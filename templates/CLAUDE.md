@@ -15,12 +15,34 @@ escalation and before the final ship.
 | sonnet | `loop-planner` / `loop-consolidator` subagents | subscription | judgment: decomposition, consolidation, normalization |
 | sonnet (fresh ctx) | `loop-reviewer` subagent | subscription | ROUTINE review of any candidate artifact |
 | openrouter bulk | `scripts/call_openrouter.sh --model kimi\|minimax\|mimo` | OpenRouter balance | cheap bulk generation/second opinions |
-| fable | `scripts/call_fable.sh` | Claude API, metered | frontier drafting or second-family review below Sol stakes |
+| fable (native) | `loop-frontier` / `loop-reviewer-frontier` subagents | subscription — ONLY while the plan includes Fable | frontier drafting, hard reasoning, pre-Sol blind review |
+| fable (script) | `scripts/call_fable.sh` | Claude API, metered | same work when Fable is NOT in the plan |
 | sol | `scripts/call_sol.sh` | OpenAI, metered, EXPENSIVE | best-of-best adversary/reviser — structural triggers only |
+
+**Fable subscription window** (as of 2026-07-13, ends ~2026-07-17): while the
+plan includes Fable, prefer the native subagents over `call_fable.sh`, and
+insert `loop-reviewer-frontier` between the routine `loop-reviewer` pass and
+any Sol escalation — it often resolves the question before a metered call is
+needed. After the window ends: revert to `call_fable.sh` (metered) and drop
+the extra review hop. Either way, the native Fable tier is SAME-FAMILY — it
+never substitutes for Sol's cross-family review. If unsure whether the window
+is still open, ask the user before routing to the native tier.
 
 Start at the cheapest adequate tier; escalate on measured failure, not by
 default. Don't spawn 8 workers when 3 will do — subscription usage is a
 shared, capped pool.
+
+## Cheap iteration mode
+
+The orchestrator is whatever the session's `/model` is — this policy is
+model-agnostic and subagent models are pinned in their frontmatter. For early
+iteration, run the session on `claude-sonnet-4-6`: it burns the
+Sonnet-specific weekly cap instead of the all-models cap, preserving
+Opus/Fable quota for the hard passes. Two rules when orchestrating from a
+cheaper model: (1) follow the structural escalation triggers mechanically —
+do not substitute your own confidence for them; (2) switch `/model` up to
+Opus (or Fable, during the window) for final consolidation and the ship
+decision.
 
 ## Sol escalation — structural triggers ONLY
 
@@ -155,8 +177,9 @@ echo '{"objective":"...","user_intent_verbatim":"...","input_paths":[],
 ```
 
 Native subagents (`loop-planner`, `loop-worker-cheap`, `loop-consolidator`,
-`loop-reviewer`) are invoked as normal subagents with the 6-field brief as the
-delegation prompt.
+`loop-reviewer`, and — while the Fable window is open — `loop-frontier` and
+`loop-reviewer-frontier`) are invoked as normal subagents with the 6-field
+brief as the delegation prompt.
 
 ## Cost calibration (as of 2026-07-12 — recalibrate from usage dashboards)
 

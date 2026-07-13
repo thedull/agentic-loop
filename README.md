@@ -29,7 +29,7 @@ dry-run one loop).
 
 | Piece | What it does |
 |---|---|
-| `agents/` (plugin-wide) | `loop-planner` (sonnet — decomposition into 6-field briefs), `loop-worker-cheap` (haiku — mechanical), `loop-consolidator` (sonnet — merge + disagreement detection), `loop-reviewer` (sonnet — fresh-context blind review) |
+| `agents/` (plugin-wide) | `loop-planner` (sonnet — decomposition into 6-field briefs), `loop-worker-cheap` (haiku — mechanical), `loop-consolidator` (sonnet — merge + disagreement detection), `loop-reviewer` (sonnet — fresh-context blind review), `loop-frontier` + `loop-reviewer-frontier` (fable — subscription-covered frontier tier, only while your plan includes Fable) |
 | `scripts/call_fable.sh` | Fable 5 via Claude API (`FABLE_KEY` — never `ANTHROPIC_API_KEY`) |
 | `scripts/call_sol.sh` | Sol/GPT-5.6 via OpenAI Responses API; `--mode adversary\|reviser`, `--effort standard\|max\|ultra` (ultra = multi-agent beta) |
 | `scripts/call_openrouter.sh` | Kimi/MiniMax/MiMo or any OpenRouter model |
@@ -85,9 +85,13 @@ harnesses, and the 2025–2026 multi-agent literature (July 2026 review):
 Never set `ANTHROPIC_API_KEY` in your environment or `.env`: it silently flips
 the interactive session from subscription to API billing. `doctor.sh` checks.
 
-Native `model: fable` in subagent frontmatter is possible as of mid-2026 but
-its billing surface (subscription vs API) is unverified — the shim keeps Fable
-spend explicit. Treat a native Fable subagent as a controlled experiment.
+**Native Fable tier**: if your plan includes Fable (verified on Max plans
+during the July 2026 window), the `loop-frontier` and `loop-reviewer-frontier`
+subagents run Fable subscription-covered — prefer them over `call_fable.sh`
+while that holds, and revert to the script (metered, explicit spend) when it
+doesn't. The routing note in the scaffolded `CLAUDE.md` carries the dated
+guidance. Native Fable is same-family: it never substitutes for Sol's
+cross-family review.
 
 ## Volatile facts — recheck before trusting
 

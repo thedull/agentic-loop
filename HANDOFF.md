@@ -63,7 +63,9 @@ agentic-scaffolding/            (plugin root)
 │   ├── planner.md              sonnet, memory:project — decomposition into 6-field briefs
 │   ├── worker-cheap.md         haiku, maxTurns:15 — mechanical only
 │   ├── consolidator.md         sonnet, memory:project — merge + disagreement detection
-│   └── reviewer.md             sonnet, read+test tools, memory:project — blind review
+│   ├── reviewer.md             sonnet, read+test tools, memory:project — blind review
+│   ├── frontier.md             fable — frontier tier, subscription-covered ONLY while plan includes Fable
+│   └── reviewer-frontier.md    fable — pre-Sol blind review, same window caveat
 ├── skills/init/SKILL.md        /agentic-loop:init — copies scripts+templates into a project
 ├── scripts/
 │   ├── lib/common.sh           .env loading, brief parsing, envelope build/validate
@@ -132,7 +134,7 @@ Dry-run: give the orchestrator a small task and watch plan → delegate → cons
 
 ## 9. Known open threads
 
-1. **Native `model: fable` subagents** are now possible (the frontmatter model field accepts arbitrary IDs) but the billing surface (subscription vs API) is unverified — the shim keeps Fable spend explicit. Treat a native Fable subagent as a controlled experiment.
+1. **Native `model: fable` subagents** are shipped as `loop-frontier` (drafting/hard reasoning) and `loop-reviewer-frontier` (pre-Sol blind review) — subscription-covered **only while the plan includes Fable** (verified 2026-07-13 on the author's Max plan; window ends ~2026-07-17). The scaffolded CLAUDE.md carries dated routing guidance: prefer them during the window, revert to `call_fable.sh` (metered) after. Same-family — never a substitute for Sol's cross-family review. Re-check whether your own plan includes Fable before relying on this tier.
 2. **Sol `--effort ultra`** uses the OpenAI Responses multi-agent beta (`OpenAI-Beta: responses_multi_agent=v1`); if an account lacks beta access the script says so and suggests `--effort max`.
 3. **High-fan-out/repeatable loops** should graduate from conversation-driven orchestration to a native Claude Code workflow script (the script holds the loop, not the orchestrator's context) — guidance is in `templates/CLAUDE.md`, but no workflow template ships yet.
 4. The spawn-guard hook is opt-in and crude (60s window, count cap) — good enough as a runaway backstop, not a scheduler.
