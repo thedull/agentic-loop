@@ -427,6 +427,29 @@ details > .details-body > :last-child { margin-bottom: 0; }
 }
 .envelope-field dd { color: var(--text-secondary); }
 
+.level-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.level-nav a {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.level-nav a:hover { background: var(--accent-dim); }
+.level-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.level-nav .spacer { flex: 1; }
+
 @media (max-width: 640px) {
   .header { padding: 1.25rem 1rem 0; }
   .header h1 { font-size: 1.2rem; }
@@ -544,6 +567,11 @@ details > .details-body > :last-child { margin-bottom: 0; }
     </div>
   </div>
 </div>
+
+<div class="level-nav">
+  <span class="spacer"></span>
+  <a data-nav="1">Basic &rarr;</a>
+</div>
 </section>
 
 <!-- ═══════════════════════════ LEVEL 1 ═══════════════════════════ -->
@@ -651,6 +679,12 @@ plan the work, delegate to workers, consolidate, and review.</code></pre>
 }</code></pre>
   </div>
 </details>
+
+<div class="level-nav">
+  <a data-nav="0">&larr; Beginner</a>
+  <span class="spacer"></span>
+  <a data-nav="2">Advanced &rarr;</a>
+</div>
 </section>
 
 <!-- ═══════════════════════════ LEVEL 2 ═══════════════════════════ -->
@@ -791,6 +825,12 @@ plan the work, delegate to workers, consolidate, and review.</code></pre>
   </table>
   </div>
 </div>
+
+<div class="level-nav">
+  <a data-nav="1">&larr; Basic</a>
+  <span class="spacer"></span>
+  <a data-nav="3">Expert &rarr;</a>
+</div>
 </section>
 
 <!-- ═══════════════════════════ LEVEL 3 ═══════════════════════════ -->
@@ -901,6 +941,11 @@ finalize_envelope "$OUTPUT" --worker "example"</code></pre>
     contract is formally defined in <code>scripts/lib/validate_envelope.jq</code>.
   </p>
 </div>
+
+<div class="level-nav">
+  <a data-nav="2">&larr; Advanced</a>
+  <span class="spacer"></span>
+</div>
 </section>
 
 </div>
@@ -910,21 +955,29 @@ finalize_envelope "$OUTPUT" --worker "example"</code></pre>
   var tabs = document.querySelectorAll('.tab');
   var levels = document.querySelectorAll('.level');
 
+  function switchTo(target) {
+    tabs.forEach(function(t) {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    tabs[target].classList.add('active');
+    tabs[target].setAttribute('aria-selected', 'true');
+
+    levels.forEach(function(l) { l.classList.remove('active'); });
+    document.getElementById('level-' + target).classList.add('active');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   tabs.forEach(function(tab) {
     tab.addEventListener('click', function() {
-      var target = this.getAttribute('data-level');
+      switchTo(parseInt(this.getAttribute('data-level'), 10));
+    });
+  });
 
-      tabs.forEach(function(t) {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      this.classList.add('active');
-      this.setAttribute('aria-selected', 'true');
-
-      levels.forEach(function(l) { l.classList.remove('active'); });
-      document.getElementById('level-' + target).classList.add('active');
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll('.level-nav a[data-nav]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      switchTo(parseInt(this.getAttribute('data-nav'), 10));
     });
   });
 })();
