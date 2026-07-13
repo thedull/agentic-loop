@@ -1,0 +1,4 @@
+# keep worker keys and run-state out of the plugin repo too
+.env
+.agentic/
+.DS_Store

@@ -1,0 +1,16 @@
+{
+  "_comment": "OPT-IN spawn-budget guard. Merge the 'hooks' block into your project's .claude/settings.json to cap runaway subagent fan-out (motivated by the June 2026 runaway-subagent incident). The jq guard blocks any single message that spawns more than MAX_PARALLEL Task calls by exiting 2; tune the limit to taste. Remove if it gets in your way — it is a safety net, not part of the loop.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MAX_PARALLEL=6; COUNT_FILE=\"/tmp/agentic-spawn-count-$PPID\"; NOW=$(date +%s); if [ -f \"$COUNT_FILE\" ]; then read -r TS N < \"$COUNT_FILE\"; if [ $((NOW - TS)) -lt 60 ]; then N=$((N + 1)); else N=1; TS=$NOW; fi; else N=1; TS=$NOW; fi; echo \"$TS $N\" > \"$COUNT_FILE\"; if [ \"$N\" -gt \"$MAX_PARALLEL\" ]; then echo \"spawn-guard: more than $MAX_PARALLEL subagent spawns within 60s — refusing (runaway fan-out protection). Consolidate the work or raise MAX_PARALLEL in .claude/settings.json.\" >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
