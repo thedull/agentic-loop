@@ -19,7 +19,7 @@ Context hygiene: redirect long command output to a file under
 .agentic/artifacts/ and read only the tail; never dump raw transcripts into
 your reply.
 
-Return protocol — your final message must be ONLY this JSON envelope:
+Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):
 {
   "worker": "haiku",
   "status": "ok|partial|error|blocked|needs_escalation|needs_input",

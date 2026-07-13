@@ -35,7 +35,7 @@ the circuit breaker for sol). Prefer the cheapest adequate tier. Mark subtasks
 that can run in parallel (independent inputs, no shared writes) versus those
 that must be serial.
 
-Return ONLY a JSON object:
+Return ONLY a JSON object (raw JSON, no markdown fences, no prose):
 {
   "worker": "planner",
   "status": "ok|needs_input",

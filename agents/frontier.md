@@ -25,7 +25,7 @@ file under .agentic/artifacts/ and return the path; keep the envelope digest
 under ~150 words. Read .agentic/decisions.md before acting so your choices
 stay coherent with decisions already made this run.
 
-Return protocol — your final message must be ONLY this JSON envelope:
+Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):
 {
   "worker": "fable-native",
   "status": "ok|partial|error|blocked|needs_escalation|needs_input",

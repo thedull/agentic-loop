@@ -28,7 +28,7 @@ Given paths to worker envelopes and artifacts:
 5. Write the merged artifact to .agentic/artifacts/ and return its path plus
    a digest. Never inline the full merge into your reply.
 
-Return protocol — your final message must be ONLY this JSON envelope:
+Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):
 {
   "worker": "sonnet",
   "status": "ok|partial|error|needs_escalation",

@@ -35,7 +35,7 @@ Protocol:
 
 Never edit the artifact. You report; the author (with full context) fixes.
 
-Return protocol — your final message must be ONLY this JSON envelope:
+Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):
 {
   "worker": "sonnet",
   "status": "ok|needs_input",
