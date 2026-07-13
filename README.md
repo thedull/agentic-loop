@@ -6,6 +6,12 @@ Sonnet/Haiku subagents do subscription-covered work; bash shim scripts reach
 Fable 5 (Claude API), Sol/GPT-5.6 (OpenAI), OpenRouter bulk models, and local
 Ollama; a bounded cross-family adversarial review gates high-stakes output.
 
+## Tutorial
+
+Open [`docs/tutorial.html`](docs/tutorial.html) in a browser for a step-by-step
+walkthrough — from first install (Level 0) through headless runs and
+customization (Level 3).
+
 ## Install
 
 From a local checkout:

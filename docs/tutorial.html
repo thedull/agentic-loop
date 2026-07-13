@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agentic-loop tutorial</title>
+<style>
+@font-face {
+  font-family: 'PlexMono';
+  font-style: normal;
+  font-weight: 500;
+  src: local('IBM Plex Mono Medium'), local('IBMPlexMono-Medium');
+}
+@font-face {
+  font-family: 'PlexMono';
+  font-style: normal;
+  font-weight: 600;
+  src: local('IBM Plex Mono SemiBold'), local('IBMPlexMono-SemiBold');
+}
+
+:root {
+  --bg: #F5F6F8;
+  --bg-raised: #FFFFFF;
+  --bg-code: #EBEEF3;
+  --text: #1B2332;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --border: #D8DCE3;
+  --accent: #2D9CDB;
+  --accent-dim: rgba(45,156,219,0.1);
+  --warning: #D97706;
+  --warning-bg: rgba(217,119,6,0.08);
+  --warning-border: rgba(217,119,6,0.3);
+  --success: #34A853;
+  --success-bg: rgba(52,168,83,0.08);
+  --tier-free: #34A853;
+  --tier-sub: #2D9CDB;
+  --tier-metered: #D97706;
+  --tab-active-bg: var(--accent);
+  --tab-active-text: #FFFFFF;
+  --tab-inactive-bg: transparent;
+  --tab-inactive-text: var(--text-secondary);
+  --shadow: 0 1px 3px rgba(27,35,50,0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --bg-raised: #1B2332;
+    --bg-code: #161D2B;
+    --text: #E2E8F0;
+    --text-secondary: #A0AEC0;
+    --text-muted: #718096;
+    --border: #2D3748;
+    --accent: #4DB8E8;
+    --accent-dim: rgba(77,184,232,0.12);
+    --warning-bg: rgba(217,119,6,0.12);
+    --warning-border: rgba(217,119,6,0.35);
+    --success-bg: rgba(52,168,83,0.12);
+    --tab-active-bg: var(--accent);
+    --tab-active-text: #111827;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111827;
+  --bg-raised: #1B2332;
+  --bg-code: #161D2B;
+  --text: #E2E8F0;
+  --text-secondary: #A0AEC0;
+  --text-muted: #718096;
+  --border: #2D3748;
+  --accent: #4DB8E8;
+  --accent-dim: rgba(77,184,232,0.12);
+  --warning-bg: rgba(217,119,6,0.12);
+  --warning-border: rgba(217,119,6,0.35);
+  --success-bg: rgba(52,168,83,0.12);
+  --tab-active-bg: var(--accent);
+  --tab-active-text: #111827;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+:root[data-theme="light"] {
+  --bg: #F5F6F8;
+  --bg-raised: #FFFFFF;
+  --bg-code: #EBEEF3;
+  --text: #1B2332;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --border: #D8DCE3;
+  --accent: #2D9CDB;
+  --accent-dim: rgba(45,156,219,0.1);
+  --warning-bg: rgba(217,119,6,0.08);
+  --warning-border: rgba(217,119,6,0.3);
+  --success-bg: rgba(52,168,83,0.08);
+  --tab-active-bg: var(--accent);
+  --tab-active-text: #FFFFFF;
+  --shadow: 0 1px 3px rgba(27,35,50,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 2rem 1.5rem 0;
+}
+.header-inner {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+.header h1 {
+  font-family: 'PlexMono', 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+.header h1 span { color: var(--accent); }
+.header p.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.925rem;
+  margin-bottom: 1.5rem;
+  max-width: 50ch;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+.tab {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--tab-inactive-bg);
+  color: var(--tab-inactive-text);
+  transition: background 0.15s, color 0.15s;
+}
+.tab:hover { background: var(--accent-dim); color: var(--text); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+.content { max-width: 52rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+.level { display: none; }
+.level.active { display: block; }
+
+.level-label {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin-bottom: 1.25rem;
+}
+
+h3 {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+p { margin-bottom: 1rem; max-width: 65ch; }
+p + p { margin-top: 0; }
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  max-width: 65ch;
+}
+li { margin-bottom: 0.4rem; }
+li code { font-size: 0.88em; }
+
+code {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.875em;
+  background: var(--bg-code);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  padding: 0.85rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 1.25rem;
+  font-size: 0.925rem;
+}
+.callout p { margin-bottom: 0.4rem; }
+.callout p:last-child { margin-bottom: 0; }
+.callout strong { color: var(--text); }
+
+.callout-warning {
+  border-left-color: var(--warning);
+  background: var(--warning-bg);
+}
+.callout-warning .callout-title {
+  color: var(--warning);
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.callout-success {
+  border-left-color: var(--success);
+  background: var(--success-bg);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0 1rem;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+.step-marker {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.step-body { min-width: 0; }
+.step-body h3 { margin-top: 0.15rem; margin-bottom: 0.5rem; }
+.step-body p:last-child { margin-bottom: 0; }
+
+details {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+details > summary {
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before {
+  content: '\25B6';
+  font-size: 0.6rem;
+  transition: transform 0.15s;
+  color: var(--text-muted);
+}
+details[open] > summary::before { transform: rotate(90deg); }
+details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+details > .details-body { padding: 1rem 1.25rem; }
+details > .details-body > :last-child { margin-bottom: 0; }
+
+.tier-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 1.5rem 0;
+}
+.tier-node {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 0 1rem;
+  padding: 0.75rem 0;
+  align-items: start;
+}
+.tier-node + .tier-node {
+  border-top: 1px dashed var(--border);
+}
+.tier-badge {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  text-align: center;
+  white-space: nowrap;
+}
+.tier-badge.free { background: rgba(52,168,83,0.12); color: var(--tier-free); }
+.tier-badge.sub { background: var(--accent-dim); color: var(--accent); }
+.tier-badge.metered { background: var(--warning-bg); color: var(--warning); }
+.tier-info h4 {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.tier-info p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+.tier-info code { font-size: 0.82em; }
+
+.billing-card {
+  border: 1px solid var(--warning-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+.billing-card-header {
+  background: var(--warning-bg);
+  padding: 0.6rem 1rem;
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warning);
+}
+.billing-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.billing-card th, .billing-card td {
+  text-align: left;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.billing-card th {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+}
+.billing-card td:first-child { font-family: 'PlexMono', 'SF Mono', monospace; font-size: 0.82rem; }
+.billing-card tr:last-child td { border-bottom: none; }
+
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.78rem;
+}
+.flow-box {
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.flow-arrow { color: var(--text-muted); font-size: 0.9rem; }
+
+.envelope-field {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+.envelope-field dt {
+  font-family: 'PlexMono', 'SF Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+.envelope-field dd { color: var(--text-secondary); }
+
+@media (max-width: 640px) {
+  .header { padding: 1.25rem 1rem 0; }
+  .header h1 { font-size: 1.2rem; }
+  .content { padding: 1.5rem 1rem 3rem; }
+  .tab { padding: 0.45rem 0.65rem; font-size: 0.72rem; }
+  .step { grid-template-columns: 2rem 1fr; gap: 0 0.75rem; }
+  .step-marker { width: 2rem; height: 2rem; font-size: 0.75rem; }
+  .tier-node { grid-template-columns: 1fr; gap: 0.35rem; }
+  .envelope-field { grid-template-columns: 1fr; gap: 0; }
+  .envelope-field dd { margin-bottom: 0.4rem; }
+  .flow-diagram { font-size: 0.7rem; }
+  .billing-card { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1><span>&gt;</span> agentic-loop</h1>
+    <p class="subtitle">Multi-model orchestration for Claude Code. Plan, delegate, review, ship.</p>
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-level="0">Beginner</button>
+      <button class="tab" role="tab" aria-selected="false" data-level="1">Basic</button>
+      <button class="tab" role="tab" aria-selected="false" data-level="2">Advanced</button>
+      <button class="tab" role="tab" aria-selected="false" data-level="3">Expert</button>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════ LEVEL 0 ═══════════════════════════ -->
+<section class="level active" id="level-0" role="tabpanel">
+<div class="level-label">Level 0</div>
+<h2>What is this and how do I install it?</h2>
+
+<p>
+  The agentic-loop plugin turns your Claude Code session into an orchestrated
+  multi-model system. Your interactive Opus session plans and routes work to the
+  cheapest model that can handle it &mdash; Haiku for mechanical tasks, Sonnet for
+  judgment calls, Fable for frontier reasoning, and external models (Sol, OpenRouter,
+  Ollama) via bash scripts. A blind review chain catches errors before they ship.
+</p>
+
+<div class="step">
+  <div class="step-marker">1</div>
+  <div class="step-body">
+    <h3>Check prerequisites</h3>
+    <ul>
+      <li><strong>Claude Max subscription</strong> &mdash; the interactive session and native subagents bill here</li>
+      <li><strong>Claude Code CLI</strong> installed and logged in</li>
+      <li><strong>jq</strong> and <strong>curl</strong> on your PATH</li>
+      <li>Optional: API keys for Fable, Sol, OpenRouter (for metered tiers); Ollama running locally (for free tier)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">2</div>
+  <div class="step-body">
+    <h3>Install the plugin</h3>
+    <p>From a local checkout of this repo:</p>
+    <pre><code>/plugin marketplace add /path/to/agentic-scaffolding
+/plugin install agentic-loop</code></pre>
+    <p>Or for a one-off session:</p>
+    <pre><code>claude --plugin-dir /path/to/agentic-scaffolding</code></pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">3</div>
+  <div class="step-body">
+    <h3>Scaffold your project</h3>
+    <p>Inside any project directory, run the init skill:</p>
+    <pre><code>/agentic-loop:init</code></pre>
+    <p>This copies the worker scripts, routing-policy <code>CLAUDE.md</code>,
+    <code>.env.example</code>, and the <code>.agentic/</code> run-state scaffold into
+    your project.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">4</div>
+  <div class="step-body">
+    <h3>Configure your keys</h3>
+    <pre><code>cp .env.example .env
+# Edit .env &mdash; fill in the keys you have</code></pre>
+    <p>You only need the keys for tiers you plan to use. Skip any you don't have &mdash;
+    the corresponding script fails cleanly with a structured error.</p>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">Billing trap</div>
+      <p>
+        <strong>Never</strong> set <code>ANTHROPIC_API_KEY</code> in your shell
+        environment or <code>.env</code>. If it's set, Claude Code silently switches
+        your interactive session from Max-subscription billing to metered API billing.
+        The Fable worker key is deliberately named <code>FABLE_KEY</code> to avoid this.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">5</div>
+  <div class="step-body">
+    <h3>Run doctor</h3>
+    <pre><code>./scripts/doctor.sh</code></pre>
+    <p>Doctor checks for the billing trap, verifies your tools are installed,
+    validates your keys are in <code>.env</code> (not exported), and runs the
+    envelope validator's self-test. Fix any <code>FAIL</code> lines before
+    proceeding.</p>
+    <div class="callout callout-success">
+      <p>All checks passing? You're ready. Move on to Level 1 for your first loop.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════ LEVEL 1 ═══════════════════════════ -->
+<section class="level" id="level-1" role="tabpanel">
+<div class="level-label">Level 1</div>
+<h2>Run your first loop</h2>
+
+<p>
+  Give the orchestrator a small task and watch the full loop in action. Here's a
+  concrete example you can run in any codebase:
+</p>
+
+<pre><code>Summarize the 3 largest files in this repo. Use the agentic loop:
+plan the work, delegate to workers, consolidate, and review.</code></pre>
+
+<h3>The flow</h3>
+<p>The orchestrator breaks this into a pipeline:</p>
+
+<div class="flow-diagram">
+  <span class="flow-box">@loop-planner</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">@loop-worker-cheap</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">@loop-consolidator</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">@loop-reviewer</span>
+</div>
+
+<div class="step">
+  <div class="step-marker">P</div>
+  <div class="step-body">
+    <h3>Plan</h3>
+    <p><code>@loop-planner</code> (Sonnet) decomposes the task into subtasks, each
+    with a 6-field delegation brief: objective, user intent verbatim, input paths,
+    boundaries, output spec, and effort budget. It assigns each subtask to the cheapest
+    adequate tier and marks which can run in parallel.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">D</div>
+  <div class="step-body">
+    <h3>Delegate</h3>
+    <p><code>@loop-worker-cheap</code> (Haiku) executes each brief mechanically.
+    For this example: find the 3 largest files, read them, produce summaries.
+    Each worker returns a JSON envelope with its results.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">C</div>
+  <div class="step-body">
+    <h3>Consolidate</h3>
+    <p><code>@loop-consolidator</code> (Sonnet) merges the worker outputs. It
+    verifies artifacts exist on disk, deduplicates, and surfaces any disagreements
+    between workers without forcing consensus. The merged result goes to
+    <code>.agentic/artifacts/</code>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">R</div>
+  <div class="step-body">
+    <h3>Review</h3>
+    <p><code>@loop-reviewer</code> (Sonnet) does a blind review: it sees the task
+    spec and the artifact, but <em>not</em> the reasoning that produced it. It runs
+    any executable checks it can and reports only correctness gaps with cited evidence.</p>
+  </div>
+</div>
+
+<h3>Reading the envelope</h3>
+<p>Every worker returns the same JSON structure. The fields that matter most:</p>
+
+<dl class="envelope-field"><dt>status</dt><dd><code>ok</code> = done, <code>partial</code> = incomplete, <code>error</code> = failed, <code>needs_input</code> = questions for you</dd></dl>
+<dl class="envelope-field"><dt>summary</dt><dd>100-word digest of what was done</dd></dl>
+<dl class="envelope-field"><dt>result</dt><dd>The actual output, per the brief's output spec</dd></dl>
+<dl class="envelope-field"><dt>artifacts[]</dt><dd>Paths to files the worker wrote (orchestrator verifies they exist)</dd></dl>
+<dl class="envelope-field"><dt>caveats[]</dt><dd>Anything that limits trust in this result</dd></dl>
+
+<h3>When things go sideways</h3>
+<ul>
+  <li><code>needs_input</code> &mdash; the worker has questions. Answer them and re-run.</li>
+  <li><code>error</code> &mdash; check the <code>summary</code> field for what went wrong. Often a missing file or a command that failed.</li>
+  <li><code>needs_escalation</code> &mdash; the worker or reviewer flagged this for a higher tier. The orchestrator decides whether to escalate.</li>
+</ul>
+
+<details>
+  <summary>Full envelope schema</summary>
+  <div class="details-body">
+<pre><code>{
+  "worker": "haiku",
+  "status": "ok|partial|error|blocked|needs_escalation|needs_input",
+  "summary": "&lt;=100 words",
+  "result": { },
+  "artifacts": ["paths to written files"],
+  "key_decisions": ["choices the worker made"],
+  "caveats": ["trust limiters"],
+  "assumptions": ["things the brief left unspecified"],
+  "confidence_ordinal": "high|medium|low",
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "est_cost_usd": 0
+  }
+}</code></pre>
+  </div>
+</details>
+</section>
+
+<!-- ═══════════════════════════ LEVEL 2 ═══════════════════════════ -->
+<section class="level" id="level-2" role="tabpanel">
+<div class="level-label">Level 2</div>
+<h2>Use every tier and optimize cost</h2>
+
+<h3>The tier ladder</h3>
+<p>Route by difficulty and stakes, not by default. Start cheap; escalate on measured failure.</p>
+
+<div class="tier-path">
+  <div class="tier-node">
+    <div><span class="tier-badge free">FREE</span></div>
+    <div class="tier-info">
+      <h4>ollama</h4>
+      <p>Local model via <code>call_ollama.sh</code>. Mechanical: extraction, formatting, bulk lookups. Default: <code>qwen3.5:4b</code>.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge sub">SUB</span></div>
+    <div class="tier-info">
+      <h4>haiku</h4>
+      <p><code>@loop-worker-cheap</code> subagent. Mechanical with repo access and tool use.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge sub">SUB</span></div>
+    <div class="tier-info">
+      <h4>sonnet</h4>
+      <p><code>@loop-planner</code>, <code>@loop-consolidator</code>, <code>@loop-reviewer</code>. Judgment: decomposition, merging, review.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge sub">SUB</span></div>
+    <div class="tier-info">
+      <h4>fable (native)</h4>
+      <p><code>@loop-frontier</code>, <code>@loop-reviewer-frontier</code>. Subscription-covered while your plan includes Fable. Pre-Sol review tier.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge metered">$</span></div>
+    <div class="tier-info">
+      <h4>openrouter</h4>
+      <p><code>call_openrouter.sh --model kimi|minimax|mimo</code>. Cheap bulk generation and second opinions.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge metered">$$</span></div>
+    <div class="tier-info">
+      <h4>fable (script)</h4>
+      <p><code>call_fable.sh</code>. Same capability as native, metered via <code>FABLE_KEY</code>. Use when Fable leaves your subscription plan.</p>
+    </div>
+  </div>
+  <div class="tier-node">
+    <div><span class="tier-badge metered">$$$</span></div>
+    <div class="tier-info">
+      <h4>sol</h4>
+      <p><code>call_sol.sh</code>. Cross-family adversary. Structural triggers only &mdash; the human is the circuit breaker.</p>
+    </div>
+  </div>
+</div>
+
+<h3>Smoke-test each tier</h3>
+<p>Quick one-shot tests to verify each tier works. Native subagents are subscription-covered; script calls are metered (pennies each).</p>
+
+<pre><code># Native subagents (subscription)
+@loop-worker-cheap "List all .sh files in scripts/ and count them"
+@loop-frontier "Explain what scripts/common.sh does in 3 bullets"
+
+# Bash shim workers (metered &mdash; needs keys in .env)
+./scripts/call_ollama.sh --objective "Reply with the word ok"
+./scripts/call_fable.sh --objective "Reply with the word ok"
+./scripts/call_sol.sh --mode reviser --effort standard \
+  --objective "Reply with the word ok"
+./scripts/call_openrouter.sh --model kimi \
+  --objective "Reply with the word ok"</code></pre>
+
+<h3>The review chain</h3>
+<p>For high-stakes output, the review escalates through tiers:</p>
+
+<div class="flow-diagram">
+  <span class="flow-box">@loop-reviewer</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">@loop-reviewer-frontier</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">call_sol.sh --mode adversary</span>
+</div>
+
+<p>
+  Each reviewer is blind &mdash; it sees the task spec and the candidate artifact, never
+  the reasoning that produced it. The frontier reviewer is same-family (Anthropic), so
+  it provides fresh context and frontier capability but not cross-family independence.
+  Sol (GPT-5.6) is the only cross-family adversary.
+</p>
+
+<h3>Blind adversary protocol</h3>
+<ul>
+  <li><strong>Blind payload</strong>: task + candidate only. Author's reasoning is withheld.</li>
+  <li><strong>Proof before preference</strong>: every finding needs cited evidence (file:line, failing command, spec contradiction) before any verdict.</li>
+  <li><strong>Correctness only</strong>: no style, no taste, no hypothetical improvements.</li>
+  <li><strong>Empty findings = valid answer</strong>: don't manufacture findings to appear thorough.</li>
+</ul>
+
+<h3>Structural escalation triggers</h3>
+<p>Sol is expensive. It fires only on structural triggers, never on self-reported confidence:</p>
+<ol>
+  <li>High-stakes or irreversible output (production deploy, data migration)</li>
+  <li>Material disagreement between worker and reviewer that persists after revision</li>
+  <li>Known-hard task class (security, concurrency, distributed state)</li>
+  <li>Repeated worker or schema failure (something is systematically wrong)</li>
+  <li>Tests failing after a revision attempt</li>
+</ol>
+
+<h3>Cheap iteration mode</h3>
+<p>
+  Run early iterations with <code>/model claude-sonnet-4-6</code> as your orchestrator.
+  This burns the Sonnet-specific weekly cap instead of the all-models cap, preserving
+  Opus and Fable quota for the hard passes. Two rules:
+</p>
+<ul>
+  <li>Follow the structural escalation triggers mechanically &mdash; don't substitute your confidence for them</li>
+  <li>Switch <code>/model</code> up to Opus or Fable for final consolidation and the ship decision</li>
+</ul>
+
+<div class="billing-card">
+  <div class="billing-card-header">Billing cheat sheet</div>
+  <div style="overflow-x: auto;">
+  <table>
+    <thead><tr><th>Surface</th><th>Meter</th></tr></thead>
+    <tbody>
+      <tr><td>orchestrator + native subagents</td><td>Max subscription (shared caps)</td></tr>
+      <tr><td>call_fable.sh</td><td>Claude API (FABLE_KEY)</td></tr>
+      <tr><td>call_sol.sh</td><td>OpenAI API &mdash; output 6x input; reasoning = output</td></tr>
+      <tr><td>call_openrouter.sh</td><td>OpenRouter balance</td></tr>
+      <tr><td>call_ollama.sh</td><td>Free (local)</td></tr>
+      <tr><td>run_headless.sh</td><td>Different meter than interactive</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════ LEVEL 3 ═══════════════════════════ -->
+<section class="level" id="level-3" role="tabpanel">
+<div class="level-label">Level 3</div>
+<h2>Headless, hardening, and customization</h2>
+
+<h3>Headless runs</h3>
+<p>
+  <code>run_headless.sh</code> wraps <code>claude -p</code> for unattended loops.
+  It bills on a <em>different meter</em> than your interactive session and refuses
+  to run without explicit acknowledgment:
+</p>
+<pre><code>./scripts/run_headless.sh \
+  --i-understand-billing \
+  --prompt-file task.md \
+  --check-cmd "test -f output.json" \
+  --max-iterations 5</code></pre>
+<ul>
+  <li><code>--i-understand-billing</code> &mdash; required gate, no shortcut</li>
+  <li><code>--prompt-file</code> &mdash; must exist, contains the task</li>
+  <li><code>--check-cmd</code> &mdash; completion check, runs after each iteration</li>
+  <li><code>--max-iterations</code> &mdash; hard cap (default 5), exits code 6 on exhaustion</li>
+  <li><code>--dry-run</code> &mdash; shows what would run without executing</li>
+</ul>
+
+<h3>Spawn-guard hook</h3>
+<p>
+  Caps concurrent subagent spawns to prevent runaway fan-out. Merge the template
+  into your project's settings:
+</p>
+<pre><code># From templates/hooks-spawn-guard.json
+# Merge into .claude/settings.json
+# MAX_PARALLEL=6 within a 60-second window</code></pre>
+
+<h3>The .agentic/ blackboard</h3>
+<p>
+  The <code>.agentic/</code> directory is the shared coordination layer during a run.
+  It's gitignored &mdash; it's ephemeral state, not project code.
+</p>
+<ul>
+  <li><code>PLAN.md</code> &mdash; orchestrator-only. The current decomposition and routing. Survives context compaction.</li>
+  <li><code>STATUS.md</code> &mdash; orchestrator-only. Milestone log: what's done, what's next.</li>
+  <li><code>decisions.md</code> &mdash; append-only, all workers read. Records choices so no one re-litigates.</li>
+  <li><code>artifacts/</code> &mdash; single-writer-per-file. Workers write here; the orchestrator and consolidator read.</li>
+</ul>
+
+<h3>Adding new worker scripts</h3>
+<p>Follow the shim pattern in <code>scripts/lib/common.sh</code>:</p>
+<ol>
+  <li>Source <code>common.sh</code> for <code>.env</code> loading, brief parsing, and envelope building</li>
+  <li>Use <code>require_key</code> to check for your API key</li>
+  <li>Use <code>parse_brief</code> to read the 6-field delegation brief</li>
+  <li>Use <code>build_task_prompt</code> + <code>envelope_instructions</code> to construct the prompt</li>
+  <li>Call your model's API with <code>curl</code></li>
+  <li>Use <code>finalize_envelope</code> to parse, validate, and return</li>
+</ol>
+
+<details>
+  <summary>Minimal script skeleton</summary>
+  <div class="details-body">
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/common.sh"
+
+require_key "MY_API_KEY"
+
+parse_brief "$@"
+PROMPT="$(build_task_prompt)"
+SYS="You are a worker.\n$(envelope_instructions)"
+
+RESPONSE=$(curl -s "https://api.example.com/v1/chat" \
+  -H "Authorization: Bearer $MY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -n --arg p "$PROMPT" --arg s "$SYS" \
+    '{model:"example-1", messages:[
+      {role:"system",content:$s},
+      {role:"user",content:$p}
+    ]}')")
+
+OUTPUT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+finalize_envelope "$OUTPUT" --worker "example"</code></pre>
+  </div>
+</details>
+
+<h3>LEARNINGS.md and the two-strikes rule</h3>
+<p>
+  <code>LEARNINGS.md</code> is the cross-run memory file. Workers and reviewers
+  record patterns on the <em>second</em> occurrence &mdash; one-offs aren't patterns.
+  Cap at ~300 lines; prune entries that no longer apply.
+</p>
+
+<h3>Why Sol can't be replaced</h3>
+<p>
+  The frontier-native reviewers (<code>@loop-reviewer-frontier</code>) are same-family:
+  they share training data, failure modes, and blind spots with the author models.
+  Sol (GPT-5.6) is the only <strong>cross-family</strong> adversary in the loop &mdash;
+  its independent training catches failure modes that Anthropic models are structurally
+  unlikely to find in each other's work. This is the one tier where "different vendor"
+  is the feature.
+</p>
+
+<div class="callout">
+  <p>
+    <strong>Next step:</strong> read <code>HANDOFF.md</code> in the repo root for the
+    full design rationale, evidence-backed decisions, and open threads. The envelope
+    contract is formally defined in <code>scripts/lib/validate_envelope.jq</code>.
+  </p>
+</div>
+</section>
+
+</div>
+
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.tab');
+  var levels = document.querySelectorAll('.level');
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var target = this.getAttribute('data-level');
+
+      tabs.forEach(function(t) {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      this.classList.add('active');
+      this.setAttribute('aria-selected', 'true');
+
+      levels.forEach(function(l) { l.classList.remove('active'); });
+      document.getElementById('level-' + target).classList.add('active');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+})();
+</script>
+</body>
+</html>
