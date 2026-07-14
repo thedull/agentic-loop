@@ -145,6 +145,23 @@ Rules:
   script holds the plan and intermediate results, not your context. Shim
   scripts remain the only route to non-Claude workers either way.
 
+## The factory (unattended spec→build→review)
+
+For the day-mode loop over `factory/specs/` (skills `/agentic-loop:spec`,
+`:build`, `:review`; workflow `.claude/workflows/factory.js`), three rules
+override the defaults above:
+
+1. **Usage gate before claiming work.** Run `scripts/lib/usage_gate.sh check`;
+   on postpone, log to `.agentic/STATUS.md` and reschedule past the reset —
+   never burn a capped session's error retries.
+2. **No metered tiers unattended.** The Sol/Fable escalation triggers still
+   fire, but unattended stages record `needs_escalation` in the spec's Notes
+   for the user's evening decision instead of spending. The human confirms
+   ALL metered calls — no exceptions for autonomy.
+3. **Terminal state is an open PR, never a merge.** Merging is the user's
+   explicit signal. Blocked-with-a-precise-question always beats a shipped
+   guess.
+
 ## Script invocation reference
 
 ```bash

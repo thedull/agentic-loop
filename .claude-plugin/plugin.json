@@ -1,7 +1,7 @@
 {
   "name": "agentic-loop",
-  "description": "Orchestrated multi-model agentic loop: Opus orchestrator, tiered native subagents, bash-shim workers for Sol/Fable/OpenRouter/Ollama, bounded cross-family adversarial review.",
-  "version": "0.1.0",
+  "description": "Orchestrated multi-model agentic loop: Opus orchestrator, tiered native subagents, bash-shim workers for Sol/Fable/OpenRouter/Ollama, bounded cross-family adversarial review — plus the factory: morning ideas to evening PRs via spec/build/review skills.",
+  "version": "0.2.0",
   "author": {
     "name": "gabbytee"
   }

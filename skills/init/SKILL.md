@@ -25,13 +25,16 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
 
 2. **Copy, from `$PLUGIN_ROOT`, into the project:**
    ```bash
-   mkdir -p scripts/lib .agentic/artifacts
+   mkdir -p scripts/lib .agentic/artifacts factory/specs .claude/workflows
    cp -R "$PLUGIN_ROOT/scripts/." scripts/
    cp "$PLUGIN_ROOT/templates/.env.example" .env.example
    cp "$PLUGIN_ROOT/templates/LEARNINGS.md" LEARNINGS.md
    cp "$PLUGIN_ROOT/templates/PROJECT_README.md" AGENTIC_LOOP.md
    cp -R "$PLUGIN_ROOT/templates/agentic-state/." .agentic/
-   chmod +x scripts/*.sh
+   cp "$PLUGIN_ROOT/templates/factory-spec.md" factory/spec-template.md
+   cp "$PLUGIN_ROOT/templates/statusline-usage.sh" scripts/statusline-usage.sh
+   cp "$PLUGIN_ROOT/templates/workflows/factory.js" .claude/workflows/factory.js
+   chmod +x scripts/*.sh scripts/lib/*.sh
    ```
 
 3. **CLAUDE.md**: if the project has no `CLAUDE.md`, copy
@@ -50,6 +53,16 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
 6. **Optional hardening** — mention (don't apply unasked): the spawn-budget
    PreToolUse hook in `$PLUGIN_ROOT/templates/hooks-spawn-guard.json` can be
    merged into the project's `.claude/settings.json`.
+
+6b. **Factory setup (mention; apply only if the user wants the
+   spec→build→review loop):** the usage gate needs the statusline mirror —
+   add to `.claude/settings.json`:
+   ```json
+   {"statusLine": {"type": "command", "command": "scripts/statusline-usage.sh"}}
+   ```
+   `factory/specs/` is COMMITTED (it is the coordination bus between
+   sessions), unlike `.agentic/`. Point the user at `docs/factory.md` in the
+   plugin root for the day-mode run recipe.
 
 7. **Finish** by running `./scripts/doctor.sh` and showing the user its
    output, then point them at `AGENTIC_LOOP.md` for the remaining checklist
