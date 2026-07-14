@@ -41,13 +41,39 @@ dry-run one loop).
 | `scripts/call_openrouter.sh` | Kimi/MiniMax/MiMo or any OpenRouter model |
 | `scripts/call_ollama.sh` | free local mechanical worker (default `qwen3.5:4b`) |
 | `scripts/run_headless.sh` | gated `claude -p` loop wrapper — read its billing warning |
-| `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test |
+| `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test, factory checks |
 | `templates/CLAUDE.md` | the routing brain: tier ladder, Sol structural triggers, blind-adversary protocol, revision bounds, `.agentic/` coordination rules |
+| `skills/spec\|build\|review` + `templates/workflows/factory.js` | **the factory** — morning ideas → unattended spec→build→review pipeline → evening PRs (see below) |
+| `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh`, `templates/statusline-usage.sh` | factory plumbing: file state machine (connector seam for future GH Issues/Jira backends) + subscription-usage self-gating |
 
 All workers speak one JSON **envelope** (`scripts/lib/validate_envelope.jq`):
 `status` enum, ≤100-word `summary`, `result`, `artifacts[]` (full output goes
 to files; envelopes carry paths + digests), `key_decisions[]`, `caveats[]`,
 `assumptions[]`. Scripts self-validate before returning.
+
+## The Factory
+
+Hand over a list of ideas in the morning; come back in the evening to open,
+reviewed PRs. Inspired by [Alex Finn's software-factory workflow](https://x.com/alexfinn/status/2076752798532931758).
+
+1. `/agentic-loop:spec "idea"` (interactive, morning) — adaptive-depth
+   grilling → one spec file in `factory/specs/` with a machine-checkable
+   `check_cmd`, gated by a fresh-context spec review.
+2. `/agentic-loop:build` (unattended) — claims a spec, isolated worktree,
+   **Red Gate** (tests must fail first), tier-routed build, `check_cmd` green.
+3. `/agentic-loop:review` (unattended) — blind review (security, optimization,
+   test quality; findings typed spec/test/impl), bounded revision, conditional
+   browser verification with screenshots, opens the PR, writes the evening
+   digest to `.agentic/STATUS.md`.
+
+Day mode: install the statusline mirror (usage self-gating: the loop postpones
+itself past the cap reset above `FACTORY_USAGE_THRESHOLD`), fill the queue,
+then `/loop 60m /factory` in a backgrounded session. Terminal state is always
+an **open PR — merging stays yours**, and unattended stages never spend
+metered API dollars (`needs_escalation` is queued for your evening decision).
+
+Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
+[`docs/software-factory-analysis.md`](docs/software-factory-analysis.md)
 
 ## Design rationale (why it's built this way)
 
