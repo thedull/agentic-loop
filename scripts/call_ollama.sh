@@ -45,9 +45,13 @@ REQUEST="$(jq -n --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "
   ]
 }')"
 
-RESPONSE="$(curl -sS --max-time 600 http://localhost:11434/api/chat \
-  -H "content-type: application/json" \
-  -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the local Ollama server (is 'ollama serve' running?)"; exit 5; }
+if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
+  RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
+else
+  RESPONSE="$(curl -sS --max-time 600 http://localhost:11434/api/chat \
+    -H "content-type: application/json" \
+    -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the local Ollama server (is 'ollama serve' running?)"; exit 5; }
+fi
 
 if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
   emit_error "$WORKER_NAME" "Ollama error: $(echo "$RESPONSE" | jq -r '.error')"

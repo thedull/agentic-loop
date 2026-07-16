@@ -53,7 +53,9 @@ load_env() {
 }
 
 # require_key VAR_NAME worker_label — fail with a structured error envelope if unset.
+# Test seam: mocked runs (MOCK_RESPONSE_FILE set, used by evals/) need no keys.
 require_key() {
+  [[ -n "${MOCK_RESPONSE_FILE:-}" ]] && return 0
   local var="$1" worker="$2"
   if [[ -z "${!var:-}" ]]; then
     emit_error "$worker" "missing credential: $var is not set. Add it to ./.env (see .env.example). Never name an Anthropic key ANTHROPIC_API_KEY."

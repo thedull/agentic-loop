@@ -58,10 +58,14 @@ REQUEST="$(jq -n --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "
   ]
 }')"
 
-RESPONSE="$(curl -sS --max-time 600 https://openrouter.ai/api/v1/chat/completions \
-  -H "content-type: application/json" \
-  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-  -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching OpenRouter"; exit 5; }
+if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
+  RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
+else
+  RESPONSE="$(curl -sS --max-time 600 https://openrouter.ai/api/v1/chat/completions \
+    -H "content-type: application/json" \
+    -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+    -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching OpenRouter"; exit 5; }
+fi
 
 if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
   emit_error "$WORKER_NAME" "OpenRouter error: $(echo "$RESPONSE" | jq -r '.error.message // .error')"

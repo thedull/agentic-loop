@@ -2,3 +2,6 @@
 .env
 .agentic/
 .DS_Store
+
+# eval run results (local)
+evals/results/

@@ -72,12 +72,16 @@ if [[ $USE_FALLBACK -eq 1 ]]; then
   BETA_HEADER=(-H "anthropic-beta: server-side-fallback-2026-06-01")
 fi
 
-RESPONSE="$(curl -sS --max-time 900 https://api.anthropic.com/v1/messages \
-  -H "content-type: application/json" \
-  -H "x-api-key: $FABLE_KEY" \
-  -H "anthropic-version: 2023-06-01" \
-  "${BETA_HEADER[@]}" \
-  -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the Claude API"; exit 5; }
+if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
+  RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
+else
+  RESPONSE="$(curl -sS --max-time 900 https://api.anthropic.com/v1/messages \
+    -H "content-type: application/json" \
+    -H "x-api-key: $FABLE_KEY" \
+    -H "anthropic-version: 2023-06-01" \
+    "${BETA_HEADER[@]}" \
+    -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the Claude API"; exit 5; }
+fi
 
 if echo "$RESPONSE" | jq -e '.type == "error"' >/dev/null 2>&1; then
   emit_error "$WORKER_NAME" "Claude API error: $(echo "$RESPONSE" | jq -r '.error.message')"

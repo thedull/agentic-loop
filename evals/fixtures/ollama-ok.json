@@ -1,0 +1,7 @@
+{
+  "message": {
+    "content": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"classified 30 items into 4 buckets\",\"result\":{\"buckets\":4,\"items\":30},\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"high\",\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"est_cost_usd\":0}}"
+  },
+  "prompt_eval_count": 123,
+  "eval_count": 45
+}

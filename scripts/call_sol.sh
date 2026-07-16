@@ -104,11 +104,15 @@ if [[ $MULTI_AGENT -eq 1 ]]; then
   BETA_HEADER=(-H "OpenAI-Beta: responses_multi_agent=v1")
 fi
 
-RESPONSE="$(curl -sS --max-time 900 https://api.openai.com/v1/responses \
-  -H "content-type: application/json" \
-  -H "Authorization: Bearer $OPENAI_API_KEY" \
-  "${BETA_HEADER[@]}" \
-  -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the OpenAI API"; exit 5; }
+if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
+  RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
+else
+  RESPONSE="$(curl -sS --max-time 900 https://api.openai.com/v1/responses \
+    -H "content-type: application/json" \
+    -H "Authorization: Bearer $OPENAI_API_KEY" \
+    "${BETA_HEADER[@]}" \
+    -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the OpenAI API"; exit 5; }
+fi
 
 if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
   ERR_MSG="$(echo "$RESPONSE" | jq -r '.error.message')"

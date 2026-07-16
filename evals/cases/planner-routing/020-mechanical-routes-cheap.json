@@ -1,0 +1,21 @@
+{
+  "id": "planner-020-mechanical-routes-cheap",
+  "target": "loop-planner",
+  "kind": "headless-agent",
+  "agent": "agentic-loop:loop-planner",
+  "input": { "brief": {
+    "objective": "Plan the extraction of all TODO comments from 40 source files into one JSON array",
+    "user_intent_verbatim": "pull every TODO out of the codebase into a list",
+    "input_paths": [],
+    "boundaries_non_goals": ["no code changes; extraction and formatting only"],
+    "output_spec": "a decomposition into subtasks, each with an assigned tier",
+    "effort_budget": "small: 1-3 subtasks"
+  } },
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ".result | tostring | test(\"ollama|haiku\"; \"i\")" },
+    { "type": "jq", "expr": "(.result | tostring | test(\"sol|fable\"; \"i\")) | not" }
+  ],
+  "_note": "mechanical work must route to the cheap tiers; refine the tier_expect path once the planner's subtask JSON shape is pinned",
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "envelope-003-nonjson-wrapped-partial",
+  "target": "common.sh finalize_envelope",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/common.sh\"; ARTIFACT_PATH=\"\"; finalize_envelope 'the model ignored the contract and wrote prose' 'testworker' 100 20 0",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ".status == \"partial\"" },
+    { "type": "jq", "expr": "(.caveats | length) >= 1" },
+    { "type": "jq", "expr": ".usage.input_tokens == 100 and .usage.output_tokens == 20" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

@@ -1,0 +1,4 @@
+[
+  {"worker":"ollama/qwen3.5:4b","status":"ok","summary":"extracted 14 TODOs","result":"see artifact","artifacts":[".agentic/artifacts/todos.json"],"key_decisions":[],"caveats":["skipped 2 binary files"],"assumptions":[],"confidence_ordinal":"high","usage":{"input_tokens":900,"output_tokens":120,"est_cost_usd":0}},
+  {"worker":"openrouter/kimi","status":"ok","summary":"classified the TODOs","result":"see artifact","artifacts":[".agentic/artifacts/DOES-NOT-EXIST.json"],"key_decisions":["treated FIXME as TODO"],"caveats":[],"assumptions":[],"confidence_ordinal":"medium","usage":{"input_tokens":1100,"output_tokens":200,"est_cost_usd":0.001}}
+]

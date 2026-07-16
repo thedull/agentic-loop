@@ -1,0 +1,16 @@
+{
+  "id": "shim-012-openrouter-mock-cost",
+  "target": "call_openrouter.sh cost passthrough",
+  "kind": "shim",
+  "shim": "call_openrouter.sh",
+  "mock_response": "fixtures/openrouter-ok.json",
+  "args": ["--model", "kimi"],
+  "input": { "brief": { "objective": "draft a short summary", "user_intent_verbatim": "", "input_paths": [], "boundaries_non_goals": [], "output_spec": "short text", "effort_budget": "one pass" } },
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ".usage.est_cost_usd == 0.0042" },
+    { "type": "jq", "expr": ".usage.input_tokens == 200 and .usage.output_tokens == 50" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}
