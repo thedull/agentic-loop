@@ -67,16 +67,34 @@ writer of that file. Invocations:
 2. **status**: print a short table — feature, enabled, dependency state
    (installed / missing / declined). Detect dependencies cheaply: `observability`
    none; `summarize` → `curl -sS --max-time 2 http://localhost:11434/api/tags`;
-   `minimize`/`grill`/`guards` → look for the plugin/skill in `claude plugin list`
-   output or their marketplace names (ponytail, caveman, guard-skills, skills).
+   `minimize`/`guards`/`grill` → grep `claude plugin list` for the plugin name
+   (`ponytail`, `caveman`) or, for skills-dir installs, the `@skills-dir`
+   entry (`grill-me-skill`, `guard-skills`).
 3. **`<feature> on`**:
    a. If the feature has a third-party dependency that is MISSING and
-      `install_declined` is not set: show the install command
-      (e.g. `/plugin marketplace add DietrichGebert/ponytail` then
-      `/plugin install ponytail@ponytail`) and ask the user:
-      **install now / enable anyway (applies once installed) / cancel**.
-      If they decline installing but still want the feature, set
-      `install_declined: true` alongside `enabled: true`.
+      `install_declined` is not set: show the install command and ask the user
+      **install now / enable anyway (applies once installed) / cancel**. If
+      they decline installing but still want the feature, set
+      `install_declined: true` alongside `enabled: true`. The install command
+      depends on how the dependency ships — verify the repo layout, don't
+      assume:
+      - **marketplace plugins** (have `.claude-plugin/marketplace.json`) —
+        `minimize`→ponytail, and caveman:
+        ```
+        claude plugin marketplace add DietrichGebert/ponytail
+        claude plugin install ponytail@ponytail
+        ```
+      - **bare skills** (a `SKILL.md` or a `skills/` dir, NO
+        `marketplace.json` — `plugin marketplace add` FAILS on these) —
+        `grill`→`RobMitt/grill-me-skill`, `guards`→`amElnagdy/guard-skills`:
+        clone and symlink into the skills directory instead:
+        ```
+        git clone https://github.com/RobMitt/grill-me-skill /path/to/grill-me
+        ln -s /path/to/grill-me ~/.claude/skills/grill-me
+        ```
+      Note: `minimize`/`guards` fold the dependency's *content* (ladder rules /
+      guard criteria) into our own briefs and reviewer — the third-party
+      install is optional, the feature works from baked-in content either way.
    b. Update the file with jq (preserve unknown keys):
       `jq '.<feature>.enabled = true | ._meta.updated = "<today>"' …`
    c. If observability was just enabled, mention: events start with the NEXT
