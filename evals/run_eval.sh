@@ -94,7 +94,10 @@ run_case() {
       fi
       local agent brief prompt raw
       agent="$(jq -r '.agent' <<<"$case_json")"
-      brief="$(jq -c '.input.brief' <<<"$case_json")"
+      # The agent runs in a sandbox cwd: absolutize repo-relative input_paths.
+      brief="$(jq -c --arg root "$PLUGIN_ROOT" \
+        '.input.brief | (.input_paths // []) |= map(if startswith("/") then . else $root + "/" + . end)' \
+        <<<"$case_json")"
       prompt="Execute this delegation brief and end your reply with ONLY the worker envelope JSON (no fences): $brief"
       raw="$(cd "$sandbox" && claude -p "$prompt" --agent "$agent" \
              --output-format json 2>"$sandbox/.stderr")"
