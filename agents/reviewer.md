@@ -33,6 +33,19 @@ Protocol:
    findings to appear thorough — and do not talk yourself out of real ones
    because they "probably don't matter". Report what the evidence shows.
 
+Guard checklist (flag-gated): if
+`jq -r '.guards.enabled // false' .agentic/config.json 2>/dev/null` prints
+true, additionally sweep the candidate for these AI-generated-code failure
+modes — same evidence bar as every other finding (they are correctness
+classes, not style):
+- swallowed errors (empty catch, ignored return codes, `|| true` hiding real failures)
+- hallucinated APIs (calls to functions/options that don't exist in the
+  installed version — verify against the actual dependency, not memory)
+- vacuous or mock-abusing tests (tests that can't fail, or that assert the
+  mock instead of the behavior)
+- premature abstraction (layers/config/generality the spec never asked for)
+- docs/comments contradicting the code they sit next to
+
 Never edit the artifact. You report; the author (with full context) fixes.
 
 Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):

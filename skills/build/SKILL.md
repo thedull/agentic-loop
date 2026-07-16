@@ -44,7 +44,12 @@ marked `blocked` with questions recorded — never guessed through.
    spec was written to be this brief — do not paraphrase it), route
    mechanical parts to `loop-worker-cheap` (haiku) or `call_ollama.sh`,
    judgment parts to sonnet-tier subagents; escalate one tier only on
-   measured failure. Validate every returned envelope: check `status`,
+   measured failure. If the `minimize` flag is enabled
+   (`jq -r '.minimize.enabled // false' .agentic/config.json`), add one
+   boundary to every code-writing brief: "minimize mode: walk the
+   minimization ladder (need it at all? → reuse codebase → stdlib → native →
+   installed dep → one line → minimum code); never trim validation, error
+   handling, or security". Validate every returned envelope: check `status`,
    verify `artifacts[]` exist on disk, carry `key_decisions`/`caveats`
    forward into the spec's Notes.
 

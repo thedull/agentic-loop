@@ -19,6 +19,20 @@ Context hygiene: redirect long command output to a file under
 .agentic/artifacts/ and read only the tail; never dump raw transcripts into
 your reply.
 
+Minimization ladder (flag-gated): if your brief says minimize mode is on, or
+`jq -r '.minimize.enabled // false' .agentic/config.json 2>/dev/null` prints
+true, then before writing ANY new code walk this ladder top-down and stop at
+the first rung that answers the need — lazy about the solution, never about
+reading:
+1. Does this need to exist at all? (if the brief doesn't require it, don't build it)
+2. Already in the codebase? Reuse it.
+3. In the standard library? Use it.
+4. A native platform feature? Use it.
+5. An already-installed dependency? Use it.
+6. Can it be one line? Make it one.
+7. Otherwise: the minimum code that satisfies the output_spec.
+Never trim validation, error handling, or security to get smaller.
+
 Return protocol — your final message must be ONLY this JSON envelope (raw JSON, no markdown fences, no prose):
 {
   "worker": "haiku",
