@@ -70,24 +70,29 @@ follows; `feature_toggle` events make flag experiments measurable
 
 ## Known open items (verify on first real run)
 
-| # | Item | Current handling |
+| # | Item | Status |
 |---|---|---|
-| F1 | Do `SubagentStart/Stop` payloads carry the child `transcript_path`? Docs ambiguous | token/model extraction is best-effort `// null`; duration and summary never depend on it |
+| F1 | Does `SubagentStop` carry the child `transcript_path`? | **RESOLVED YES** (2026-07-16, CLI 2.1.207): a real `loop-worker-cheap` spawn produced an `agent_stop` with the child's transcript path, from which the hook extracted model (`claude-haiku-4-5-20251001`) and true token counts. Extraction stays best-effort `// null` for version drift (F3) |
 | F2 | Matcher support on `SubagentStart` is contradictory in docs | no matchers; filtering in-script by `agent_type` |
 | F3 | Transcript JSONL internals are version-dependent | tolerant jq (`.message.usage // .usage`), schema carries `v` |
-| F6 | Some versions may show a trust prompt for plugin hooks | RESOLVED for headless (2026-07-16, CLI 2.1.207): `claude -p --plugin-dir <repo>` registered `hooks/hooks.json` and ran `observe.sh` with no blocking prompt |
+| F4 | Plugin-scoped `--agent` names headlessly | **RESOLVED YES**: `claude -p --agent agentic-loop:loop-planner --plugin-dir <repo>` executes the agent. Two required companions (baked into `evals/run_eval.sh`): `--permission-mode acceptEdits` (agents otherwise land in plan mode and write a plan file instead of executing) and `--add-dir` for any input paths outside the cwd |
+| F5 | Headless result JSON field shape | **RESOLVED**: carries `total_cost_usd`, `usage` (incl. cache fields + per-iteration breakdown), `session_id`, `num_turns`, `duration_ms`; **no top-level `model` field** in 2.1.207 — our `// null` fallback covers it |
+| F6 | Trust prompt for plugin hooks | **RESOLVED for headless**: `--plugin-dir` registered `hooks/hooks.json` and ran `observe.sh` with no blocking prompt |
 
 Verified in synthetic tests (2026-07-15): pairing/duration, both usage
 shapes, agent filtering, run-id correlation across hook/shim/headless
 sources, off-state zero-write, tracker/gate events, renderer rollups
 matching jq-computed sums.
 
-Verified LIVE (2026-07-16): a real `call_ollama.sh` worker run produced a
-valid envelope and a `shim_call` event with authoritative tokens/duration;
-the ollama judge tier discriminates (planted-good candidate scored 4,
-garbage scored 2); headless result JSON confirmed to carry `total_cost_usd`,
-`usage` (incl. cache fields), `session_id`, `num_turns`, `duration_ms`
-(`model` field still unconfirmed — only error results observed so far).
+Verified LIVE (2026-07-16, CLI 2.1.207): a real `call_ollama.sh` worker run
+produced a valid envelope and a `shim_call` event with authoritative
+tokens/duration; the ollama judge tier discriminates (planted-good candidate
+scored 4, garbage scored 2); a real subagent spawn was captured end to end
+(paired start/stop, 6.6s duration, model + true tokens from the child
+transcript) and rendered as a run tree; and the full live eval suite passed
+6/6 (planner routing ×2, consolidator missing-artifact, reviewer seeded
+SQL-injection, spec-gate ambiguity, red-gate vacuous check) alongside the
+15/15 free suite.
 
 Two operational caveats found live: close stdin (`< /dev/null`) when
 invoking shims from a non-interactive shell without a piped brief (they

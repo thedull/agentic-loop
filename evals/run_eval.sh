@@ -99,8 +99,17 @@ run_case() {
         '.input.brief | (.input_paths // []) |= map(if startswith("/") then . else $root + "/" + . end)' \
         <<<"$case_json")"
       prompt="Execute this delegation brief and end your reply with ONLY the worker envelope JSON (no fences): $brief"
+      echo "  [run ] $id — live claude -p, may take a minute... ($(date '+%H:%M:%S'))"
+      # stdin MUST be closed: claude -p reads a held-open non-tty stdin forever.
+      # --plugin-dir makes plugin-scoped agent names resolve without install.
+      # --permission-mode acceptEdits: without it agents land in plan mode and
+      # write a plan file instead of executing the brief (observed live,
+      # CLI 2.1.207). The cwd is a throwaway sandbox, so edits are harmless.
+      # --add-dir: fixtures live under the plugin root, outside the sandbox.
       raw="$(cd "$sandbox" && claude -p "$prompt" --agent "$agent" \
-             --output-format json 2>"$sandbox/.stderr")"
+             --plugin-dir "$PLUGIN_ROOT" --permission-mode acceptEdits \
+             --add-dir "$PLUGIN_ROOT" \
+             --output-format json < /dev/null 2>"$sandbox/.stderr")"
       exit_code=$?
       # The envelope is the agent's final text; extract the JSON object.
       output="$(jq -r '.result // empty' <<<"$raw" \

@@ -13,9 +13,9 @@
   } },
   "checks": [
     { "type": "envelope_valid" },
-    { "type": "jq", "expr": ".result | tostring | test(\"ollama|haiku\"; \"i\")" },
-    { "type": "jq", "expr": "(.result | tostring | test(\"sol|fable\"; \"i\")) | not" }
+    { "type": "tier_expect", "path": ".result.subtasks[].tier", "allowed": ["ollama", "haiku"] },
+    { "type": "jq", "expr": "(.result | tostring | test(\"\\\\b(sol|fable)\\\\b\"; \"i\")) | not" }
   ],
-  "_note": "mechanical work must route to the cheap tiers; refine the tier_expect path once the planner's subtask JSON shape is pinned",
+  "_note": "mechanical work must route to the cheap tiers; planner output shape (result.subtasks[].tier) confirmed live 2026-07-16. Word boundaries in the regex: 'consolidated' contains 'sol'.",
   "provenance": { "source": "hand", "date": "2026-07-15" }
 }
