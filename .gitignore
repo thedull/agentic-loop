@@ -5,3 +5,6 @@
 
 # eval run results (local)
 evals/results/
+
+# local dev-server config (machine-specific)
+.claude/launch.json
