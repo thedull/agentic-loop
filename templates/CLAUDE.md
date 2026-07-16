@@ -222,6 +222,11 @@ override the defaults above:
 echo '{"objective":"...","user_intent_verbatim":"...","input_paths":[],
       "boundaries_non_goals":[],"output_spec":"...","effort_budget":"..."}' \
   | ./scripts/call_fable.sh
+
+# Not piping a brief? Close stdin: the scripts read it whenever it isn't a
+# tty, and a shell that holds stdin open (some tool harnesses do) hangs the
+# call indefinitely:
+./scripts/call_ollama.sh --objective "..." < /dev/null
 ```
 
 Native subagents (`loop-planner`, `loop-worker-cheap`, `loop-consolidator`,

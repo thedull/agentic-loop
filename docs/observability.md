@@ -75,12 +75,25 @@ follows; `feature_toggle` events make flag experiments measurable
 | F1 | Do `SubagentStart/Stop` payloads carry the child `transcript_path`? Docs ambiguous | token/model extraction is best-effort `// null`; duration and summary never depend on it |
 | F2 | Matcher support on `SubagentStart` is contradictory in docs | no matchers; filtering in-script by `agent_type` |
 | F3 | Transcript JSONL internals are version-dependent | tolerant jq (`.message.usage // .usage`), schema carries `v` |
-| F6 | Some versions may show a trust prompt for plugin hooks | harmless; approve once |
+| F6 | Some versions may show a trust prompt for plugin hooks | RESOLVED for headless (2026-07-16, CLI 2.1.207): `claude -p --plugin-dir <repo>` registered `hooks/hooks.json` and ran `observe.sh` with no blocking prompt |
 
 Verified in synthetic tests (2026-07-15): pairing/duration, both usage
 shapes, agent filtering, run-id correlation across hook/shim/headless
 sources, off-state zero-write, tracker/gate events, renderer rollups
 matching jq-computed sums.
+
+Verified LIVE (2026-07-16): a real `call_ollama.sh` worker run produced a
+valid envelope and a `shim_call` event with authoritative tokens/duration;
+the ollama judge tier discriminates (planted-good candidate scored 4,
+garbage scored 2); headless result JSON confirmed to carry `total_cost_usd`,
+`usage` (incl. cache fields), `session_id`, `num_turns`, `duration_ms`
+(`model` field still unconfirmed — only error results observed so far).
+
+Two operational caveats found live: close stdin (`< /dev/null`) when
+invoking shims from a non-interactive shell without a piped brief (they
+read stdin whenever it isn't a tty), and prefer a non-thinking local model
+for Ollama duty — thinking models can spend the whole budget inside
+`<think>` and return an empty (correctly `partial`) result.
 
 ## Complementary tools
 
