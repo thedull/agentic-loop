@@ -14,18 +14,14 @@ customization (Level 3).
 
 ## Install
 
-From a local checkout:
-
 ```bash
-git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
-ln -s /path/to/agentic-loop ~/.claude/skills/agentic-loop
+claude plugin marketplace add thedull/agentic-loop
+claude plugin install agentic-loop@agentic-loop
 ```
 
-The symlink registers it in Claude Code's `skills-dir` — it auto-loads as
-`agentic-loop@skills-dir` every session with no further steps. If you already
-have a checkout, skip the clone.
-
-Or per-session without installing: `claude --plugin-dir /path/to/agentic-loop`
+Or from a local checkout, point `marketplace add` at the path instead of the
+GitHub slug. For a one-off session without installing:
+`claude --plugin-dir /path/to/agentic-loop`
 
 ## Instantiate in a project
 
