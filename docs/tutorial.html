@@ -512,12 +512,13 @@ details > .details-body > :last-child { margin-bottom: 0; }
   <div class="step-marker">2</div>
   <div class="step-body">
     <h3>Install the plugin</h3>
-    <p>Clone and register the plugin, then install:</p>
-    <pre><code>git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
-claude plugin marketplace add ~/plugins/agentic-loop
+    <p>Clone (or use an existing checkout), register, then install:</p>
+    <pre><code>git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
+claude plugin marketplace add /path/to/agentic-loop
 claude plugin install agentic-loop</code></pre>
+    <p>The path can be anywhere on disk — if you already have a checkout, skip the clone step.</p>
     <p>Or load it for a one-off session without installing:</p>
-    <pre><code>claude --plugin-dir ~/plugins/agentic-loop</code></pre>
+    <pre><code>claude --plugin-dir /path/to/agentic-loop</code></pre>
   </div>
 </div>
 

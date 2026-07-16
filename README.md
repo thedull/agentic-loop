@@ -17,12 +17,15 @@ customization (Level 3).
 From a local checkout:
 
 ```bash
-git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
-claude plugin marketplace add ~/plugins/agentic-loop
+git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
+claude plugin marketplace add /path/to/agentic-loop
 claude plugin install agentic-loop
 ```
 
-Or one-off (no install needed): `claude --plugin-dir ~/plugins/agentic-loop`
+The path can be anywhere — if you already have a checkout, skip the clone and
+point `marketplace add` directly at it.
+
+Or one-off (no install needed): `claude --plugin-dir /path/to/agentic-loop`
 
 ## Instantiate in a project
 

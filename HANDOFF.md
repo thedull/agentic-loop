@@ -117,8 +117,8 @@ Reviewers add `findings[]`, each `{claim, evidence, severity}` — evidence requ
 ## 7. Install and instantiate
 
 ```bash
-git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
-claude plugin marketplace add ~/plugins/agentic-loop
+git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
+claude plugin marketplace add /path/to/agentic-loop   # any local path works
 claude plugin install agentic-loop
 # then, inside any project:
 /agentic-loop:init
