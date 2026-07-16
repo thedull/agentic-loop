@@ -66,7 +66,11 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
 
 7. **Finish** by running `./scripts/doctor.sh` and showing the user its
    output, then point them at `AGENTIC_LOOP.md` for the remaining checklist
-   (fill `.env`, verify subscription login, dry-run one loop).
+   (fill `.env`, verify subscription login, dry-run one loop). Mention the
+   opt-ins once, without enabling anything: `/agentic-loop:config
+   observability on` records every operation to a local event log and renders
+   run trees (`docs/observability.md`), and `/agentic-loop:config` lists the
+   other default-off flags (minimize, grill, guards, summarize).
 
 The four native subagents (`loop-planner`, `loop-worker-cheap`,
 `loop-consolidator`, `loop-reviewer`) ship with the plugin itself and are
