@@ -292,7 +292,7 @@ project — every candidate is a 3–53★ solo repo with unverified claims.
 | Tool | Stars | Mechanism | Verdict |
 |---|---|---|---|
 | [ponytail](https://github.com/DietrichGebert/ponytail) | 84k | Skills + hooks: code-minimization decision ladder (YAGNI→reuse→stdlib→native→existing dep→one-liner→minimum) | **Adopt** — inject ladder rules into build-stage worker briefs |
-| [grill-with-docs](https://github.com/mattpocock/skills) | 172k (repo) | Pure interaction-pattern skill (Matt Pocock's `mattpocock/skills`): relentless pre-plan interview that also drops ADRs + a glossary as it goes | **Adopt** — optional pre-planning step for ambiguous/high-stakes asks |
+| [grill-with-docs](https://github.com/mattpocock/skills) | 172k (repo) | Pure interaction-pattern skill (Matt Pocock's `mattpocock/skills`): relentless pre-plan interview that also drops ADRs + a glossary as it goes | **Adopted** — deep-mode provider for the `grill` flag (`grill deep on`): runs on `large`/domain-heavy ideas when installed; native grilling with the cap lifted otherwise |
 | [guard-skills](https://github.com/amElnagdy/guard-skills) | 1.0k | Zero-dep skill files: clean-code-guard, test-guard | **Adopt** — fold criteria into reviewer checklist |
 | [cache-audit](https://github.com/ussumant/cache-audit) | 57 | Read-only skill scoring setup against Anthropic's caching rules | **Adopt, one-time** — quantify tier-hopping cache-miss cost |
 | [ccusage](https://github.com/ccusage/ccusage) | 17k | CLI reading local usage JSONL; cost reports | **Adopt-with-config** — optional npx companion, not wired into core |
@@ -353,7 +353,9 @@ scattered env vars:
 ```
 
 - `minimize` = ponytail ladder in build-worker briefs; `grill` = pre-planning
-  interview; `guards` = guard-skills criteria in the reviewer checklist;
+  interview (native; a later `deep` sub-flag escalates `large`/domain-heavy
+  ideas to grill-with-docs when installed, native-uncapped otherwise);
+  `guards` = guard-skills criteria in the reviewer checklist;
   `summarize` = the Ollama render fallback.
 - **Precedence:** per-run skill flag > user config default > agent judgment.
   The agent may toggle a feature per-task **only** where the user set

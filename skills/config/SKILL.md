@@ -19,6 +19,8 @@ writer of that file. Invocations:
 /agentic-loop:config                          → status (all features)
 /agentic-loop:config <feature> on|off         → toggle
 /agentic-loop:config <feature> status         → one feature
+/agentic-loop:config grill deep on|off        → sub-toggle: deep interviews
+                                                 for large/domain-heavy ideas
 /agentic-loop:config render [--tty]           → observability report (delegates
                                                  to scripts/observe_render.sh)
 ```
@@ -30,6 +32,7 @@ writer of that file. Invocations:
 | `observability` | Unified JSONL event log (`.agentic/observability/`) capturing every subagent, shim call, headless iteration and factory transition; renderable as an HTML/tty tree | none |
 | `minimize` | The code-minimization decision ladder is injected into build-stage worker briefs (smallest sufficient diff) | ponytail (rules content; plugin optional) |
 | `grill` | A relentless pre-planning interview runs before `loop-planner` decomposes ambiguous or high-stakes requests | none — native behavior in the `spec` skill (interview protocol inspired by grill-with-docs in `mattpocock/skills`; nothing to install) |
+| `grill` deep | `large`/new-domain ideas escalate to a deep interview: grill-with-docs (`/grilling` + `/domain-modeling`, emits glossary + ADRs into `factory/specs/<id>/`) when Matt Pocock's collection is installed; otherwise native grilling with the question cap lifted | mattpocock-skills (optional — enhances; native fallback always works) |
 | `guards` | Clean-code + test quality-gate criteria are added to the reviewer's blind-review checklist | guard-skills (criteria content; plugin optional) |
 | `summarize` | The report renderer fills summary-less nodes via local Ollama (free) | ollama running locally |
 
@@ -39,7 +42,7 @@ writer of that file. Invocations:
 {
   "observability": { "enabled": true, "all_agents": false },
   "minimize":      { "enabled": false, "agent_judgment": false },
-  "grill":         { "enabled": false, "agent_judgment": false },
+  "grill":         { "enabled": false, "deep": false, "agent_judgment": false },
   "guards":        { "enabled": false },
   "summarize":     { "enabled": false },
   "_meta":         { "updated": "<iso date>" }
@@ -66,24 +69,33 @@ writer of that file. Invocations:
    pure status read — report "no config, all features off" instead).
 2. **status**: print a short table — feature, enabled, dependency state
    (installed / missing / declined). Detect dependencies cheaply: `observability`
-   and `grill` have none (both are native — nothing to detect); `summarize` →
+   and base `grill` have none (native — nothing to detect); `grill` with
+   `deep: true` → grep `claude plugin list` for `mattpocock-skills` (missing =
+   native-uncapped fallback, not an error); `summarize` →
    `curl -sS --max-time 2 http://localhost:11434/api/tags`; `minimize`/`guards`
    → grep `claude plugin list` for the plugin name (`ponytail`) or, for
    skills-dir installs, the `@skills-dir` entry (`guard-skills`).
-3. **`<feature> on`**:
-   a. `grill` has no dependency — it's native behavior in the `spec` skill;
-      just enable it (skip straight to step b). For a feature that DOES have a
-      third-party dependency that is MISSING and `install_declined` is not set:
-      show the install command and ask the user **install now / enable anyway
-      (applies once installed) / cancel**. If they decline installing but still
-      want the feature, set `install_declined: true` alongside `enabled: true`.
-      The install command depends on how the dependency ships — verify the repo
-      layout, don't assume:
+3. **`<feature> on`** (and **`grill deep on`**, which sets `.grill.deep`
+   instead of `.enabled` and also sets `.grill.enabled = true` — deep implies
+   on):
+   a. Base `grill` has no dependency — it's native behavior in the `spec`
+      skill; just enable it (skip straight to step b). For a feature (or
+      `grill deep`) that DOES have a third-party dependency that is MISSING
+      and `install_declined` is not set: show the install command and ask the
+      user **install now / enable anyway (applies once installed) / cancel**.
+      If they decline installing but still want the feature, set
+      `install_declined: true` alongside the flag (for `grill deep`, the spec
+      skill then runs its native grilling with the question cap lifted — the
+      feature still works). The install command depends on how the dependency
+      ships — verify the repo layout, don't assume:
       - **marketplace plugins** (have `.claude-plugin/marketplace.json`) —
-        `minimize`→ponytail:
+        `minimize`→ponytail, `grill deep`→Matt Pocock's collection:
         ```
         claude plugin marketplace add DietrichGebert/ponytail
         claude plugin install ponytail@ponytail
+
+        claude plugin marketplace add mattpocock/skills
+        claude plugin install mattpocock-skills@mattpocock
         ```
       - **bare skills** (a `SKILL.md` or a `skills/` dir, NO
         `marketplace.json` — `plugin marketplace add` FAILS on these) —
@@ -102,7 +114,8 @@ writer of that file. Invocations:
       session/shim call; `AGENTIC_OBSERVE=1` forces it for one-off runs;
       `.agentic/` is gitignored so nothing lands in git.
 4. **`<feature> off`**: set `enabled: false`. Do not delete the entry (history
-   of `install_declined` etc. must survive).
+   of `install_declined` etc. must survive). `grill deep off` sets only
+   `.grill.deep = false` — base grill stays as it was.
 5. **render**: run `./scripts/observe_render.sh` (add `--tty` if asked for a
    terminal view; `--summarize` only if the `summarize` flag is enabled).
    If the scripts are not scaffolded into this project yet, run them from the

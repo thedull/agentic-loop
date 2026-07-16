@@ -147,7 +147,7 @@ file = everything off.
 |---|---|
 | `observability` | nothing — capture is automatic (hooks/shims). Use `/agentic-loop:config render` to show the run tree |
 | `minimize` | add the minimization-ladder boundary to every code-writing brief (ladder text: agents/worker-cheap.md / build skill) |
-| `grill` | before delegating an ambiguous or high-stakes request to `loop-planner`, interview the user first — one question at a time, surfacing implicit assumptions and unresolved branches, until the intent is unambiguous. Skip for well-specified asks |
+| `grill` | before delegating an ambiguous or high-stakes request to `loop-planner`, interview the user first — one question at a time, surfacing implicit assumptions and unresolved branches, until the intent is unambiguous. Skip for well-specified asks. With `deep: true`, `large`/new-domain ideas escalate: grill-with-docs (glossary + ADRs into `factory/specs/<id>/`, referenced in `input_paths`) when `mattpocock-skills` is installed, else native grilling with the question cap lifted. Interactive-only — changes nothing unattended |
 | `guards` | nothing — the reviewer applies its guard checklist itself |
 | `summarize` | pass `--summarize` when rendering reports |
 

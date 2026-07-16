@@ -1,0 +1,12 @@
+{
+  "id": "config-071-grill-flags-default-off",
+  "target": "skills/spec (grill flag read)",
+  "kind": "bash-unit",
+  "cmd": "out=$(jq -r '[(.grill.enabled // false), (.grill.deep // false)] | join(\" \")' .agentic/config.json 2>/dev/null || echo \"false false\"); [ \"$out\" = \"false false\" ] && echo '{\"parsed\":\"'\"$out\"'\"}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".parsed == \"false false\"" }
+  ],
+  "_note": "missing config file must fall back to 'false false' (everything off) without erroring — the || fallback in the prescribed command",
+  "provenance": { "source": "hand", "date": "2026-07-16" }
+}

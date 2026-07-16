@@ -1,0 +1,12 @@
+{
+  "id": "config-070-grill-flags-parse",
+  "target": "skills/spec (grill flag read)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"grill\":{\"enabled\":true,\"deep\":true,\"agent_judgment\":false}}' > .agentic/config.json; out=$(jq -r '[(.grill.enabled // false), (.grill.deep // false)] | join(\" \")' .agentic/config.json 2>/dev/null || echo \"false false\"); [ \"$out\" = \"true true\" ] && echo '{\"parsed\":\"'\"$out\"'\"}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".parsed == \"true true\"" }
+  ],
+  "_note": "the exact command skills/spec/SKILL.md prescribes for reading grill enabled+deep must parse both flags from a full config entry",
+  "provenance": { "source": "hand", "date": "2026-07-16" }
+}

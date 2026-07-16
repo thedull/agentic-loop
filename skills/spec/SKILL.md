@@ -22,10 +22,37 @@ constitution/research/data-model/contract documents. Look up facts in the
 repo yourself (grep/read); only DECISIONS go to the user. Never inline file
 contents into the spec — paths only.
 
-Grill flag: if `jq -r '.grill.enabled // false' .agentic/config.json` prints
-true, raise the interview depth one notch above what triage suggests — the
-user has opted into more questions up front in exchange for fewer wrong
-guesses downstream. The flag never lowers depth.
+Grill flag — read once per run:
+
+```bash
+jq -r '[(.grill.enabled // false), (.grill.deep // false)] | join(" ")' \
+  .agentic/config.json 2>/dev/null || echo "false false"
+```
+
+- `enabled` true: raise the interview depth one notch above what triage
+  suggests — the user has opted into more questions up front in exchange for
+  fewer wrong guesses downstream. The flag never lowers depth.
+- `deep` true: for ideas triaged `large`, OR whose objective introduces new
+  domain vocabulary (entities/invariants the codebase has no words for yet —
+  grep first to check), escalate to a **deep interview**:
+  1. If Matt Pocock's skills collection is installed (`claude plugin list`
+     shows `mattpocock-skills`), run its grill-with-docs flow: a `/grilling`
+     session using the `/domain-modeling` skill. Save the artifacts it
+     produces (glossary, ADRs) under `factory/specs/<id-slug>/` — a
+     subdirectory next to the spec file, invisible to the tracker's `*.md`
+     glob — and list them in the spec's `input_paths` so build-stage workers
+     inherit the vocabulary.
+  2. If not installed and the grill entry has no `install_declined`: offer
+     the install ONCE (`/agentic-loop:config` owns the consent flow and
+     records a decline); then proceed per the answer.
+  3. Fallback (not installed or declined): run the native grilling below
+     with the ~5-question cap LIFTED — depth bounded by the decision tree
+     reaching shared understanding, not by the question budget.
+
+  Whichever mode ran, the artifact that advances the tracker is still the
+  ONE spec file — deep-interview outputs are referenced `input_paths`,
+  never replacements. Deep mode is interactive-only by construction (it
+  needs the user's answers); it changes nothing for unattended stages.
 
 ## Steps per idea
 

@@ -55,7 +55,8 @@ In that session:
 - [ ] `/agentic-loop:config observability on` — you want the trail for every
       unattended run. Optionally also: `guards on` (reviewer quality gates),
       `minimize on` (smallest-sufficient-diff builds), `grill on` (deeper
-      spec interviews).
+      spec interviews; add `grill deep on` for glossary/ADR-producing deep
+      interviews on large or domain-heavy ideas).
 - [ ] `./scripts/doctor.sh` → fix anything red, rerun until only warnings you
       understand remain.
 - [ ] **Make `check_cmd` possible**: an unattended build needs a runnable

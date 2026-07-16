@@ -1,0 +1,12 @@
+{
+  "id": "config-072-grill-partial-entry",
+  "target": "skills/spec (grill flag read)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"grill\":{\"enabled\":true},\"observability\":{\"enabled\":true}}' > .agentic/config.json; out=$(jq -r '[(.grill.enabled // false), (.grill.deep // false)] | join(\" \")' .agentic/config.json 2>/dev/null || echo \"false false\"); [ \"$out\" = \"true false\" ] && echo '{\"parsed\":\"'\"$out\"'\"}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".parsed == \"true false\"" }
+  ],
+  "_note": "a pre-deep-mode config entry (no .deep key) must read as enabled=true deep=false — backward compatibility with configs written before 0.4.0",
+  "provenance": { "source": "hand", "date": "2026-07-16" }
+}

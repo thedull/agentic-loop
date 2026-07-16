@@ -46,7 +46,7 @@ dry-run one loop).
 | `skills/spec\|build\|review` + `templates/workflows/factory.js` | **the factory** — morning ideas → unattended spec→build→review pipeline → evening PRs (see below) |
 | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh`, `templates/statusline-usage.sh` | factory plumbing: file state machine (connector seam for future GH Issues/Jira backends) + subscription-usage self-gating |
 | `hooks/hooks.json` + `scripts/observe.sh` + `scripts/observe_render.sh` | **opt-in observability**: every subagent/shim/headless/factory operation logged to one JSONL (model, tokens, est. cost, duration, status, summary) and rendered as an HTML/tty run tree — `/agentic-loop:config observability on` (see below) |
-| `skills/config` | feature flags in `.agentic/config.json`, all default-off: `observability`, `minimize` (code-minimization ladder in build briefs), `grill` (pre-planning interview), `guards` (reviewer quality gates), `summarize` (Ollama report summaries) |
+| `skills/config` | feature flags in `.agentic/config.json`, all default-off: `observability`, `minimize` (code-minimization ladder in build briefs), `grill` (pre-planning interview; `grill deep` adds glossary/ADR deep interviews via grill-with-docs when installed), `guards` (reviewer quality gates), `summarize` (Ollama report summaries) |
 | `evals/` | the plugin's own eval harness: free envelope/shim/tracker/gate suites ($0, mocked), live agent suites behind `--live`, cross-family LLM judge, and `mine.sh` — drafts new eval cases from observability-log failures |
 
 All workers speak one JSON **envelope** (`scripts/lib/validate_envelope.jq`):
