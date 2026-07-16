@@ -292,7 +292,7 @@ project — every candidate is a 3–53★ solo repo with unverified claims.
 | Tool | Stars | Mechanism | Verdict |
 |---|---|---|---|
 | [ponytail](https://github.com/DietrichGebert/ponytail) | 84k | Skills + hooks: code-minimization decision ladder (YAGNI→reuse→stdlib→native→existing dep→one-liner→minimum) | **Adopt** — inject ladder rules into build-stage worker briefs |
-| [grill-me](https://github.com/mattpocock/skills) | 172k (repo) | Pure interaction-pattern skill: relentless pre-plan interview | **Adopt** — optional pre-planning step for ambiguous/high-stakes asks |
+| [grill-with-docs](https://github.com/mattpocock/skills) | 172k (repo) | Pure interaction-pattern skill (Matt Pocock's `mattpocock/skills`): relentless pre-plan interview that also drops ADRs + a glossary as it goes | **Adopt** — optional pre-planning step for ambiguous/high-stakes asks |
 | [guard-skills](https://github.com/amElnagdy/guard-skills) | 1.0k | Zero-dep skill files: clean-code-guard, test-guard | **Adopt** — fold criteria into reviewer checklist |
 | [cache-audit](https://github.com/ussumant/cache-audit) | 57 | Read-only skill scoring setup against Anthropic's caching rules | **Adopt, one-time** — quantify tier-hopping cache-miss cost |
 | [ccusage](https://github.com/ccusage/ccusage) | 17k | CLI reading local usage JSONL; cost reports | **Adopt-with-config** — optional npx companion, not wired into core |
@@ -401,7 +401,7 @@ scattered env vars:
    case twice with swapped A/B order and confirm order-invariance handling.
 4. *Flags & plugin adoption* — `.agentic/config.json` schema, consent-to-install
    flow, ponytail rules into worker briefs, guard criteria into
-   `agents/reviewer.md`, grill-me as optional pre-planning step, caveman
+   `agents/reviewer.md`, grill-with-docs as optional pre-planning step, caveman
    compatibility test against the envelope schema, one-time cache-audit run.
 
 **On the factory branch (after it takes main in):**

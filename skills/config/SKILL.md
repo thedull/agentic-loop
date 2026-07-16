@@ -29,7 +29,7 @@ writer of that file. Invocations:
 |---|---|---|
 | `observability` | Unified JSONL event log (`.agentic/observability/`) capturing every subagent, shim call, headless iteration and factory transition; renderable as an HTML/tty tree | none |
 | `minimize` | The code-minimization decision ladder is injected into build-stage worker briefs (smallest sufficient diff) | ponytail (rules content; plugin optional) |
-| `grill` | A relentless pre-planning interview runs before `loop-planner` decomposes ambiguous or high-stakes requests | grill-me skill |
+| `grill` | A relentless pre-planning interview runs before `loop-planner` decomposes ambiguous or high-stakes requests | grill-with-docs (Matt Pocock's `mattpocock/skills`) |
 | `guards` | Clean-code + test quality-gate criteria are added to the reviewer's blind-review checklist | guard-skills (criteria content; plugin optional) |
 | `summarize` | The report renderer fills summary-less nodes via local Ollama (free) | ollama running locally |
 
@@ -67,9 +67,9 @@ writer of that file. Invocations:
 2. **status**: print a short table — feature, enabled, dependency state
    (installed / missing / declined). Detect dependencies cheaply: `observability`
    none; `summarize` → `curl -sS --max-time 2 http://localhost:11434/api/tags`;
-   `minimize`/`guards`/`grill` → grep `claude plugin list` for the plugin name
-   (`ponytail`, `caveman`) or, for skills-dir installs, the `@skills-dir`
-   entry (`grill-me-skill`, `guard-skills`).
+   `minimize`/`grill`/`guards` → grep `claude plugin list` for the plugin name
+   (`ponytail`, `mattpocock-skills`) or, for skills-dir installs, the
+   `@skills-dir` entry (`guard-skills`).
 3. **`<feature> on`**:
    a. If the feature has a third-party dependency that is MISSING and
       `install_declined` is not set: show the install command and ask the user
@@ -79,18 +79,22 @@ writer of that file. Invocations:
       depends on how the dependency ships — verify the repo layout, don't
       assume:
       - **marketplace plugins** (have `.claude-plugin/marketplace.json`) —
-        `minimize`→ponytail, and caveman:
+        `minimize`→ponytail, and `grill`→Matt Pocock's skills collection
+        (its `grill-with-docs` skill):
         ```
         claude plugin marketplace add DietrichGebert/ponytail
         claude plugin install ponytail@ponytail
+
+        claude plugin marketplace add mattpocock/skills
+        claude plugin install mattpocock-skills@mattpocock
         ```
       - **bare skills** (a `SKILL.md` or a `skills/` dir, NO
         `marketplace.json` — `plugin marketplace add` FAILS on these) —
-        `grill`→`RobMitt/grill-me-skill`, `guards`→`amElnagdy/guard-skills`:
-        clone and symlink into the skills directory instead:
+        `guards`→`amElnagdy/guard-skills`: clone and symlink into the skills
+        directory instead:
         ```
-        git clone https://github.com/RobMitt/grill-me-skill /path/to/grill-me
-        ln -s /path/to/grill-me ~/.claude/skills/grill-me
+        git clone https://github.com/amElnagdy/guard-skills /path/to/guard-skills
+        ln -s /path/to/guard-skills ~/.claude/skills/guard-skills
         ```
       Note: `minimize`/`guards` fold the dependency's *content* (ladder rules /
       guard criteria) into our own briefs and reviewer — the third-party
