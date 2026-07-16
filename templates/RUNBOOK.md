@@ -15,10 +15,17 @@ Time: ~20 min interactive setup, then mornings ~5 min/idea.
       `claude`, type `/login` if prompted. Headless calls fail with
       "OAuth session expired" when this lapses — re-login fixes it.
 - [ ] `jq` and `curl` on PATH.
-- [ ] The plugin installed:
-      `/plugin marketplace add thedull/agentic-loop` then
-      `/plugin install agentic-loop` (or per-session:
-      `claude --plugin-dir /path/to/agentic-loop`).
+- [ ] The plugin cloned and available:
+      ```bash
+      git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
+      ```
+      Then either register it permanently:
+      ```bash
+      claude plugin add ~/plugins/agentic-loop
+      ```
+      Or load it per-session: `claude --plugin-dir ~/plugins/agentic-loop`.
+      The `/plugin marketplace add` command looks up locally-registered
+      marketplace registries only — it does not fetch from GitHub.
 - [ ] **No `ANTHROPIC_API_KEY` anywhere** — not exported, not in any `.env`.
       It silently flips your subscription session to metered API billing.
 - [ ] Optional but recommended (free local tier + free eval judge):
