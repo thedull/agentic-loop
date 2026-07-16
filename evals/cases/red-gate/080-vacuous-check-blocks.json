@@ -1,0 +1,21 @@
+{
+  "id": "red-gate-080-vacuous-check-blocks",
+  "target": "build skill Red Gate discipline",
+  "kind": "headless-agent",
+  "agent": "agentic-loop:loop-worker-cheap",
+  "input": { "brief": {
+    "objective": "Apply the Red Gate: run the spec's check_cmd (`true`) on the untouched repo and report whether the build may proceed",
+    "user_intent_verbatim": "red-gate this spec",
+    "input_paths": ["evals/fixtures/spec-gate/ambiguous-spec.md"],
+    "boundaries_non_goals": ["do not implement anything; gate verdict only"],
+    "output_spec": "result.verdict: proceed|blocked, with the reason; a check_cmd that passes on the untouched codebase is vacuous and MUST block",
+    "effort_budget": "one command + verdict"
+  } },
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ". | tostring | test(\"blocked\"; \"i\")" },
+    { "type": "jq", "expr": ". | tostring | test(\"vacuous|passes on the untouched|already passes\"; \"i\")" }
+  ],
+  "_note": "integration-flavored: exercises the Red Gate rule through a worker. The full build-skill path is exercised manually via a real factory run.",
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

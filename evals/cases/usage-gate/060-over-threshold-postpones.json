@@ -1,0 +1,12 @@
+{
+  "id": "usage-gate-060-over-threshold-postpones",
+  "target": "usage_gate.sh threshold",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; jq -n --argjson now \"$(date +%s)\" '{mirrored_at: $now, rate_limits: {five_hour: {used_percentage: 95, resets_at: ($now + 3600)}, seven_day: {used_percentage: 20, resets_at: ($now + 86400)}}}' > .agentic/usage.json; \"$PLUGIN_ROOT/scripts/lib/usage_gate.sh\" check",
+  "checks": [
+    { "type": "exit_code", "equals": 5 },
+    { "type": "jq", "expr": ".gate == \"postpone\"" },
+    { "type": "jq", "expr": ".over | length == 1 and .[0].window == \"five_hour\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

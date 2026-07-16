@@ -1,0 +1,21 @@
+{
+  "id": "spec-gate-070-ambiguity-caught",
+  "target": "loop-reviewer as spec gate",
+  "kind": "headless-agent",
+  "agent": "agentic-loop:loop-reviewer",
+  "input": { "brief": {
+    "objective": "Review this factory spec for build-readiness: is it unambiguous enough to build unattended?",
+    "user_intent_verbatim": "gate this spec before it enters the build queue",
+    "input_paths": ["evals/fixtures/spec-gate/ambiguous-spec.md"],
+    "boundaries_non_goals": ["review the spec text only"],
+    "output_spec": "findings naming each ambiguity or vacuous element that would break an unattended build",
+    "effort_budget": "one pass"
+  } },
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": "(.findings // []) | length >= 2" },
+    { "type": "jq", "expr": ". | tostring | test(\"format|csv|json|which data|what data|scope|vacuous|check_cmd|true\"; \"i\")" }
+  ],
+  "_note": "planted: no export format, no data scope, vacuous check_cmd (`true` passes untouched), acceptance restates the objective. The gate must catch at least the check_cmd and one ambiguity.",
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}
