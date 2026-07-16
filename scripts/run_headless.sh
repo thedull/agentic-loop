@@ -2,12 +2,14 @@
 # run_headless.sh — GATED wrapper for unattended `claude -p` loop runs.
 #
 # ############################  BILLING WARNING  ##############################
-# Headless / autonomous usage (claude -p, Agent SDK, CI) is metered DIFFERENTLY
-# from your interactive Max subscription session. Reports through 2026 describe
-# a separate monthly credit followed by API-rate billing, with large cost jumps
-# for heavy automated workloads. The exact policy is volatile and NOT fully
-# confirmed in official docs — verify your plan's current terms before relying
-# on this. This script refuses to run without --i-understand-billing.
+# Billing follows the AUTH METHOD, not headless-vs-interactive (verified
+# against official docs 2026-07-14, costs.md): plain `claude -p` under your
+# OAuth subscription login draws the same Max allowance as interactive use;
+# `--bare` mode skips OAuth and requires ANTHROPIC_API_KEY — per-token API
+# billing; CI runners (GitHub Actions etc.) use API keys by design. The trap:
+# a docs-recommended `--bare` flag, or any ANTHROPIC_API_KEY in scope, silently
+# changes your meter. Policies stay volatile — verify your plan's current
+# terms. This script refuses to run without --i-understand-billing.
 # #############################################################################
 #
 # Loop discipline (Ralph-style):
@@ -46,8 +48,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ $ACK -ne 1 ]]; then
-  echo "REFUSING TO RUN: headless usage is billed differently from your" >&2
-  echo "interactive Max session (see the warning at the top of this script)." >&2
+  echo "REFUSING TO RUN: billing follows your auth method — an API key in" >&2
+  echo "scope (or --bare mode) bills per token instead of your subscription" >&2
+  echo "(see the warning at the top of this script)." >&2
   echo "Re-run with --i-understand-billing to proceed." >&2
   exit 2
 fi
@@ -84,11 +87,25 @@ if [[ $ASSUME_YES -ne 1 ]]; then
 fi
 
 TOTAL_COST=0
+ERR_TMP="$(mktemp)"
+trap 'rm -f "$ERR_TMP"' EXIT
 for ((iter = 1; iter <= MAX_ITER; iter++)); do
   echo "--- iteration $iter/$MAX_ITER $(date '+%H:%M:%S') ---" >&2
 
-  RESULT="$(cat "$PROMPT_FILE" | "${CMD[@]}")" || {
+  RESULT="$(cat "$PROMPT_FILE" | "${CMD[@]}" 2>"$ERR_TMP")" || {
+    # Usage-cap backstop: cap errors are NOT retried by the CLI and block
+    # until reset — burning further iterations is pure waste. Surface a
+    # structured "postponed" outcome instead (exit 7, reset time on stdout).
+    COMBINED="${RESULT}"$'\n'"$(cat "$ERR_TMP")"
+    if grep -qE "hit your (session|weekly|Opus) limit" <<<"$COMBINED"; then
+      RESET_HINT="$(grep -oE 'resets [^"]*' <<<"$COMBINED" | head -1)"
+      echo "POSTPONED: subscription usage cap hit on iteration $iter (${RESET_HINT:-reset time unknown})." >&2
+      jq -n --arg resets "${RESET_HINT:-unknown}" --argjson iter "$iter" \
+        '{status: "postponed", reason: "usage cap", resets: $resets, iterations_run: ($iter - 1)}'
+      exit 7
+    fi
     echo "claude -p exited non-zero on iteration $iter" >&2
+    sed 's/^/  stderr: /' "$ERR_TMP" >&2
     exit 5
   }
 

@@ -78,6 +78,32 @@ else
 fi
 
 echo
+echo "factory (skip if you don't use the spec→build→review loop):"
+if [[ -d ./factory/specs ]]; then
+  [[ -x ./scripts/lib/tracker.sh ]] && ok "tracker.sh present" \
+    || fail "factory/specs exists but scripts/lib/tracker.sh is missing/not executable — re-run /agentic-loop:init"
+  [[ -x ./scripts/lib/usage_gate.sh ]] && ok "usage_gate.sh present" \
+    || fail "scripts/lib/usage_gate.sh missing — usage gating unavailable"
+  if [[ -f ./.claude/settings.json ]] && grep -q 'statusline-usage' ./.claude/settings.json 2>/dev/null; then
+    ok "statusline usage mirror configured"
+  else
+    warn "statusline usage mirror not configured — the usage gate will fail open.
+         Add to .claude/settings.json:
+         {\"statusLine\": {\"type\": \"command\", \"command\": \"scripts/statusline-usage.sh\"}}"
+  fi
+  if [[ -f ./.agentic/usage.json ]]; then
+    AGE_MIN=$(( ($(date +%s) - $(jq -r '.mirrored_at // 0' ./.agentic/usage.json 2>/dev/null || echo 0)) / 60 ))
+    [[ $AGE_MIN -le "${FACTORY_USAGE_STALE_MINUTES:-120}" ]] \
+      && ok "usage mirror fresh (${AGE_MIN}min old)" \
+      || warn "usage mirror stale (${AGE_MIN}min old) — gate fails open until a live session refreshes it"
+  else
+    warn "no .agentic/usage.json yet — appears after the first turn of a session with the statusline installed"
+  fi
+else
+  ok "no factory/specs directory (factory not initialized here)"
+fi
+
+echo
 echo "subscription auth (manual check):"
 echo "  Run 'claude' interactively and confirm the session shows your Max"
 echo "  subscription login (claude /login), not an API key. This script cannot"
