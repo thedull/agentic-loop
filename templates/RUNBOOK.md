@@ -15,16 +15,17 @@ Time: ~20 min interactive setup, then mornings ~5 min/idea.
       `claude`, type `/login` if prompted. Headless calls fail with
       "OAuth session expired" when this lapses — re-login fixes it.
 - [ ] `jq` and `curl` on PATH.
-- [ ] The plugin registered and installed — point at any local checkout:
+- [ ] The plugin registered — symlink any local checkout into the
+      skills directory:
       ```bash
       # if you don't have a checkout yet:
       git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
 
-      claude plugin marketplace add /path/to/agentic-loop
-      claude plugin install agentic-loop
+      ln -s /path/to/agentic-loop ~/.claude/skills/agentic-loop
       ```
-      Or load it per-session without installing:
-      `claude --plugin-dir /path/to/agentic-loop`
+      It auto-loads as `agentic-loop@skills-dir` every session
+      (verify: `claude plugin list`). Or load it per-session without
+      registering: `claude --plugin-dir /path/to/agentic-loop`
 - [ ] **No `ANTHROPIC_API_KEY` anywhere** — not exported, not in any `.env`.
       It silently flips your subscription session to metered API billing.
 - [ ] Optional but recommended (free local tier + free eval judge):
@@ -46,9 +47,9 @@ In that session:
 
 - [ ] `/agentic-loop:init` — scaffolds scripts/, CLAUDE.md, .env.example,
       `.agentic/`, factory/specs/, the factory workflow, and runs doctor.
-- [ ] Copy `.env.example` → `.env`; set at least
-      `OLLAMA_MODEL=gemma4:12b` (or your non-thinking model). Add worker keys
-      only if you have them.
+- [ ] Copy `.env.example` → `.env`; uncomment the `OLLAMA_MODEL=` line and
+      set it to `gemma4:12b` (or your non-thinking model). Add worker keys
+      only if you have them — all keys are blank/commented by default.
 - [ ] Install the statusline usage mirror (the factory's self-gating depends
       on it) — merge into `.claude/settings.json`:
       `{"statusLine": {"type": "command", "command": "scripts/statusline-usage.sh"}}`

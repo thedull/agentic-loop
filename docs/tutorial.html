@@ -512,11 +512,10 @@ details > .details-body > :last-child { margin-bottom: 0; }
   <div class="step-marker">2</div>
   <div class="step-body">
     <h3>Install the plugin</h3>
-    <p>Clone (or use an existing checkout), register, then install:</p>
+    <p>Clone (or use an existing checkout), then symlink into Claude Code's skills directory:</p>
     <pre><code>git clone https://github.com/thedull/agentic-loop /path/to/agentic-loop
-claude plugin marketplace add /path/to/agentic-loop
-claude plugin install agentic-loop</code></pre>
-    <p>The path can be anywhere on disk — if you already have a checkout, skip the clone step.</p>
+ln -s /path/to/agentic-loop ~/.claude/skills/agentic-loop</code></pre>
+    <p>The symlink registers it permanently as <code>agentic-loop@skills-dir</code> — it auto-loads every session. If you already have a checkout, skip the clone.</p>
     <p>Or load it for a one-off session without installing:</p>
     <pre><code>claude --plugin-dir /path/to/agentic-loop</code></pre>
   </div>
