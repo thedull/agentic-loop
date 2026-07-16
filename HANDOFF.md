@@ -116,9 +116,10 @@ Reviewers add `findings[]`, each `{claim, evidence, severity}` — evidence requ
 
 ## 7. Install and instantiate
 
-```
-/plugin marketplace add /path/to/agentic-scaffolding
-/plugin install agentic-loop
+```bash
+git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
+claude plugin marketplace add ~/plugins/agentic-loop
+claude plugin install agentic-loop
 # then, inside any project:
 /agentic-loop:init
 cp .env.example .env        # fill FABLE_KEY / OPENAI_API_KEY / OPENROUTER_API_KEY (any subset)

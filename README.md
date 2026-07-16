@@ -16,12 +16,13 @@ customization (Level 3).
 
 From a local checkout:
 
-```
-/plugin marketplace add /path/to/agentic-scaffolding
-/plugin install agentic-loop
+```bash
+git clone https://github.com/thedull/agentic-loop ~/plugins/agentic-loop
+claude plugin marketplace add ~/plugins/agentic-loop
+claude plugin install agentic-loop
 ```
 
-Or one-off: `claude --plugin-dir /path/to/agentic-scaffolding`
+Or one-off (no install needed): `claude --plugin-dir ~/plugins/agentic-loop`
 
 ## Instantiate in a project
 
