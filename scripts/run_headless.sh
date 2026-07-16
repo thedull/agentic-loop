@@ -28,6 +28,11 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Opt-in observability (no-op unless enabled — see lib/obs.sh).
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/obs.sh"
+
 PROMPT_FILE=""
 CHECK_CMD=""
 MAX_ITER=5
@@ -89,9 +94,28 @@ fi
 TOTAL_COST=0
 ERR_TMP="$(mktemp)"
 trap 'rm -f "$ERR_TMP"' EXIT
+
+# Observability: one run id for the whole loop, exported so shim calls made
+# by the headless session correlate to it.
+AGENTIC_RUN_ID="hl-$(date +%s)-$$"
+export AGENTIC_RUN_ID
+obs_event headless_start headless "$(jq -cn \
+  --arg pf "$PROMPT_FILE" --arg cc "$CHECK_CMD" --argjson max "$MAX_ITER" \
+  '{detail: {prompt_file: $pf, check_cmd: $cc, max_iterations: $max}}')"
+
+# obs_headless_end STATUS EXIT_CODE ITERS_RUN — terminal event for every exit
+# path (done / postponed / error / exhausted).
+obs_headless_end() {
+  obs_event headless_end headless "$(jq -cn \
+    --arg s "$1" --argjson c "$2" --argjson n "$3" --argjson total "$TOTAL_COST" \
+    '{status: $s, exit_code: $c, est_cost_usd: $total,
+      detail: {iterations_run: $n}}')"
+}
+
 for ((iter = 1; iter <= MAX_ITER; iter++)); do
   echo "--- iteration $iter/$MAX_ITER $(date '+%H:%M:%S') ---" >&2
 
+  ITER_T0="$(obs_now_ms)"
   RESULT="$(cat "$PROMPT_FILE" | "${CMD[@]}" 2>"$ERR_TMP")" || {
     # Usage-cap backstop: cap errors are NOT retried by the CLI and block
     # until reset — burning further iterations is pure waste. Surface a
@@ -102,10 +126,12 @@ for ((iter = 1; iter <= MAX_ITER; iter++)); do
       echo "POSTPONED: subscription usage cap hit on iteration $iter (${RESET_HINT:-reset time unknown})." >&2
       jq -n --arg resets "${RESET_HINT:-unknown}" --argjson iter "$iter" \
         '{status: "postponed", reason: "usage cap", resets: $resets, iterations_run: ($iter - 1)}'
+      obs_headless_end postponed 7 "$((iter - 1))"
       exit 7
     fi
     echo "claude -p exited non-zero on iteration $iter" >&2
     sed 's/^/  stderr: /' "$ERR_TMP" >&2
+    obs_headless_end error 5 "$((iter - 1))"
     exit 5
   }
 
@@ -113,8 +139,27 @@ for ((iter = 1; iter <= MAX_ITER; iter++)); do
   TOTAL_COST="$(jq -n --argjson a "$TOTAL_COST" --argjson b "$COST" '$a + $b')"
   echo "iteration $iter cost: \$$COST (cumulative: \$$TOTAL_COST)" >&2
 
-  if bash -c "$CHECK_CMD"; then
+  if bash -c "$CHECK_CMD"; then CHECK_OK=true; else CHECK_OK=false; fi
+
+  obs_event headless_iteration headless "$(echo "$RESULT" | jq -c \
+    --argjson iter "$iter" --argjson dur "$(( $(obs_now_ms) - ITER_T0 ))" \
+    --argjson total "$TOTAL_COST" --argjson passed "$CHECK_OK" '
+    {session_id: (.session_id // null),
+     model: (.model // null),
+     tier: "headless",
+     usage: {input_tokens: (.usage.input_tokens // null),
+             output_tokens: (.usage.output_tokens // null),
+             cache_read_input_tokens: (.usage.cache_read_input_tokens // null),
+             cache_creation_input_tokens: (.usage.cache_creation_input_tokens // null)},
+     est_cost_usd: (.total_cost_usd // null),
+     duration_ms: $dur,
+     status: "ok",
+     detail: {iteration: $iter, total_cost_usd: $total,
+              check_cmd_passed: $passed}}' 2>/dev/null || echo '{}')"
+
+  if [[ "$CHECK_OK" == "true" ]]; then
     echo "check command passed after iteration $iter — done. Total: \$$TOTAL_COST" >&2
+    obs_headless_end ok 0 "$iter"
     exit 0
   fi
   echo "check command still failing; continuing" >&2
@@ -122,4 +167,5 @@ done
 
 echo "ESCAPE HATCH: $MAX_ITER iterations exhausted and '$CHECK_CMD' still fails." >&2
 echo "Total spend: \$$TOTAL_COST. Review the repo state and git log before re-running." >&2
+obs_headless_end exhausted 6 "$MAX_ITER"
 exit 6

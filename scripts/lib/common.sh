@@ -25,6 +25,12 @@ set -euo pipefail
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALIDATOR="$LIB_DIR/validate_envelope.jq"
 
+# Opt-in observability (no-op unless enabled — see lib/obs.sh). The timer set
+# here gives every shim call its duration_ms.
+# shellcheck disable=SC1091
+source "$LIB_DIR/obs.sh"
+OBS_T0="$(obs_now_ms)"
+
 die_tool_missing() {
   local tool="$1"
   echo "error: required tool '$tool' not found on PATH" >&2
@@ -58,6 +64,8 @@ require_key() {
 # --- envelope helpers --------------------------------------------------------
 
 # emit_error worker message — print a valid error envelope and return.
+# Tapped for observability: failed calls are exactly what the eval-mining
+# flywheel wants to see.
 emit_error() {
   local worker="$1" msg="$2"
   jq -n --arg worker "$worker" --arg msg "$msg" '{
@@ -65,7 +73,7 @@ emit_error() {
     artifacts: [], key_decisions: [], caveats: [], assumptions: [],
     confidence_ordinal: "low",
     usage: {input_tokens: 0, output_tokens: 0, est_cost_usd: 0}
-  }'
+  }' | obs_shim_tap
 }
 
 # validate_envelope — read envelope on stdin; echo it if valid, else exit 4.
@@ -73,7 +81,7 @@ validate_envelope() {
   local env_json
   env_json="$(cat)"
   if echo "$env_json" | jq -e -f "$VALIDATOR" >/dev/null 2>&2; then
-    echo "$env_json"
+    echo "$env_json" | obs_shim_tap
   else
     echo "$env_json" | jq -e -f "$VALIDATOR" >/dev/null 2>&1 || true
     emit_error "${WORKER_NAME:-unknown}" "worker produced an envelope that failed schema validation"
