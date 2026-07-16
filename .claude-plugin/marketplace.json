@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "agentic-loop",
+  "description": "Multi-model agentic loop for Claude Code: orchestrator, tiered subagents, bash-shim workers, the unattended factory, opt-in observability, and evals.",
+  "owner": {
+    "name": "gabbytee",
+    "url": "https://github.com/thedull"
+  },
+  "plugins": [
+    {
+      "name": "agentic-loop",
+      "description": "Orchestrated multi-model agentic loop: Opus orchestrator, tiered native subagents, bash-shim workers for Sol/Fable/OpenRouter/Ollama, bounded cross-family adversarial review, the spec/build/review factory, opt-in observability with run-tree reports, feature flags, and a built-in eval harness.",
+      "source": "./",
+      "category": "workflow"
+    }
+  ]
+}
