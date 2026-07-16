@@ -1,0 +1,15 @@
+{
+  "id": "shim-011-ollama-missing-objective",
+  "target": "call_ollama.sh brief validation",
+  "kind": "shim",
+  "shim": "call_ollama.sh",
+  "mock_response": "fixtures/ollama-ok.json",
+  "input": { "brief": {} },
+  "checks": [
+    { "type": "exit_code", "equals": 2 },
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ".status == \"error\"" },
+    { "type": "must_find", "strings": ["objective"] }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

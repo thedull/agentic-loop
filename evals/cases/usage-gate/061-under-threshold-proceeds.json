@@ -1,0 +1,8 @@
+{
+  "id": "usage-gate-061-under-threshold-proceeds",
+  "target": "usage_gate.sh threshold",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; jq -n --argjson now \"$(date +%s)\" '{mirrored_at: $now, rate_limits: {five_hour: {used_percentage: 40, resets_at: 0}, seven_day: {used_percentage: 55, resets_at: 0}}}' > .agentic/usage.json; \"$PLUGIN_ROOT/scripts/lib/usage_gate.sh\" check",
+  "checks": [ { "type": "exit_code", "equals": 0 } ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

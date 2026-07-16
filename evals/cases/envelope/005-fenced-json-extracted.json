@@ -1,0 +1,11 @@
+{
+  "id": "envelope-005-fenced-json-extracted",
+  "target": "common.sh extract_json_object",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/common.sh\"; extract_json_object '```json\n{\"worker\":\"x\",\"status\":\"ok\"}\n```'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".worker == \"x\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

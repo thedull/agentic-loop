@@ -1,0 +1,13 @@
+{
+  "id": "tracker-053-transition-emits-event",
+  "target": "tracker.sh observability instrumentation",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; printf -- '---\nid: 001\ntitle: t\nstatus: building\nclaimed_by: build-loop\n---\n' > factory/specs/001-t.md; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance factory/specs/001-t.md blocked >/dev/null; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".event == \"tracker_transition\" and .source == \"tracker\"" },
+    { "type": "jq", "expr": ".detail.from_status == \"building\" and .detail.to_status == \"blocked\"" },
+    { "type": "jq", "expr": ".status == \"blocked\" and .detail.actor == \"build-loop\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

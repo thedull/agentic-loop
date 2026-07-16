@@ -25,6 +25,20 @@
 
 set -euo pipefail
 
+# Opt-in observability (no-op unless enabled — see obs.sh).
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/obs.sh"
+
+# _tracker_obs_transition FILE FROM TO ACTOR — one tracker_transition event.
+_tracker_obs_transition() {
+  obs_event tracker_transition tracker "$(jq -cn \
+    --arg f "$1" --arg from "$2" --arg to "$3" --arg actor "$4" '
+    {status: (if $to == "blocked" then "blocked" else null end),
+     detail: {spec_file: $f, from_status: (if $from == "" then null else $from end),
+              to_status: $to, actor: (if $actor == "" then null else $actor end)}}' \
+    2>/dev/null || echo '{}')"
+}
+
 FACTORY_SPECS_DIR="${FACTORY_SPECS_DIR:-factory/specs}"
 TRACKER_LOCK_DIR="${TRACKER_LOCK_DIR:-.agentic/tracker.lock}"
 TRACKER_LOCK_TIMEOUT="${TRACKER_LOCK_TIMEOUT:-30}"
@@ -108,6 +122,7 @@ tracker_claim() {
   _tracker_set_field "$target" claimed_by "$actor"
   _tracker_set_field "$target" claimed_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   tracker_unlock
+  _tracker_obs_transition "$target" "$from" "$to" "$actor"
   echo "$target"
 }
 
@@ -118,12 +133,16 @@ tracker_advance() {
   _tracker_valid_status "$status" || _tracker_die "unknown status '$status'"
   mkdir -p "$(dirname "$TRACKER_LOCK_DIR")"
   tracker_lock
+  local prev
+  prev="$(_tracker_field "$file" status)"
   _tracker_set_field "$file" status "$status"
   while [[ $# -ge 2 ]]; do
     _tracker_set_field "$file" "$1" "$2"
     shift 2
   done
   tracker_unlock
+  _tracker_obs_transition "$file" "$prev" "$status" \
+    "$(_tracker_field "$file" claimed_by)"
 }
 
 # tracker_next_id — next zero-padded numeric id from existing filenames.

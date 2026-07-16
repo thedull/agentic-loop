@@ -104,6 +104,24 @@ else
 fi
 
 echo
+echo "observability (opt-in):"
+if [[ "$(jq -r '.observability.enabled // false' ./.agentic/config.json 2>/dev/null)" == "true" ]]; then
+  ok "observability enabled (.agentic/config.json)"
+  LATEST_EVENTS="$(ls -t ./.agentic/observability/events-*.jsonl 2>/dev/null | head -1)"
+  if [[ -n "$LATEST_EVENTS" ]]; then
+    if tail -1 "$LATEST_EVENTS" | jq -e '.v == 1' >/dev/null 2>&1; then
+      ok "event log healthy ($(wc -l < "$LATEST_EVENTS" | tr -d ' ') events in ${LATEST_EVENTS#./})"
+    else
+      warn "last line of ${LATEST_EVENTS#./} is not a v1 event — log may be corrupted"
+    fi
+  else
+    warn "enabled but no events yet — they appear after the first instrumented run"
+  fi
+else
+  ok "observability disabled — opt in with /agentic-loop:config observability on"
+fi
+
+echo
 echo "subscription auth (manual check):"
 echo "  Run 'claude' interactively and confirm the session shows your Max"
 echo "  subscription login (claude /login), not an API key. This script cannot"

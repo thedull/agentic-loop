@@ -1,0 +1,8 @@
+{
+  "id": "envelope-002-bad-status-rejected",
+  "target": "validate_envelope.jq",
+  "kind": "bash-unit",
+  "cmd": "printf '%s' '{\"worker\":\"t\",\"status\":\"nonsense\",\"summary\":\"s\",\"result\":\"r\",\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"high\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"est_cost_usd\":0}}' | jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\"",
+  "checks": [ { "type": "exit_code", "nonzero": true } ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

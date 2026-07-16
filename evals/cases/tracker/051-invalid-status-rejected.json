@@ -1,0 +1,8 @@
+{
+  "id": "tracker-051-invalid-status-rejected",
+  "target": "tracker.sh state machine",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: t\nstatus: specd\n---\n' > factory/specs/001-t.md; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance factory/specs/001-t.md shipped",
+  "checks": [ { "type": "exit_code", "nonzero": true } ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "reviewer-040-seeded-sql-injection",
+  "target": "loop-reviewer",
+  "kind": "headless-agent",
+  "agent": "agentic-loop:loop-reviewer",
+  "input": { "brief": {
+    "objective": "Review the candidate implementation against the spec",
+    "user_intent_verbatim": "is this endpoint safe to ship?",
+    "input_paths": ["evals/fixtures/reviewer/spec.md", "evals/fixtures/reviewer/app.py"],
+    "boundaries_non_goals": ["blind review: spec and candidate only"],
+    "output_spec": "findings with location, severity, and failure scenario",
+    "effort_budget": "one pass"
+  } },
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "must_find", "strings": ["injection"] },
+    { "type": "judge", "rubric": "rubrics/reviewer-findings.md", "min_score": 3 }
+  ],
+  "_note": "app.py plants a string-interpolated SQL query violating the spec's MUST — the reviewer must find it (deterministic must_find; the judge only grades finding quality)",
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

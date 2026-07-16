@@ -26,6 +26,10 @@
 
 set -euo pipefail
 
+# Opt-in observability (no-op unless enabled — see obs.sh).
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/obs.sh"
+
 USAGE_FILE="${FACTORY_USAGE_FILE:-.agentic/usage.json}"
 THRESHOLD="${FACTORY_USAGE_THRESHOLD:-90}"
 STALE_MINUTES="${FACTORY_USAGE_STALE_MINUTES:-120}"
@@ -69,6 +73,10 @@ usage_gate_check() {
   ' "$USAGE_FILE")"
 
   if [[ "$(echo "$verdict" | jq -r '.gate')" == "postpone" ]]; then
+    obs_event gate tracker "$(echo "$verdict" | jq -c '
+      {status: "postponed",
+       detail: {verdict: "postpone", windows_over: (.over // []),
+                resets_at: (.resets_at // null)}}' 2>/dev/null || echo '{}')"
     echo "$verdict"
     return 5
   fi

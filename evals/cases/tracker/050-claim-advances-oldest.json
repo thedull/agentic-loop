@@ -1,0 +1,13 @@
+{
+  "id": "tracker-050-claim-advances-oldest",
+  "target": "tracker.sh claim",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: older\nstatus: specd\n---\nbody\n' > factory/specs/001-older.md; printf -- '---\nid: 002\ntitle: newer\nstatus: specd\n---\nbody\n' > factory/specs/002-newer.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; CLAIMED=$(tracker_claim specd building build-loop); jq -n --arg claimed \"$CLAIMED\" --arg s1 \"$(_tracker_field factory/specs/001-older.md status)\" --arg s2 \"$(_tracker_field factory/specs/002-newer.md status)\" --arg actor \"$(_tracker_field factory/specs/001-older.md claimed_by)\" '{claimed: $claimed, s1: $s1, s2: $s2, actor: $actor}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".claimed == \"factory/specs/001-older.md\"" },
+    { "type": "jq", "expr": ".s1 == \"building\" and .s2 == \"specd\"" },
+    { "type": "jq", "expr": ".actor == \"build-loop\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

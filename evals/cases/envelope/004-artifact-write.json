@@ -1,0 +1,12 @@
+{
+  "id": "envelope-004-artifact-write",
+  "target": "common.sh finalize_envelope",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/common.sh\"; ARTIFACT_PATH=\"out/draft.md\"; finalize_envelope '{\"worker\":\"x\",\"status\":\"ok\",\"summary\":\"drafted\",\"result\":\"r\",\"confidence_ordinal\":\"high\"}' 'testworker' 10 5 0",
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "artifact_exists", "paths_from": ".artifacts" },
+    { "type": "jq", "expr": ".artifacts == [\"out/draft.md\"]" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

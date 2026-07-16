@@ -136,6 +136,37 @@ Rules:
   ~300 lines; prune when stale. No external memory layers (no memory MCPs /
   vector DBs) — files + git + native subagent memory are the whole system.
 
+## Feature flags — .agentic/config.json (all default-off)
+
+Optional behaviors live behind explicit flags in `.agentic/config.json`,
+toggled ONLY via `/agentic-loop:config <feature> on|off` (never edit the file
+ad hoc). Check it once per session (`jq . .agentic/config.json`); missing
+file = everything off.
+
+| Flag | When enabled, you must |
+|---|---|
+| `observability` | nothing — capture is automatic (hooks/shims). Use `/agentic-loop:config render` to show the run tree |
+| `minimize` | add the minimization-ladder boundary to every code-writing brief (ladder text: agents/worker-cheap.md / build skill) |
+| `grill` | before delegating an ambiguous or high-stakes request to `loop-planner`, interview the user first — one question at a time, surfacing implicit assumptions and unresolved branches, until the intent is unambiguous. Skip for well-specified asks |
+| `guards` | nothing — the reviewer applies its guard checklist itself |
+| `summarize` | pass `--summarize` when rendering reports |
+
+Precedence: an explicit user instruction this session > per-run skill flag >
+config default > your judgment. You may enable a feature per-task on your own
+judgment ONLY where its entry has `"agent_judgment": true`, and every such
+toggle MUST be logged:
+
+```bash
+./scripts/observe.sh emit feature_toggle \
+  '{"detail":{"feature":"minimize","scope":"<task>","reason":"<why>","decided_by":"agent"}}'
+```
+
+Unattended stages (factory/headless): never judgment-enable anything metered,
+never install anything — if a feature's third-party dependency is missing,
+emit a `missing_dependency` event and continue without it. Interactively,
+offer the install once; a decline is recorded (`install_declined`) and never
+re-asked.
+
 ## Conversation vs workflow
 
 - Interactive, judgment-heavy, few-worker tasks → orchestrate in conversation

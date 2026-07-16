@@ -45,6 +45,9 @@ dry-run one loop).
 | `templates/CLAUDE.md` | the routing brain: tier ladder, Sol structural triggers, blind-adversary protocol, revision bounds, `.agentic/` coordination rules |
 | `skills/spec\|build\|review` + `templates/workflows/factory.js` | **the factory** — morning ideas → unattended spec→build→review pipeline → evening PRs (see below) |
 | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh`, `templates/statusline-usage.sh` | factory plumbing: file state machine (connector seam for future GH Issues/Jira backends) + subscription-usage self-gating |
+| `hooks/hooks.json` + `scripts/observe.sh` + `scripts/observe_render.sh` | **opt-in observability**: every subagent/shim/headless/factory operation logged to one JSONL (model, tokens, est. cost, duration, status, summary) and rendered as an HTML/tty run tree — `/agentic-loop:config observability on` (see below) |
+| `skills/config` | feature flags in `.agentic/config.json`, all default-off: `observability`, `minimize` (code-minimization ladder in build briefs), `grill` (pre-planning interview), `guards` (reviewer quality gates), `summarize` (Ollama report summaries) |
+| `evals/` | the plugin's own eval harness: free envelope/shim/tracker/gate suites ($0, mocked), live agent suites behind `--live`, cross-family LLM judge, and `mine.sh` — drafts new eval cases from observability-log failures |
 
 All workers speak one JSON **envelope** (`scripts/lib/validate_envelope.jq`):
 `status` enum, ≤100-word `summary`, `result`, `artifacts[]` (full output goes
@@ -74,6 +77,19 @@ metered API dollars (`needs_escalation` is queued for your evening decision).
 
 Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
 [`docs/software-factory-analysis.md`](docs/software-factory-analysis.md)
+
+## Observability & evals (opt-in)
+
+`/agentic-loop:config observability on`, run your loop, then
+`/agentic-loop:config render` — a self-contained HTML tree of the whole
+orchestration (per node: tier, model, tokens in/out, est. metered cost,
+duration, status, operation summary; rollups split metered $ from
+subscription tokens). The flat JSONL under `.agentic/observability/` is the
+data-mining substrate: `./evals/mine.sh` turns logged failures into draft
+eval cases, and `./evals/run_eval.sh` runs the suites (free tiers always $0).
+Reference: [`docs/observability.md`](docs/observability.md) ·
+[`evals/README.md`](evals/README.md) · design rationale:
+[`docs/observability-evals-analysis.md`](docs/observability-evals-analysis.md)
 
 ## Design rationale (why it's built this way)
 

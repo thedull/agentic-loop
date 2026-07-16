@@ -1,0 +1,16 @@
+{
+  "id": "shim-010-ollama-mock-ok",
+  "target": "call_ollama.sh",
+  "kind": "shim",
+  "shim": "call_ollama.sh",
+  "mock_response": "fixtures/ollama-ok.json",
+  "input": { "brief": { "objective": "classify 30 items into buckets", "user_intent_verbatim": "bucket these", "input_paths": [], "boundaries_non_goals": [], "output_spec": "JSON with bucket counts", "effort_budget": "one pass" } },
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "envelope_valid" },
+    { "type": "jq", "expr": ".status == \"ok\"" },
+    { "type": "jq", "expr": ".worker | startswith(\"ollama/\")" },
+    { "type": "jq", "expr": ".usage.input_tokens == 123 and .usage.output_tokens == 45 and .usage.est_cost_usd == 0" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

@@ -80,8 +80,11 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
 9. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
    append the digest entry to `.agentic/STATUS.md`:
    `pr-open: <id> <title> — <url> | tests: <pass/fail> | caveats: <n> |
-   escalation: <yes/no>`. This block is what the user reads in the evening.
-   Stop — one item per invocation.
+   escalation: <yes/no>`. When observability is enabled, append
+   ` | run: <run id>` (from `.agentic/observability/state/run`, or
+   `$AGENTIC_RUN_ID` under a headless loop) so the digest line links to its
+   tree: `/agentic-loop:config render` visualizes the run. This block is what
+   the user reads in the evening. Stop — one item per invocation.
 
 ## Unattended rules
 

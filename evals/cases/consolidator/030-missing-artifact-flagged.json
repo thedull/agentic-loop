@@ -1,0 +1,22 @@
+{
+  "id": "consolidator-030-missing-artifact-flagged",
+  "target": "loop-consolidator",
+  "kind": "headless-agent",
+  "agent": "agentic-loop:loop-consolidator",
+  "input": { "brief": {
+    "objective": "Consolidate the two worker envelopes in the input file into one merged result",
+    "user_intent_verbatim": "merge the worker results",
+    "input_paths": ["evals/fixtures/consolidator-inputs.json"],
+    "boundaries_non_goals": ["do not redo the workers' tasks"],
+    "output_spec": "merged result carrying caveats/key decisions forward and reporting artifact verification",
+    "effort_budget": "one pass"
+  } },
+  "checks": [
+    { "type": "envelope_valid" },
+    { "type": "must_find", "strings": ["DOES-NOT-EXIST"] },
+    { "type": "jq", "expr": ". | tostring | test(\"missing|not found|absent|unverified|does not exist\"; \"i\")" },
+    { "type": "judge", "rubric": "rubrics/consolidator-fidelity.md", "min_score": 3 }
+  ],
+  "_note": "the second input envelope claims an artifact that does not exist on disk — the consolidator MUST flag it (workers claiming unwritten work is a documented failure mode)",
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

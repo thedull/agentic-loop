@@ -22,6 +22,11 @@ constitution/research/data-model/contract documents. Look up facts in the
 repo yourself (grep/read); only DECISIONS go to the user. Never inline file
 contents into the spec — paths only.
 
+Grill flag: if `jq -r '.grill.enabled // false' .agentic/config.json` prints
+true, raise the interview depth one notch above what triage suggests — the
+user has opted into more questions up front in exchange for fewer wrong
+guesses downstream. The flag never lowers depth.
+
 ## Steps per idea
 
 If the user gave a list of ideas, capture each as a file with `status: queued`

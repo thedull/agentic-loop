@@ -1,0 +1,8 @@
+{
+  "id": "usage-gate-062-stale-fails-open",
+  "target": "usage_gate.sh staleness",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; jq -n --argjson old \"$(( $(date +%s) - 100000 ))\" '{mirrored_at: $old, rate_limits: {five_hour: {used_percentage: 99, resets_at: 0}}}' > .agentic/usage.json; \"$PLUGIN_ROOT/scripts/lib/usage_gate.sh\" check",
+  "checks": [ { "type": "exit_code", "equals": 0 } ],
+  "provenance": { "source": "hand", "date": "2026-07-15" }
+}

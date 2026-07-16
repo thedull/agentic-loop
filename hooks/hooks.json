@@ -1,0 +1,33 @@
+{
+  "_comment": "Observability capture hooks. These register automatically when the plugin is enabled, but observe.sh is a silent ~1ms no-op unless the project opted in (.agentic/config.json .observability.enabled == true, via /agentic-loop:config observability on, or AGENTIC_OBSERVE=1). No matchers on SubagentStart/Stop by design — docs are contradictory on matcher support there (F2), so agent filtering happens inside observe.sh.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\"" }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\"" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\"" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh\"" }
+        ]
+      }
+    ]
+  }
+}

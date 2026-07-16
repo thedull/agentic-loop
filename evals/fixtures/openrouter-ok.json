@@ -1,0 +1,10 @@
+{
+  "choices": [
+    {
+      "message": {
+        "content": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"drafted the summary\",\"result\":\"a short draft\",\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"medium\",\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"est_cost_usd\":0}}"
+      }
+    }
+  ],
+  "usage": { "prompt_tokens": 200, "completion_tokens": 50, "cost": 0.0042 }
+}
