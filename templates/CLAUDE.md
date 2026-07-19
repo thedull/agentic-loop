@@ -175,6 +175,16 @@ re-asked.
   pipelines) → put the loop in a native Claude Code workflow script so the
   script holds the plan and intermediate results, not your context. Shim
   scripts remain the only route to non-Claude workers either way.
+- **Live-app puppeteering exception** (field-tested 2026-07-19, premiere-bridge):
+  when the task is sequential mutations against ONE live application via MCP
+  — each step depending on live state — worker fan-out has nothing to bite
+  on and "the hub does no domain work" does not apply. The orchestrator does
+  the domain work itself; the discipline that replaces delegation is
+  verify-after-write: read the app's state back through an independent
+  channel after EVERY mutation, and re-derive any cached mapping of external
+  state immediately before each new mutation (the human may have changed the
+  app between your calls). See the plugin's
+  docs/field-reports/2026-07-19-premiere-bridge.md.
 
 ## The factory (unattended spec→build→review)
 

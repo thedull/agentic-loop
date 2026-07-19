@@ -23,17 +23,32 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
    directory, a `CLAUDE.md`, or a `.agentic/` directory, list what would be
    overwritten and ask the user before proceeding. Never clobber silently.
 
-2. **Copy, from `$PLUGIN_ROOT`, into the project:**
+1b. **Mode.** Ask (or take from the invocation args) which bootstrap the
+   project needs:
+   - **`interactive`** — orchestrated loop in conversation only: skip the
+     factory pieces (no `factory/`, no `.claude/workflows/factory.js`, no
+     statusline usage-gate mirror in step 6b) and, when copying CLAUDE.md in
+     step 3, delete its "The factory (unattended spec→build→review)" section.
+   - **`factory`** — the unattended spec→build→review loop is the point:
+     copy everything, and apply step 6b (statusline mirror) without asking.
+   - **`both`** (default when the user has no preference) — current
+     behavior: copy everything, mention 6b.
+   A project can upgrade later by re-running init in `factory` mode — the
+   safety check in step 1 shows what would change.
+
+2. **Copy, from `$PLUGIN_ROOT`, into the project** (skip the three
+   factory lines in `interactive` mode):
    ```bash
-   mkdir -p scripts/lib .agentic/artifacts factory/specs .claude/workflows
+   mkdir -p scripts/lib .agentic/artifacts .claude
+   mkdir -p factory/specs .claude/workflows        # factory/both only
    cp -R "$PLUGIN_ROOT/scripts/." scripts/
    cp "$PLUGIN_ROOT/templates/.env.example" .env.example
    cp "$PLUGIN_ROOT/templates/LEARNINGS.md" LEARNINGS.md
    cp "$PLUGIN_ROOT/templates/PROJECT_README.md" AGENTIC_LOOP.md
    cp -R "$PLUGIN_ROOT/templates/agentic-state/." .agentic/
-   cp "$PLUGIN_ROOT/templates/factory-spec.md" factory/spec-template.md
+   cp "$PLUGIN_ROOT/templates/factory-spec.md" factory/spec-template.md          # factory/both only
    cp "$PLUGIN_ROOT/templates/statusline-usage.sh" scripts/statusline-usage.sh
-   cp "$PLUGIN_ROOT/templates/workflows/factory.js" .claude/workflows/factory.js
+   cp "$PLUGIN_ROOT/templates/workflows/factory.js" .claude/workflows/factory.js # factory/both only
    chmod +x scripts/*.sh scripts/lib/*.sh
    ```
 
