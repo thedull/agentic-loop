@@ -20,6 +20,17 @@ the project's CLAUDE.md.
   `~/Videos/Premiere/` via `new-video`). Field report:
   `docs/field-reports/2026-07-19-premiere-bridge.md`.
 
+## The audit→insights loop (core to the vision)
+
+Propagating principles is half the job; the other half is **auditing how
+projects actually operate and feeding that back**. Today: the
+`observability` flag captures every operation to `.agentic/` event logs and
+renders run trees. Deferred piece: an **insights pass** — a periodic skill
+(or report mode) that mines those logs across runs/projects for tier-usage
+patterns (where quota actually goes), verification-failure hotspots,
+escalation-trigger frequency, and loop-shape smells — so the loops and the
+development process itself get streamlined from evidence, not vibes.
+
 ## Deferred (build when a real project of that kind shows up)
 
 - **Per-type template packs** beyond media: research (question → sources →
