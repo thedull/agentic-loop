@@ -42,6 +42,11 @@ development process itself get streamlined from evidence, not vibes.
   identity + policy.
 - **Unattended bootstrap**: `init` runnable headless with a prefilled
   answers file (factory-style), for scripted project creation.
+- **Photoshop domain pack**: deferred. Single deterministic PS operations
+  are shim scripts inside premiere-bridge (`scripts/ps_remove_bg.sh`,
+  field-proven 2026-07-19: `open -a` + .jsx + status-file polling, since
+  PS 2026's AppleScript JS bridge is broken). Trigger for a full pack:
+  recurring PS work — most likely per-episode thumbnails.
 - **Type registry**: packs self-describe (name, interview questions,
   scaffold recipe) so third-party plugins can register kinds instead of
   hardcoding the init matrix.
