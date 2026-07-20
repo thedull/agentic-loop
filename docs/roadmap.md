@@ -47,6 +47,15 @@ development process itself get streamlined from evidence, not vibes.
   field-proven 2026-07-19: `open -a` + .jsx + status-file polling, since
   PS 2026's AppleScript JS bridge is broken). Trigger for a full pack:
   recurring PS work — most likely per-episode thumbnails.
+- **Remotion lane**: ADOPTED as an engine capability in premiere-bridge
+  (`remotion/`, field-proven 2026-07-20 round 9) — programmatic brand
+  assets (transparent ProRes 4444 into Premiere) + the unattended shorts
+  caption renderer. React comps, Free License (individual). Not a separate
+  pack; it's a rendering tool the video engine owns.
+- **Audition**: PROBED and REJECTED 2026-07-20 (round 10). CEP/ExtendScript
+  ACKs effects as success but renders no change; audio lane is ffmpeg
+  (loudnorm + afftdn/arnndn), not a scripted Audition bridge. Recorded so
+  a future session doesn't re-attempt it (`research/audition-dom.md`).
 - **Type registry**: packs self-describe (name, interview questions,
   scaffold recipe) so third-party plugins can register kinds instead of
   hardcoding the init matrix.
