@@ -1,0 +1,13 @@
+{
+  "id": "bench-094-conflict-leaves-unmerged",
+  "target": "bench.sh ensure — a non-trivial merge conflict aborts and leaves the bench on its original commit",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup --conflict; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; mkdir -p .agentic; echo '{\"bench\":{\"enabled\":true}}' > .agentic/config.json; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; ERR=$(bench_reconcile 2>&1 >/dev/null); CONTENT=$(cat \"$FACTORY_BENCH_DIR/feature/f.txt\" 2>/dev/null); MERGING=no; git -C \"$FACTORY_BENCH_DIR/feature\" rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && MERGING=yes; jq -n --arg content \"$CONTENT\" --arg err \"$ERR\" --arg merging \"$MERGING\" '{content: $content, err: $err, merging: $merging}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".content == \"feature-v2\"" },
+    { "type": "jq", "expr": ".merging == \"no\"" },
+    { "type": "must_find", "strings": ["CONFLICTS"] }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

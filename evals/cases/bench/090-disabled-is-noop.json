@@ -1,0 +1,11 @@
+{
+  "id": "bench-090-disabled-is-noop",
+  "target": "bench.sh reconcile — disabled feature flag is a silent no-op",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; bench_reconcile; jq -n --arg exists \"$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo yes || echo no)\" '{exists: $exists}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".exists == \"no\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

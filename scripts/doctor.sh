@@ -104,6 +104,23 @@ else
 fi
 
 echo
+echo "review benches (opt-in):"
+if [[ "$(jq -r '.bench.enabled // false' ./.agentic/config.json 2>/dev/null)" == "true" ]]; then
+  ok "bench enabled (.agentic/config.json)"
+  [[ -x ./scripts/lib/bench.sh ]] && ok "bench.sh present" \
+    || fail "bench enabled but scripts/lib/bench.sh is missing/not executable — re-run /agentic-loop:init"
+  BENCH_DIR="$(jq -r '.bench.dir // empty' ./.agentic/config.json 2>/dev/null)"
+  [[ -n "$BENCH_DIR" ]] || BENCH_DIR="../$(basename "$PWD")-benches"
+  if [[ -d "$BENCH_DIR" ]]; then
+    ok "bench dir exists ($BENCH_DIR, $(ls -1 "$BENCH_DIR" 2>/dev/null | wc -l | tr -d ' ') bench(es))"
+  else
+    warn "bench dir not created yet ($BENCH_DIR) — appears after the first reconcile with a pr-open spec"
+  fi
+else
+  ok "bench disabled — opt in with /agentic-loop:config bench on"
+fi
+
+echo
 echo "observability (opt-in):"
 if [[ "$(jq -r '.observability.enabled // false' ./.agentic/config.json 2>/dev/null)" == "true" ]]; then
   ok "observability enabled (.agentic/config.json)"

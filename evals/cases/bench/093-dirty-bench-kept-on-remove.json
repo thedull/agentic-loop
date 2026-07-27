@@ -1,0 +1,12 @@
+{
+  "id": "bench-093-dirty-bench-kept-on-remove",
+  "target": "bench.sh reconcile — never deletes a bench with uncommitted changes",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; mkdir -p .agentic; echo '{\"bench\":{\"enabled\":true}}' > .agentic/config.json; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; bench_reconcile; echo dirty > \"$FACTORY_BENCH_DIR/feature/uncommitted.txt\"; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_advance factory/specs/001-t.md done; ERR=$(bench_reconcile 2>&1 >/dev/null); jq -n --arg exists \"$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo yes || echo no)\" --arg err \"$ERR\" '{exists: $exists, err: $err}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".exists == \"yes\"" },
+    { "type": "must_find", "strings": ["uncommitted changes"] }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

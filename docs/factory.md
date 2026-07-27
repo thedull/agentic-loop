@@ -234,6 +234,46 @@ what you read in the evening:
 pr-open: 004 Add rate-limit retry — https://github.com/you/repo/pull/12 | tests: pass | caveats: 1 | escalation: no
 ```
 
+## Review benches (optional)
+
+A diff and a screenshot aren't enough on projects where evening review means
+*running* the thing — `npm run app` onto real hardware, launching a desktop
+app, anything beyond reading code. The build stage's worktree is cleaned up
+after blind review by design (that isolation is what lets ideas build
+concurrently); left as-is, an open PR has nothing left to test from.
+
+`/agentic-loop:config bench on` turns on a second, longer-lived artifact: a
+persistent git-worktree checkout per open PR, at
+`../<repo>-benches/<slug>` — a sibling of the repo, never inside it. The
+review stage reconciles benches on every invocation (and `/factory`'s Scout
+phase does the same once per iteration): every `pr-open` spec gets a bench,
+freshly merged with the current default branch so you're never testing
+against an already-fixed bug; every spec that reaches `done` gets its bench
+removed. A bench with uncommitted changes is never deleted out from under
+you — reconcile leaves it and reports why. A non-trivial merge conflict
+against the default branch aborts that one bench and reports it rather than
+guessing; every other bench still gets reconciled.
+
+```bash
+scripts/lib/bench.sh reconcile     # ensure/prune to match the tracker (idempotent)
+scripts/lib/bench.sh list          # one line per existing bench: slug, branch
+scripts/lib/bench.sh ensure <spec> # single spec file
+scripts/lib/bench.sh remove <slug> # remove one bench (refuses if dirty)
+```
+
+Config (`.agentic/config.json`, all optional beyond `enabled`):
+
+```json
+{ "bench": { "enabled": true,
+             "dir": "../<repo>-benches",
+             "setup_cmd": "npm ci" } }
+```
+
+`setup_cmd` runs once, at creation, in the new bench's directory — the
+one-time project setup (`npm ci`, `bundle install`, …) a fresh checkout
+needs before it's runnable. Env overrides for one-off runs:
+`FACTORY_BENCH_DIR`, `FACTORY_BENCH_SETUP_CMD`.
+
 ## Running the factory
 
 **Day mode (recommended): one session, `/loop 60m`.**

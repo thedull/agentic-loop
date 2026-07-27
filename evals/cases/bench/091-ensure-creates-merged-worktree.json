@@ -1,0 +1,13 @@
+{
+  "id": "bench-091-ensure-creates-merged-worktree",
+  "target": "bench.sh reconcile — creates a freshness-merged worktree for a pr-open spec",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; mkdir -p .agentic; echo '{\"bench\":{\"enabled\":true}}' > .agentic/config.json; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; bench_reconcile; jq -n --arg has_main \"$([ -f \"$FACTORY_BENCH_DIR/feature/f.txt\" ] && echo yes || echo no)\" --arg has_feature \"$([ -f \"$FACTORY_BENCH_DIR/feature/f2.txt\" ] && echo yes || echo no)\" --arg branch \"$(git -C \"$FACTORY_BENCH_DIR/feature\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" '{has_main: $has_main, has_feature: $has_feature, branch: $branch}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".has_main == \"yes\"" },
+    { "type": "jq", "expr": ".has_feature == \"yes\"" },
+    { "type": "jq", "expr": ".branch == \"feature\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

@@ -20,10 +20,18 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    log `review postponed until <resets_at local>` to `.agentic/STATUS.md` and
    stop (same rescheduling rules as the build skill).
 
-2. **Claim.** `scripts/lib/tracker.sh claim built reviewing review-loop`; if
+2. **Bench reconcile.** `scripts/lib/bench.sh reconcile` — a no-op unless
+   `.bench.enabled` is set in `.agentic/config.json`; otherwise ensures every
+   `pr-open` spec has a fresh, freshness-merged git-worktree checkout under
+   the project's bench dir (so you can actually run the app during evening
+   review) and removes benches for specs already `done`. Never blocks this
+   stage — a per-bench conflict or failure is reported to stderr and
+   reconcile moves on to the next.
+
+3. **Claim.** `scripts/lib/tracker.sh claim built reviewing review-loop`; if
    exit 1, log `review idle` and stop.
 
-3. **Blind review.** Delegate to the `loop-reviewer` subagent (fresh context,
+4. **Blind review.** Delegate to the `loop-reviewer` subagent (fresh context,
    subscription-covered). Payload: ONLY the spec file and the branch diff
    (`git diff main...claude/idea-<slug>`) — never the build stage's reasoning
    (blind-adversary protocol). Brief it to check, evidence-first:
@@ -38,7 +46,7 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    Run `check_cmd` and the project suite yourself — reviewer claims without a
    non-LLM check are opinions.
 
-4. **Bounded revision — hard cap 2, routed by layer.**
+5. **Bounded revision — hard cap 2, routed by layer.**
    - `impl` findings → fix on the branch, re-run `check_cmd`.
    - `test` findings → fix/add the test, confirm it FAILS against the
      pre-fix code (Red Gate applies to revisions too), then fix.
@@ -48,13 +56,13 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    A second round ONLY if the first materially changed the artifact AND a
    check still fails. After cap: proceed with caveats stated, or `blocked`.
 
-5. **Structural escalation — record, never spend.** If the routing brain's
+6. **Structural escalation — record, never spend.** If the routing brain's
    Sol triggers fire (material disagreement, known-hard class, tests failing
    post-revision), do NOT call metered tiers unattended: mark
    `needs_escalation` in the spec Notes and surface it in the digest for the
    user's evening decision.
 
-6. **Browser verification (conditional).** Only when the project has a
+7. **Browser verification (conditional).** Only when the project has a
    runnable web UI AND the spec's acceptance references UI behavior: run the
    app, execute each Given/When/Then step with Playwright (Chromium is
    preinstalled on Claude Code cloud sessions), capture a screenshot per
@@ -62,7 +70,7 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    list. Skip entirely for CLI/library changes — this pass is the expensive
    one, spend it only where it observes something.
 
-7. **Preview (conditional, cheapest first).** Screenshots + test steps in the
+8. **Preview (conditional, cheapest first).** Screenshots + test steps in the
    PR body are the default preview — sufficient for most evening reviews at
    zero cost. For static/front-end changes in an environment with Artifact
    publishing (Claude Code web/cloud), additionally publish a self-contained
@@ -70,14 +78,14 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    Pages branch, Codespaces badge, Cloudflare Pages) are project hooks — use
    only if the project already has them configured.
 
-8. **Open the PR.** Push the branch (`git push -u origin claude/idea-<slug>`)
+9. **Open the PR.** Push the branch (`git push -u origin claude/idea-<slug>`)
    and open a PR: title = spec title; body = executive summary (what changed
    and why, ≤10 lines), the acceptance checklist with pass/fail, manual test
    steps, screenshots, caveats/assumptions carried from envelopes, and the
    spec file reference. No remote configured → record `pr: local` and note
    the branch in the digest instead.
 
-9. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
+10. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
    append the digest entry to `.agentic/STATUS.md`:
    `pr-open: <id> <title> — <url> | tests: <pass/fail> | caveats: <n> |
    escalation: <yes/no>`. When observability is enabled, append

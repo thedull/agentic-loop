@@ -1,0 +1,11 @@
+{
+  "id": "bench-092-reconcile-removes-clean-bench-for-done",
+  "target": "bench.sh reconcile — removes a clean bench once its spec reaches done",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; mkdir -p .agentic; echo '{\"bench\":{\"enabled\":true}}' > .agentic/config.json; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; bench_reconcile; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_advance factory/specs/001-t.md done; bench_reconcile; jq -n --arg exists \"$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo yes || echo no)\" '{exists: $exists}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".exists == \"no\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

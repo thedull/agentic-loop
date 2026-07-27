@@ -26,6 +26,7 @@ zero writes). On = events append to
 | bash shims (`call_*.sh`) | envelope tap in `scripts/lib/common.sh` | `shim_call` — exact model, authoritative tokens + `est_cost_usd`, duration, status, summary, the brief's objective |
 | headless loops | `scripts/run_headless.sh` | `headless_start` / `headless_iteration` (cost, usage, check result) / `headless_end` (ok/postponed/error/exhausted) |
 | factory | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh` | `tracker_transition` (from→to, actor), `gate` (postpone verdicts) |
+| review benches (opt-in) | `scripts/lib/bench.sh` | `bench` — `detail.action` one of `created`, `refreshed`, `conflict`, `error`, `kept_dirty`, `removed`; `detail.slug`/`detail.path`/`detail.branch` as applicable |
 | orchestrator decisions | `scripts/observe.sh emit …` | `feature_toggle`, `missing_dependency` |
 
 Only `loop-*` subagents are logged by default; set

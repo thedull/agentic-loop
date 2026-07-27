@@ -3,10 +3,11 @@ name: config
 description: >-
   Toggle the agentic-loop feature flags for the current project: observability
   (event log + tree reports), minimize (code-minimization ladder in build
-  briefs), grill (pre-planning interview), guards (reviewer quality gates) and
-  summarize (Ollama fallback summaries in reports). Use when the user wants to
-  turn a loop feature on or off, check what is enabled, or render an
-  observability report.
+  briefs), grill (pre-planning interview), guards (reviewer quality gates),
+  summarize (Ollama fallback summaries in reports) and bench (persistent
+  review checkouts for open PRs). Use when the user wants to turn a loop
+  feature on or off, check what is enabled, or render an observability
+  report.
 ---
 
 # agentic-loop:config — feature flags
@@ -35,6 +36,7 @@ writer of that file. Invocations:
 | `grill` deep | `large`/new-domain ideas escalate to a deep interview: grill-with-docs (`/grilling` + `/domain-modeling`, emits glossary + ADRs into `factory/specs/<id>/`) when Matt Pocock's collection is installed; otherwise native grilling with the question cap lifted | mattpocock-skills (optional — enhances; native fallback always works) |
 | `guards` | Clean-code + test quality-gate criteria are added to the reviewer's blind-review checklist | guard-skills (criteria content; plugin optional) |
 | `summarize` | The report renderer fills summary-less nodes via local Ollama (free) | ollama running locally |
+| `bench` | The review stage keeps one persistent, freshness-merged git-worktree checkout per open PR (`../<repo>-benches/<slug>`) so evening review can actually run the app, not just read a diff | none |
 
 ## Config file shape
 
@@ -45,6 +47,7 @@ writer of that file. Invocations:
   "grill":         { "enabled": false, "deep": false, "agent_judgment": false },
   "guards":        { "enabled": false },
   "summarize":     { "enabled": false },
+  "bench":         { "enabled": false, "dir": "../<repo>-benches", "setup_cmd": "" },
   "_meta":         { "updated": "<iso date>" }
 }
 ```
@@ -68,8 +71,9 @@ writer of that file. Invocations:
    with all features `enabled: false` on first write; never create it for a
    pure status read — report "no config, all features off" instead).
 2. **status**: print a short table — feature, enabled, dependency state
-   (installed / missing / declined). Detect dependencies cheaply: `observability`
-   and base `grill` have none (native — nothing to detect); `grill` with
+   (installed / missing / declined). Detect dependencies cheaply:
+   `observability`, `bench`, and base `grill` have none (native — nothing to
+   detect); `grill` with
    `deep: true` → grep `claude plugin list` for `mattpocock-skills` (missing =
    native-uncapped fallback, not an error); `summarize` →
    `curl -sS --max-time 2 http://localhost:11434/api/tags`; `minimize`/`guards`

@@ -36,8 +36,12 @@ const scout = await agent(
    1. Run: scripts/lib/usage_gate.sh check
       - exit 5 (postpone): append "factory postponed until <resets_at as local time>" to .agentic/STATUS.md and return {"gate":"postpone","specs":[]}.
       - exit 0: continue (a fail-open warning on stderr is fine).
-   2. Run: scripts/lib/tracker.sh list specd
-   3. Return the gate verdict and up to ${MAX_IDEAS} spec file paths, oldest first.`,
+   2. Run: scripts/lib/bench.sh reconcile
+      - no-op unless .bench.enabled is set in .agentic/config.json; otherwise
+        ensures every pr-open spec has a fresh review bench and removes
+        benches for done specs. Never fails this step either way.
+   3. Run: scripts/lib/tracker.sh list specd
+   4. Return the gate verdict and up to ${MAX_IDEAS} spec file paths, oldest first.`,
   {
     label: 'scout',
     model: 'haiku',
