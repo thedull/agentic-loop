@@ -1,15 +1,23 @@
-# Observability, evals, and cost optimization — analysis & design
+# Observability, evals, and cost optimization — decision record
 
-Research companion for three planned additions to the agentic-loop plugin. Analysis
-only — nothing in this document is implemented yet. Facts about Claude Code behavior
-were verified against code.claude.com docs on 2026-07-15; anything that could NOT be
-verified is flagged inline as **F1–F6** and collected in the appendix.
+Research companion for the observability layer, the eval harness, and the
+cost-optimization work. **All of it shipped** (v0.3.0, 2026-07-16); this document
+is the *why* behind those decisions, not a plan. For how to operate what shipped:
 
-Covers both configurations:
+| Subject | Operating guide |
+|---|---|
+| Observability — enable, schema, reports, mining | `docs/observability.md` |
+| Evals — case format, check types, judge protocol | `evals/README.md` |
+| Feature flags — the config file, toggles, consent-to-install | `skills/config/SKILL.md` |
 
-- **Base loop** (`main`): tier-routed orchestration, native subagents, bash shims.
-- **Factory** (`claude/agentic-loop-analysis-ar17ts`): the unattended
-  spec→build→review pipeline layered on top (see `docs/factory.md` on that branch).
+What endures here and nowhere else: the **build-vs-buy verdicts** (§1) and the
+**community-plugin adoption matrix** (§4). The design sections (§2–§3, §5) record
+the reasoning behind choices the guides above now document operationally — where
+they disagree with the code, the code wins.
+
+Facts about Claude Code behavior were verified against code.claude.com docs on
+2026-07-15 and flagged inline as **F1–F6** where unverifiable at the time; the
+appendix now carries their empirical resolutions.
 
 Motivating sources:
 
@@ -77,24 +85,31 @@ user hand-merges into settings), observability hooks ship plugin-level and the
 **opt-in gate lives inside the hook script**:
 
 ```bash
-# first lines of observe.sh
-CFG="${CLAUDE_PROJECT_DIR:-.}/.agentic/observability/config.json"
-[[ -f "$CFG" || "${AGENTIC_OBSERVE:-}" == "1" ]] || exit 0   # silent no-op, ~1ms
+# as shipped, in scripts/lib/obs.sh — AGENTIC_OBSERVE=0 is a hard off that
+# wins over the config file; =1 forces on for one-off headless runs
+CFG="${CLAUDE_PROJECT_DIR:-.}/.agentic/config.json"
+[[ "${AGENTIC_OBSERVE:-}" == "0" ]] && return 1
+[[ -f "$CFG" || "${AGENTIC_OBSERVE:-}" == "1" ]] || return 1   # silent no-op, ~1ms
 ```
+
+(The design first sketched a dedicated `.agentic/observability/config.json`; §5's
+one-config-for-every-feature decision superseded it — everything lives in
+`.agentic/config.json` under an `observability` key.)
 
 Toggled by a skill (see §5 for the generalized `/agentic-loop:config`); the
 `AGENTIC_OBSERVE=1` env override serves one-off headless runs. Users who never opt
 in pay one file-stat per hook event and get zero files written. Everything lands in
 `.agentic/`, which is already gitignored.
 
-### 2.2 Capture points (four)
+### 2.2 Capture points (five)
 
 | Source | Where | What it emits |
 |---|---|---|
-| `hook` | new `scripts/observe.sh` wired via new `hooks/hooks.json` (SessionStart, SubagentStart, SubagentStop, Stop, SessionEnd) | `run_start`, `agent_start`, `agent_stop`, `run_end`. Duration from a `state/agent-<agent_id>.start` marker pair (constant-time, no log scans). Summary from `last_assistant_message` (truncated). Tokens/model best-effort from the subagent transcript **(F1, F3)**. Filter `agent_type` matching `(^|:)loop-` in-script, not via matchers **(F2)**. Every path exits 0 — hooks must never break the loop. |
+| `hook` | `scripts/observe.sh` wired via `hooks/hooks.json` (SessionStart, SubagentStart, SubagentStop, SessionEnd) | `run_start`, `agent_start`, `agent_stop`, `run_end`. Duration from a `state/agent-<agent_id>.start` marker pair (constant-time, no log scans). Summary from `last_assistant_message` (truncated). Tokens/model best-effort from the subagent transcript **(F1, F3)**. Filter `agent_type` matching `(^\|:)loop-` in-script, not via matchers **(F2)**. Every path exits 0 — hooks must never break the loop. |
 | `shim` | `scripts/lib/common.sh` — `finalize_envelope()` (line ~194) and `emit_error()` (line ~61) | `shim_call` with worker, exact model, authoritative usage + `est_cost_usd` (the envelope already carries all of it), duration (timer set when the script sources common.sh), status, summary, and `detail.objective` — the future eval-case seed. stdout stays contractually reserved for the envelope; the event append goes only to the log file. |
-| `headless` | `scripts/run_headless.sh` | `headless_start` / `headless_iteration` (session_id, usage, `total_cost_usd`, `check_cmd_passed`) / `headless_end` on every exit path — including the factory branch's exit-7 usage-cap postpone (`status: "postponed"`). |
-| `tracker` (factory branch) | `scripts/lib/tracker.sh` `tracker_advance`/`tracker_claim`; `scripts/lib/usage_gate.sh` | `tracker_transition` with `{spec_file, from_status, to_status, actor}`; a `gate` event on postpone verdicts. |
+| `headless` | `scripts/run_headless.sh` | `headless_start` / `headless_iteration` (session_id, usage, `total_cost_usd`, `check_cmd_passed`) / `headless_end` on every exit path — including the exit-7 usage-cap postpone (`status: "postponed"`). |
+| `tracker` (factory) | `scripts/lib/tracker.sh` `tracker_advance`/`tracker_claim`; `scripts/lib/usage_gate.sh` | `tracker_transition` with `{spec_file, from_status, to_status, actor}`; a `gate` event on postpone verdicts. |
+| `skill` | `scripts/observe.sh emit <event> '<json>'` (added during implementation — orchestrator decisions have no hook) | `feature_toggle` (which flag, why, decided_by), `missing_dependency`. This is what makes flag efficacy mineable per §5. |
 
 ### 2.3 Event log — one unified JSONL
 
@@ -194,13 +209,15 @@ evals/
   rubrics/                   # anchored 1-4 ordinal rubrics
   cases/
     envelope/                # tier 0: pure-bash fixtures for common.sh   ($0)
+    shim/                    # tier 0: call_*.sh via MOCK_RESPONSE_FILE   ($0)
+    config/                  # tier 0: feature-flag parsing               ($0)
     planner-routing/         # tier 1: headless planner runs
     consolidator/            # tier 1 + judge
     reviewer/                # tier 1 + judge, seeded defects
-    tracker/                 # (factory) pure-bash state machine          ($0)
-    usage-gate/              # (factory) fixture usage.json files         ($0)
-    spec-gate/               # (factory) planted-ambiguity specs
-    red-gate/                # (factory) vacuous check_cmd must block
+    tracker/                 # factory: pure-bash state machine           ($0)
+    usage-gate/              # factory: fixture usage.json files          ($0)
+    spec-gate/               # factory: planted-ambiguity specs
+    red-gate/                # factory: vacuous check_cmd must block
     _inbox/                  # mined drafts awaiting human curation
   fixtures/                  # tiny repos/artifacts cases point at
   results/                   # gitignored: results-<ts>.jsonl + summary
@@ -219,7 +236,8 @@ evals/
   "checks": [
     { "type": "envelope_valid" },
     { "type": "jq", "expr": ".result.subtasks | length <= 3" },
-    { "type": "tier_expect", "map": { "t1": ["ollama","haiku"], "t2": ["sonnet"] } },
+    { "type": "tier_expect", "path": ".result.subtasks[].tier",
+      "allowed": ["ollama","haiku"] },
     { "type": "artifact_exists", "paths_from": ".artifacts" },
     { "type": "judge", "rubric": "rubrics/reviewer-findings.md",
       "must_find": ["sql-injection in fixtures/app.py:42"], "min_score": 3 }
@@ -231,7 +249,8 @@ evals/
 Check types are a fixed, small set implemented once in `run_eval.sh`:
 `envelope_valid` (pipe through `validate_envelope.jq` — free regression of the
 schema contract), `jq` (arbitrary boolean), `tier_expect` (routing assertion),
-`artifact_exists`, `exit_code`, `judge`.
+`artifact_exists`, `exit_code`, `must_find` (grep for a planted defect — see
+§3.4 rule 1), `judge`.
 
 ### 3.3 Execution kinds
 
@@ -291,9 +310,9 @@ project — every candidate is a 3–53★ solo repo with unverified claims.
 
 | Tool | Stars | Mechanism | Verdict |
 |---|---|---|---|
-| [ponytail](https://github.com/DietrichGebert/ponytail) | 84k | Skills + hooks: code-minimization decision ladder (YAGNI→reuse→stdlib→native→existing dep→one-liner→minimum) | **Adopt** — inject ladder rules into build-stage worker briefs |
+| [ponytail](https://github.com/DietrichGebert/ponytail) | 84k | Skills + hooks: code-minimization decision ladder (YAGNI→reuse→stdlib→native→existing dep→one-liner→minimum) | **Adopted** — ladder rules injected into build-stage worker briefs behind the `minimize` flag (`agents/worker-cheap.md`, `skills/build/SKILL.md`) |
 | [grill-with-docs](https://github.com/mattpocock/skills) | 172k (repo) | Pure interaction-pattern skill (Matt Pocock's `mattpocock/skills`): relentless pre-plan interview that also drops ADRs + a glossary as it goes | **Adopted** — deep-mode provider for the `grill` flag (`grill deep on`): runs on `large`/domain-heavy ideas when installed; native grilling with the cap lifted otherwise |
-| [guard-skills](https://github.com/amElnagdy/guard-skills) | 1.0k | Zero-dep skill files: clean-code-guard, test-guard | **Adopt** — fold criteria into reviewer checklist |
+| [guard-skills](https://github.com/amElnagdy/guard-skills) | 1.0k | Zero-dep skill files: clean-code-guard, test-guard | **Adopted** — criteria folded into the reviewer checklist behind the `guards` flag (`agents/reviewer.md`) |
 | [cache-audit](https://github.com/ussumant/cache-audit) | 57 | Read-only skill scoring setup against Anthropic's caching rules | **Adopt, one-time** — quantify tier-hopping cache-miss cost |
 | [ccusage](https://github.com/ccusage/ccusage) | 17k | CLI reading local usage JSONL; cost reports | **Adopt-with-config** — optional npx companion, not wired into core |
 | [cozempic](https://github.com/Ruya-AI/cozempic) | 352 | Hooks + Python daemon: tiered context pruning | **Adopt-with-config** — cautious pilot, interactive sessions only; test against spawn-guard |
@@ -344,11 +363,12 @@ scattered env vars:
 
 ```json
 {
-  "observability": { "enabled": true },
-  "minimize":      { "enabled": false, "agent_judgment": true },
-  "grill":         { "enabled": false, "agent_judgment": true },
-  "guards":        { "enabled": true  },
-  "summarize":     { "enabled": false }
+  "observability": { "enabled": false, "all_agents": false },
+  "minimize":      { "enabled": false, "agent_judgment": false },
+  "grill":         { "enabled": false, "deep": false, "agent_judgment": false },
+  "guards":        { "enabled": false },
+  "summarize":     { "enabled": false },
+  "_meta":         { "updated": "<iso date>" }
 }
 ```
 
@@ -381,57 +401,53 @@ scattered env vars:
 
 ---
 
-## 6. What lands where, in what order
+## 6. What shipped
 
-**On main (base loop):**
+All six phases landed in v0.3.0 (2026-07-16), on `main` — the factory branch this
+document was written against was merged, so the base-loop/factory split it planned
+for no longer exists.
 
-1. *Capture core* — `scripts/lib/obs.sh`, `scripts/observe.sh`, `hooks/hooks.json`,
-   config skill, `doctor.sh` check, instrumentation in `common.sh` +
-   `run_headless.sh`.
-   Verify: with observability OFF, run a `loop-worker-cheap` task → assert zero
-   writes; ON, run the same + one `call_ollama.sh` + a 1-iteration headless run →
-   assert paired agent events with duration, a `shim_call` with usage, headless
-   events. Resolve **F1** empirically and record the answer here.
-2. *Renderer* — `observe_render.sh` (tty → HTML → `--summarize`).
-   Verify: rollup totals equal jq-computed sums; kill Ollama, confirm
-   `--summarize` degrades silently.
-3. *Evals core* — **F4** spike → runner + free envelope suite → headless suites
-   (planner-routing, consolidator artifact-verification, reviewer seeded-defects)
-   → `judge.sh` + rubrics → `mine.sh`.
-   Verify: `--free` green at $0; full run produces a baseline; deliberately break
-   `validate_envelope.jq` locally and confirm the suite catches it; run one judged
-   case twice with swapped A/B order and confirm order-invariance handling.
-4. *Flags & plugin adoption* — `.agentic/config.json` schema, consent-to-install
-   flow, ponytail rules into worker briefs, guard criteria into
-   `agents/reviewer.md`, grill-with-docs as optional pre-planning step, caveman
-   compatibility test against the envelope schema, one-time cache-audit run.
+| Phase | Shipped as |
+|---|---|
+| Capture core | `scripts/lib/obs.sh`, `scripts/observe.sh`, `hooks/hooks.json`, `skills/config/`, `doctor.sh` check, taps in `common.sh` + `run_headless.sh` |
+| Renderer | `scripts/observe_render.sh` — tty, HTML, `--summarize` |
+| Evals core | `evals/run_eval.sh`, `judge.sh`, `mine.sh`, `rubrics/` |
+| Flags & adoption | `.agentic/config.json`, consent-to-install, ponytail ladder → `agents/worker-cheap.md`, guard criteria → `agents/reviewer.md` |
+| Factory instrumentation | `tracker.sh` / `usage_gate.sh` events, `run: <id>` in the digest |
+| Factory eval suites | `evals/cases/{tracker,usage-gate,spec-gate,red-gate}/` |
 
-**On the factory branch (after it takes main in):**
+Verification results, including the live runs that resolved F1/F4/F5/F6, are
+recorded in `docs/observability.md`. Two things the plan did not anticipate and
+that shipped later: `grill deep` mode (§4) and the `config`/`shim` eval suites.
 
-5. *Factory instrumentation* — `tracker.sh` transition events, `usage_gate.sh`
-   gate events, exit-7 postpone event in its `run_headless.sh`, digest lines in
-   `.agentic/STATUS.md` gain `run: <run_id>`.
-6. *Factory eval suites* — tracker state-machine ($0), usage-gate fixtures ($0),
-   spec-gate planted-ambiguity, red-gate vacuous-check (integration, manual).
-   Verify: drive one spec through spec→build→review with observability on; render
-   the tree — tracker transitions appear under the run.
-
-**Docs/polish (main):** this doc graduates into `docs/observability.md` +
-`evals/README.md` reference material; README + `templates/CLAUDE.md` pointers;
-plugin.json version bump.
+Still open from this plan's phase 4: the **caveman compatibility test** against
+the envelope schema, and the one-time **cache-audit** run.
 
 ---
 
-## 7. Appendix — open facts the design defends against
+## 7. Appendix — facts the design defended against, and how they resolved
 
-| # | Unverified fact | Defense |
-|---|---|---|
-| F1 | Whether `SubagentStart`/`SubagentStop` stdin includes the **child's** `transcript_path` (docs' common-fields table says yes; per-event examples omit it) | Token/model extraction is best-effort (`// null`); hook never fails; resolve empirically in phase 1 |
-| F2 | Docs self-contradict on whether `SubagentStart` honors matchers | Don't use matchers; filter by `agent_type` in-script |
-| F3 | Transcript JSONL internal format is version-dependent, not a stable API | All jq uses `// null` fallbacks; events carry `v` so the renderer can adapt |
-| F4 | `claude -p --agent agentic-loop:loop-planner` (plugin-scoped name) working headlessly | 5-minute spike first; fallback `--append-system-prompt "$(cat agent body)"` |
-| F5 | Headless JSON result carrying `model` + full `usage` breakdown | Taken from docs research, not exercised; phase-1 verification covers it |
-| F6 | Whether some Claude Code versions prompt for trust before running plugin hooks | Harmless either way; affects docs UX text only |
+Each was unverifiable from documentation when the design was written, so each got
+a defense that holds either way. All were then exercised live (2026-07-16, CLI
+2.1.207); `docs/observability.md` carries the full verification log.
+
+| # | The unknown | Defense taken | Outcome |
+|---|---|---|---|
+| F1 | Whether `SubagentStart`/`SubagentStop` stdin includes the **child's** `transcript_path` (docs' common-fields table says yes; per-event examples omit it) | Token/model extraction best-effort (`// null`); hook never fails | **Resolved YES** — a real `loop-worker-cheap` spawn yielded the child transcript path, from which the hook read model + true token counts |
+| F2 | Docs self-contradict on whether `SubagentStart` honors matchers | Don't use matchers; filter by `agent_type` in-script | **Still ambiguous, and it no longer matters** — the in-script filter sidesteps it permanently |
+| F3 | Transcript JSONL internal format is version-dependent, not a stable API | All jq uses `// null` fallbacks; events carry `v` | **Open by design** — the tolerant read is the permanent answer, not a stopgap |
+| F4 | `claude -p --agent agentic-loop:loop-planner` (plugin-scoped name) working headlessly | 5-minute spike first; fallback `--append-system-prompt "$(cat agent body)"` | **Resolved YES** — fallback never needed. Two companions were required and are baked into `run_eval.sh`: `--permission-mode acceptEdits` (else agents land in plan mode and write a plan instead of executing) and `--add-dir` for inputs outside the sandbox cwd |
+| F5 | Headless JSON result carrying `model` + full `usage` breakdown | Taken from docs research, not exercised | **Resolved, partly negative** — `total_cost_usd`, `usage` (incl. cache fields), `session_id`, `num_turns`, `duration_ms` all present; **no top-level `model`** in 2.1.207. The `// null` fallback is what absorbed this |
+| F6 | Whether some Claude Code versions prompt for trust before running plugin hooks | Harmless either way; affects docs UX text only | **Resolved for headless** — `--plugin-dir` registered the hooks and ran `observe.sh` with no blocking prompt |
+
+The pattern worth keeping: every F-item was written as *design that survives either
+answer*, so resolving them changed documentation, never code. F5 landing negative
+cost nothing for exactly that reason.
+
+Two operational gotchas surfaced only in live use, both now in the runbook: close
+stdin (`< /dev/null`) when invoking shims from a non-interactive shell, and prefer
+a non-thinking local model for Ollama duty — thinking models can spend the whole
+budget inside `<think>` and return an empty (correctly `partial`) result.
 
 Implementation nit: stock macOS bash 3.2 lacks `$EPOCHREALTIME`/GNU `date +%s%N` —
 shim duration falls back to second precision (or a `perl -MTime::HiRes` one-liner)
