@@ -125,6 +125,16 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
    renders run trees (`docs/observability.md`), and `/agentic-loop:config`
    lists the other default-off flags (minimize, grill, guards, summarize).
 
+   **If you scaffolded the factory, say this explicitly — it is the most
+   common first-run stumble:** `/factory` is a *project workflow*
+   (`.claude/workflows/factory.js`), not a plugin command like
+   `/agentic-loop:spec`. This init just created that directory mid-session,
+   and a workflows directory that did not exist at session start is not
+   watched — so **`/factory` will not resolve until the session restarts**
+   (try `/reload-skills` first: it rescans command directories and may pick
+   it up without a restart). The `/agentic-loop:*` skills work immediately;
+   only `/factory` needs this.
+
 The four native subagents (`loop-planner`, `loop-worker-cheap`,
 `loop-consolidator`, `loop-reviewer`) ship with the plugin itself and are
 available in every project where the plugin is enabled — nothing to copy.

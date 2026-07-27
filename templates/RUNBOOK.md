@@ -76,12 +76,20 @@ In that session:
 
 ## Phase 3 — unattended run (day)
 
-Start a dedicated session in the project folder (terminal, tmux, or a
+Start a **fresh** session in the project folder (terminal, tmux, or a
 backgrounded desktop session) and leave it running:
 
 ```
 /loop 60m /factory
 ```
+
+> **`/factory` not found?** It is a *project workflow*
+> (`.claude/workflows/factory.js`), not a plugin command — Phase 1 created
+> that directory mid-session, and a workflows directory that did not exist
+> at session start is not watched. Restart Claude Code in this folder (or
+> try `/reload-skills`) and it appears in `/` autocomplete. This is why
+> Phase 3 starts a fresh session. The `/agentic-loop:*` skills are
+> unaffected — they ship with the plugin and work immediately.
 
 What holds while you're away — by construction, not by promise:
 
@@ -134,6 +142,7 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 
 | Symptom | Cause / fix |
 |---|---|
+| `/factory` doesn't exist right after `/agentic-loop:init` | it's a project workflow in `.claude/workflows/`, created mid-session; that directory isn't watched until a session starts with it present — restart Claude Code (or try `/reload-skills`). Plugin skills `/agentic-loop:*` are unaffected |
 | A shim call hangs forever | stdin held open by a non-interactive shell — append `< /dev/null` unless piping a JSON brief |
 | Worker returns `status: partial`, empty result, thousands of output tokens | thinking-tier Ollama model spent everything in `<think>` — use a non-thinking model |
 | Headless agent "writes a plan" instead of executing | `claude -p` landed in plan mode — pass `--permission-mode acceptEdits` |
