@@ -118,6 +118,15 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 
 - [ ] Read `.agentic/STATUS.md`: one line per item —
       `pr-open: … | tests: … | caveats: n | escalation: yes/no | run: <id>`.
+- [ ] Work each PR's **test plan** (every PR has one): the automated commands
+      are already run — re-run to confirm — then the by-hand checkboxes, one
+      per acceptance criterion. Read the *"not verified in this environment"*
+      section first; that is where real-device and paid-path gaps live.
+- [ ] If you enabled benches (`/agentic-loop:config bench on`), each open PR
+      has a ready checkout at `../<repo>-benches/<slug>`, already merged with
+      `main` and set up — `cd` there and run the thing rather than reading a
+      diff. A bench reporting a conflict needs a manual merge before it is
+      worth testing (a stale branch re-surfaces already-fixed bugs).
 - [ ] For anything surprising: `./scripts/observe_render.sh --run <id>` and
       open the HTML report — every subagent/shim call with model, tokens,
       duration, status, summary.

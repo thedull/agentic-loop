@@ -57,7 +57,9 @@ before overwriting the latter. `./scripts/doctor.sh` reports the drift.
 | `scripts/call_ollama.sh` | free local mechanical worker (default `qwen3.5:4b`) |
 | `scripts/run_headless.sh` | gated `claude -p` loop wrapper — read its billing warning |
 | `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test, scaffold-drift + factory checks |
-| `skills/update` + `scripts/lib/scaffold.sh` | **the update path**: enumerated manifest of plugin-owned files, committed version stamp with per-file checksums, and `/agentic-loop:update` — refreshes a project's scaffold without touching anything the project owns |
+| `skills/update` + `scripts/lib/scaffold.sh` | **the update path**: enumerated manifest of plugin-owned files, committed version stamp with per-file checksums, and `/agentic-loop:update` — refreshes a project's scaffold without touching anything the project owns. Refuses to run against a live factory (a held claim + a swapped `tracker.sh` = a half-applied state machine) |
+| `skills/line` + `scripts/lib/workflow.sh` | **the loop builder**: your production line is your file, but plugin-owned *regions* inside it keep updating. Customize the line without forking it — and without losing safety policy by omission |
+| `scripts/lib/bench.sh` | **review benches** (opt-in): one persistent, `origin/main`-merged, set-up checkout per open PR, because hands-on review often means *running* the thing, not reading a diff. Reconciled mechanically every iteration, never by an agent remembering to |
 | `templates/CLAUDE.md` | the routing brain: tier ladder, Sol structural triggers, blind-adversary protocol, revision bounds, `.agentic/` coordination rules |
 | `skills/spec\|build\|review` + `templates/workflows/factory.js` | **the factory** — morning ideas → unattended spec→build→review pipeline → evening PRs (see below) |
 | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh`, `templates/statusline-usage.sh` | factory plumbing: file state machine (connector seam for future GH Issues/Jira backends) + subscription-usage self-gating |
@@ -77,19 +79,38 @@ reviewed PRs. Inspired by [Alex Finn's software-factory workflow](https://x.com/
 
 1. `/agentic-loop:spec "idea"` (interactive, morning) — adaptive-depth
    grilling → one spec file in `factory/specs/` with a machine-checkable
-   `check_cmd`, gated by a fresh-context spec review.
-2. `/agentic-loop:build` (unattended) — claims a spec, isolated worktree,
-   **Red Gate** (tests must fail first), tier-routed build, `check_cmd` green.
+   `check_cmd`, gated by a fresh-context spec review. Coupled ideas record
+   `depends_on:` so they cannot be built before their dependency is merged.
+2. `/agentic-loop:build` (unattended) — claims a spec whose dependencies are
+   all `done`, isolated worktree, **Red Gate** (tests must fail first),
+   tier-routed build, `check_cmd` green.
 3. `/agentic-loop:review` (unattended) — blind review (security, optimization,
    test quality; findings typed spec/test/impl), bounded revision, conditional
-   browser verification with screenshots, opens the PR, writes the evening
-   digest to `.agentic/STATUS.md`.
+   browser verification with screenshots, opens the PR **with a mandatory test
+   plan** — copy-pasteable commands, one checkbox per acceptance criterion,
+   and an explicit *what could not be verified here* section — then writes the
+   evening digest to `.agentic/STATUS.md`.
 
 Day mode: install the statusline mirror (usage self-gating: the loop postpones
 itself past the cap reset above `FACTORY_USAGE_THRESHOLD`), fill the queue,
 then `/loop 60m /factory` in a backgrounded session. Terminal state is always
 an **open PR — merging stays yours**, and unattended stages never spend
 metered API dollars (`needs_escalation` is queued for your evening decision).
+
+**No two production lines are identical.** `.claude/workflows/factory.js` is
+*your* file — sequencing, extra stages, machine realities (a port that must
+stay up, a package-manager quirk). The spans marked `owner=plugin` inside it
+are the exception: they hold the stage contracts and safety policy, and
+`/agentic-loop:update` refreshes them in place. So customizing your line no
+longer costs you upstream improvements.
+
+That split came from a real failure. A project needed a different line, had no
+seam, and forked the workflow — and the fork silently dropped the review
+stage's *record `needs_escalation`* rule and pinned a skill path to a plugin
+version that had since moved. **Forking loses policy by omission.** Region
+ownership makes that structurally impossible: a hand-edit inside a plugin
+region is detected and refused rather than quietly overwritten, and
+`/agentic-loop:line` adds your customization in the right place for you.
 
 Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
 [`docs/software-factory-analysis.md`](docs/software-factory-analysis.md)
@@ -109,7 +130,25 @@ Reference: [`docs/observability.md`](docs/observability.md) ·
 
 ## Design rationale (why it's built this way)
 
-The design was validated against Anthropic's official guidance, community
+Three principles came out of running this on real projects rather than from
+the literature, and they now decide most design arguments here:
+
+- **Gates, not documentation.** The "use a non-thinking Ollama model" trap was
+  written up in the runbook, `.env.example`, *and* a gotcha table — and still
+  bit two of three projects. Prose does not prevent; a check that refuses
+  does. Hence `depends_on` gating claims, `doctor.sh` refusing a leaked API
+  key, and update refusing a live factory.
+- **Reconcile, don't remember.** A step an agent is told to perform is a step
+  it will eventually skip — one did, which is why open PRs had no bench to
+  test from. State the invariant instead ("every open PR has a fresh bench")
+  and repair it mechanically every iteration; a run that forgets is fixed by
+  the next one.
+- **Ownership must be sub-file, or people fork.** Whole-file ownership forces
+  a choice between customizing your line and ever receiving an update. One
+  project forked, and the fork silently lost a safety rule. Marked regions
+  make the split explicit and the loss impossible.
+
+The rest was validated against Anthropic's official guidance, community
 harnesses, and the 2025–2026 multi-agent literature (July 2026 review):
 
 - **Bash shims, not MCP wrappers or proxies** — single-shot scripts cost ~80
