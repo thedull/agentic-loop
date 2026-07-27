@@ -137,6 +137,9 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 - [ ] Recalibrate the cost table in `CLAUDE.md` from observed usage:
       `cat .agentic/observability/events-*.jsonl | jq -s '[.[] | select(.event=="shim_call")] | group_by(.tier) | map({tier: .[0].tier, calls: length, cost: (map(.est_cost_usd // 0) | add)})'`
 - [ ] Prune `LEARNINGS.md` (two-strikes rule, ~300-line cap).
+- [ ] `claude plugin update agentic-loop`, then `/agentic-loop:update` — pick
+      up plugin fixes shipped since this project was scaffolded. Skips when
+      already current; asks before touching anything you edited.
 - [ ] If you enabled `minimize`/`guards`: compare runs with the flag on vs
       off (`feature_toggle` events mark the switches) before deciding to
       keep them on.
@@ -155,3 +158,4 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 | Every headless call: "Failed to authenticate: OAuth session expired" | re-run `/login` in any interactive `claude` session |
 | Everything suddenly bills dollars | an `ANTHROPIC_API_KEY` leaked into scope — unset it; `doctor.sh` catches this |
 | No events in `.agentic/observability/` | observability is opt-in — `/agentic-loop:config observability on` (or `AGENTIC_OBSERVE=1` for one run) |
+| A plugin feature you know shipped isn't in this project | project scaffolds are copies and don't self-update — run `/agentic-loop:update` (`doctor.sh` reports the drift). Update `claude plugin update agentic-loop` FIRST: update copies from the *installed* plugin, so a stale cache updates the project to a stale version |

@@ -1,0 +1,14 @@
+{
+  "id": "scaffold-103-project-type-tiers",
+  "target": "scaffold.sh manifest — project type gates the factory tier; media/other scaffold nothing",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; jq -n --arg un \"$(scaffold_manifest software-unattended | grep -c 'factory')\" --arg iv \"$(scaffold_manifest software-interviewed | grep -c 'factory')\" --arg md \"$(scaffold_manifest media | wc -l | tr -d ' ')\" --arg core \"$(scaffold_manifest software-interviewed | wc -l | tr -d ' ')\" '{unattended_factory: $un, interviewed_factory: $iv, media_total: $md, interviewed_total: $core}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": "(.unattended_factory | tonumber) > 0" },
+    { "type": "jq", "expr": ".interviewed_factory == \"0\"" },
+    { "type": "jq", "expr": ".media_total == \"0\"" },
+    { "type": "jq", "expr": "(.interviewed_total | tonumber) > 10" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

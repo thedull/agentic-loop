@@ -1,0 +1,13 @@
+{
+  "id": "scaffold-106-stamp-records-upstream-not-disk",
+  "target": "scaffold.sh stamp — checksums record what UPSTREAM shipped, so a kept local edit reads modified rather than stale (the silent-revert bug)",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.9.0; scaffold_put fake/scripts/lib/tracker.sh UPSTREAM; scaffold_put scripts/lib/tracker.sh MY_LOCAL_EDIT; scaffold_write_stamp fake software-interviewed src; UP=$(scaffold_checksum fake/scripts/lib/tracker.sh); DISK=$(scaffold_checksum scripts/lib/tracker.sh); STAMPED=$(scaffold_stamped_sum scripts/lib/tracker.sh); jq -n --arg stamped \"$STAMPED\" --arg up \"$UP\" --arg disk \"$DISK\" --arg state \"$(scaffold_status fake software-interviewed | awk -F'\\t' '$1==\"scripts/lib/tracker.sh\"{print $2}')\" '{matches_upstream: ($stamped == $up), matches_disk: ($stamped == $disk), state: $state}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".matches_upstream == true" },
+    { "type": "jq", "expr": ".matches_disk == false" },
+    { "type": "jq", "expr": ".state == \"modified\"" }
+  ],
+  "provenance": { "source": "mined", "run_id": null, "date": "2026-07-27" }
+}

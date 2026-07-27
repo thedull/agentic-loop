@@ -95,6 +95,20 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
    (media/other minimal scaffold: skip `scripts/` and factory lines; still
    copy LEARNINGS.md, AGENTIC_LOOP.md, `.agentic/`.)
 
+5a. **Stamp the scaffold** (software types only — media/other copy no
+   plugin-owned files and get no stamp). From the project root:
+
+   ```bash
+   ./scripts/lib/scaffold.sh stamp "$PLUGIN_ROOT" <software-unattended|software-interviewed> "$PLUGIN_ROOT"
+   ```
+
+   This writes `scripts/.agentic-scaffold.json` — plugin version, project
+   type, source, and a checksum per copied file. **Commit it**: it travels
+   with the files it describes, so `doctor.sh` and `/agentic-loop:update`
+   later know exactly what this project was scaffolded from and whether
+   anyone has hand-edited a plugin-owned file. Without it, a future update
+   cannot tell a stale copy from a deliberate local change.
+
 6. **.gitignore**: append the lines from
    `$PLUGIN_ROOT/templates/gitignore-snippet` if not already present
    (`.env` and `.agentic/` must be ignored). If the project has no
@@ -138,3 +152,7 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
 The four native subagents (`loop-planner`, `loop-worker-cheap`,
 `loop-consolidator`, `loop-reviewer`) ship with the plugin itself and are
 available in every project where the plugin is enabled — nothing to copy.
+
+**Keep the copy list in step 5 and the manifest in
+`scripts/lib/scaffold.sh` in sync.** They are the same fact stated twice: what
+init copies is what update refreshes. An eval fails if they diverge.

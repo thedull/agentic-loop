@@ -1,0 +1,12 @@
+{
+  "id": "scaffold-104-manifest-sources-exist",
+  "target": "scaffold.sh manifest — every source path it claims actually ships in the plugin (guards manifest/init drift)",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; MISSING=\"\"; while IFS=$'\\t' read -r dest src tier; do [ -n \"$src\" ] || continue; [ -f \"$PLUGIN_ROOT/$src\" ] || MISSING=\"$MISSING $src\"; done < <(scaffold_manifest software-unattended); jq -n --arg missing \"$MISSING\" --arg n \"$(scaffold_manifest software-unattended | wc -l | tr -d ' ')\" '{missing: $missing, count: $n}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".missing == \"\"" },
+    { "type": "jq", "expr": "(.count | tonumber) > 15" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

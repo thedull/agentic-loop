@@ -78,6 +78,54 @@ else
 fi
 
 echo
+echo "scaffold version:"
+SCAFFOLD="$SCRIPT_DIR/lib/scaffold.sh"
+if [[ -f ./.claude-plugin/plugin.json ]]; then
+  # This IS the plugin source, not a project scaffolded from it. Comparing it
+  # against an installed copy would report "drift" backwards and confuse.
+  ok "this is the agentic-loop source tree itself (v$(jq -r '.version // "?"' ./.claude-plugin/plugin.json 2>/dev/null)) — nothing to update"
+elif [[ -f "$SCAFFOLD" ]]; then
+  STAMPED="$(bash "$SCAFFOLD" version 2>/dev/null)"
+  PROOT="$(bash "$SCAFFOLD" plugin-root 2>/dev/null)"
+  if [[ -z "$STAMPED" ]]; then
+    warn "no scaffold stamp — this project predates version stamping.
+         Run /agentic-loop:update to record one and pick up newer plugin files."
+  else
+    ok "scaffolded from agentic-loop v$STAMPED"
+  fi
+  # Local edits to plugin-owned files (needs no plugin install to answer).
+  EDITED="$(bash "$SCAFFOLD" integrity 2>/dev/null)"
+  if [[ -n "$EDITED" ]]; then
+    warn "plugin-owned files differ from the last recorded install (hand-edited,
+         or copied in without re-stamping) — /agentic-loop:update reconciles
+         them and asks before replacing anything:
+$(echo "$EDITED" | sed 's/^/           /')"
+  fi
+  # Version drift against a discoverable install.
+  if [[ -n "$PROOT" ]]; then
+    PVER="$(jq -r '.version // empty' "$PROOT/.claude-plugin/plugin.json" 2>/dev/null)"
+    SUM="$(bash "$SCAFFOLD" summary "$PROOT" 2>/dev/null)"
+    NEEDS=$(( $(echo "$SUM" | jq -r '.stale // 0') \
+            + $(echo "$SUM" | jq -r '.unverified // 0') \
+            + $(echo "$SUM" | jq -r '.missing // 0') ))
+    if [[ "$NEEDS" -gt 0 ]]; then
+      warn "scaffold drift vs installed plugin v${PVER:-?}: $SUM
+         Run /agentic-loop:update to refresh plugin-owned files."
+    else
+      ok "scaffold matches installed plugin v${PVER:-?}"
+    fi
+    if [[ -n "$STAMPED" && -n "$PVER" && "$STAMPED" != "$PVER" ]]; then
+      warn "stamped v$STAMPED, installed plugin is v$PVER"
+    fi
+  else
+    warn "no agentic-loop install found — cannot compare against upstream
+         (set AGENTIC_PLUGIN_ROOT, or run doctor from a session with the plugin loaded)"
+  fi
+else
+  warn "scripts/lib/scaffold.sh missing — scaffold version tracking unavailable"
+fi
+
+echo
 echo "factory (skip if you don't use the spec→build→review loop):"
 if [[ -d ./factory/specs ]]; then
   [[ -x ./scripts/lib/tracker.sh ]] && ok "tracker.sh present" \

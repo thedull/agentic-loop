@@ -31,6 +31,21 @@ run-state scaffold into the project, then runs `./scripts/doctor.sh`.
 Follow the checklist it prints (fill `.env`, verify subscription login,
 dry-run one loop).
 
+**Keeping a project current.** Those copies do not update themselves — a
+project scaffolded at 0.6.0 never gains anything shipped later unless you
+say so. `/agentic-loop:update` refreshes the plugin-owned files (the shims,
+`scripts/lib/*`, `doctor.sh`, the factory workflow and spec template) and
+leaves everything the project owns alone. It records a committed stamp at
+`scripts/.agentic-scaffold.json` — version, project type, and a checksum per
+file — so it can tell a stale copy from one you deliberately edited, and asks
+before overwriting the latter. `./scripts/doctor.sh` reports the drift.
+
+> Two drift axes, not one: `/agentic-loop:update` copies from your
+> **installed** plugin, so run `claude plugin update agentic-loop` first —
+> otherwise you faithfully update a project to a version that is itself
+> behind. The skill prints the root and version it copied from for exactly
+> this reason.
+
 ## What's in the box
 
 | Piece | What it does |
@@ -41,7 +56,8 @@ dry-run one loop).
 | `scripts/call_openrouter.sh` | Kimi/MiniMax/MiMo or any OpenRouter model |
 | `scripts/call_ollama.sh` | free local mechanical worker (default `qwen3.5:4b`) |
 | `scripts/run_headless.sh` | gated `claude -p` loop wrapper — read its billing warning |
-| `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test, factory checks |
+| `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test, scaffold-drift + factory checks |
+| `skills/update` + `scripts/lib/scaffold.sh` | **the update path**: enumerated manifest of plugin-owned files, committed version stamp with per-file checksums, and `/agentic-loop:update` — refreshes a project's scaffold without touching anything the project owns |
 | `templates/CLAUDE.md` | the routing brain: tier ladder, Sol structural triggers, blind-adversary protocol, revision bounds, `.agentic/` coordination rules |
 | `skills/spec\|build\|review` + `templates/workflows/factory.js` | **the factory** — morning ideas → unattended spec→build→review pipeline → evening PRs (see below) |
 | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh`, `templates/statusline-usage.sh` | factory plumbing: file state machine (connector seam for future GH Issues/Jira backends) + subscription-usage self-gating |

@@ -1,0 +1,15 @@
+{
+  "id": "scaffold-102-stamp-roundtrip",
+  "target": "scaffold.sh stamp — writing a stamp makes a matching tree report ok, and integrity catches a later edit",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.9.0; scaffold_put fake/scripts/lib/tracker.sh SAME; scaffold_put scripts/lib/tracker.sh SAME; scaffold_write_stamp fake software-interviewed fixture-src; BEFORE=$(scaffold_integrity | wc -l | tr -d ' '); scaffold_put scripts/lib/tracker.sh EDITED; AFTER=$(scaffold_integrity); jq -n --arg v \"$(scaffold_field plugin_version)\" --arg t \"$(scaffold_field project_type)\" --arg s \"$(scaffold_field source)\" --arg before \"$BEFORE\" --arg after \"$AFTER\" '{version: $v, type: $t, source: $s, before: $before, after: $after}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".version == \"0.9.0\"" },
+    { "type": "jq", "expr": ".type == \"software-interviewed\"" },
+    { "type": "jq", "expr": ".source == \"fixture-src\"" },
+    { "type": "jq", "expr": ".before == \"0\"" },
+    { "type": "jq", "expr": ".after == \"scripts/lib/tracker.sh\\tmodified\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

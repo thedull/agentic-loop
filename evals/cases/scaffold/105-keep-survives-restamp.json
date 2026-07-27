@@ -1,0 +1,16 @@
+{
+  "id": "scaffold-105-keep-survives-restamp",
+  "target": "scaffold.sh keep/stamp — a deliberately kept local edit is never reclassified as replaceable, and the keep list survives a re-stamp",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.9.0; scaffold_put fake/scripts/lib/tracker.sh UPSTREAM; scaffold_put scripts/lib/tracker.sh MY_LOCAL_EDIT; scaffold_write_stamp fake software-interviewed src1; S1=$(scaffold_status fake software-interviewed | awk -F'\\t' '$1==\"scripts/lib/tracker.sh\"{print $2}'); scaffold_keep '  scripts/lib/tracker.sh  '; S2=$(scaffold_status fake software-interviewed | awk -F'\\t' '$1==\"scripts/lib/tracker.sh\"{print $2}'); scaffold_write_stamp fake software-interviewed src2; S3=$(scaffold_status fake software-interviewed | awk -F'\\t' '$1==\"scripts/lib/tracker.sh\"{print $2}'); jq -n --arg s1 \"$S1\" --arg s2 \"$S2\" --arg s3 \"$S3\" --arg keep \"$(jq -c '.keep' \"$SCAFFOLD_STAMP_PATH\")\" --arg body \"$(cat scripts/lib/tracker.sh)\" --arg valid \"$(jq -e . \"$SCAFFOLD_STAMP_PATH\" >/dev/null 2>&1 && echo yes || echo no)\" '{s1: $s1, s2: $s2, s3: $s3, keep: $keep, body: $body, valid: $valid}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".s1 == \"modified\"" },
+    { "type": "jq", "expr": ".s2 == \"kept\"" },
+    { "type": "jq", "expr": ".s3 == \"kept\"" },
+    { "type": "jq", "expr": ".keep == \"[\\\"scripts/lib/tracker.sh\\\"]\"" },
+    { "type": "jq", "expr": ".body == \"MY_LOCAL_EDIT\"" },
+    { "type": "jq", "expr": ".valid == \"yes\"" }
+  ],
+  "provenance": { "source": "mined", "run_id": null, "date": "2026-07-27" }
+}

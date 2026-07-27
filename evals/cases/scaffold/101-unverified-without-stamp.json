@@ -1,0 +1,13 @@
+{
+  "id": "scaffold-101-unverified-without-stamp",
+  "target": "scaffold.sh status — no stamp means unverified, never a modified accusation",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.9.0; scaffold_put fake/scripts/lib/tracker.sh NEW; scaffold_put fake/scripts/lib/bench.sh NEW; scaffold_put fake/scripts/lib/common.sh SAME; scaffold_put scripts/lib/tracker.sh OLD; scaffold_put scripts/lib/common.sh SAME; scaffold_status fake software-interviewed | jq -R -s 'split(\"\\n\") | map(select(length>0)) | map(split(\"\\t\")) | map({(.[0]): .[1]}) | add'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".[\"scripts/lib/tracker.sh\"] == \"unverified\"" },
+    { "type": "jq", "expr": ".[\"scripts/lib/bench.sh\"] == \"missing\"" },
+    { "type": "jq", "expr": ".[\"scripts/lib/common.sh\"] == \"ok\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}
