@@ -124,6 +124,7 @@ scripts/lib/scaffold.sh	scripts/lib/scaffold.sh	core
 scripts/lib/tracker.sh	scripts/lib/tracker.sh	core
 scripts/lib/usage_gate.sh	scripts/lib/usage_gate.sh	core
 scripts/lib/validate_envelope.jq	scripts/lib/validate_envelope.jq	core
+scripts/lib/workflow.sh	scripts/lib/workflow.sh	core
 factory/spec-template.md	templates/factory-spec.md	factory
 .claude/workflows/factory.js	templates/workflows/factory.js	factory
 MANIFEST
