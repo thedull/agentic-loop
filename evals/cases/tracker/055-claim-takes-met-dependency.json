@@ -1,0 +1,13 @@
+{
+  "id": "tracker-055-claim-takes-met-dependency",
+  "target": "tracker.sh claim (depends_on)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: dependent\nstatus: specd\ndepends_on: 002 003\n---\nbody\n' > factory/specs/001-dependent.md; printf -- '---\nid: 002\ntitle: dep-a\nstatus: done\n---\nbody\n' > factory/specs/002-dep-a.md; printf -- '---\nid: 003\ntitle: dep-b\nstatus: done\n---\nbody\n' > factory/specs/003-dep-b.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; CLAIMED=$(tracker_claim specd building build-loop); jq -n --arg claimed \"$CLAIMED\" --arg s1 \"$(_tracker_field factory/specs/001-dependent.md status)\" '{claimed: $claimed, s1: $s1}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".claimed == \"factory/specs/001-dependent.md\"" },
+    { "type": "jq", "expr": ".s1 == \"building\"" }
+  ],
+  "_note": "every listed dependency is done (merged) — the dependent must claim normally; also covers multi-id depends_on parsing",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

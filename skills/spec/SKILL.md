@@ -61,6 +61,16 @@ first (id from `scripts/lib/tracker.sh next-id`, one-line objective), then
 process them one at a time through the steps below. Never interleave the
 grilling of two ideas.
 
+**Dependencies between ideas.** If an idea builds on another's output — it
+consumes a module, API, or artifact another spec produces (in this batch or
+already in the queue) — record `depends_on: <ids>` in its frontmatter. The
+tracker will not claim it until every listed spec is `done` (merged), which
+prevents the observed field failure: a dependent built against a base that
+never contained its dependency, or blocked wastefully discovering it mid-run.
+When coupling is plausible but not certain, ask — one question, "does B need
+A's <thing> to exist first?" — rather than guessing either way. Independent
+ideas get no `depends_on` line at all.
+
 1. **Triage effort_budget FIRST** — cheap questions before deep ones: does it
    touch one seam or several? Is it easily reversible? Answer them yourself
    from the codebase where possible.

@@ -1,0 +1,15 @@
+{
+  "id": "tracker-056-all-waiting-exits-1-emits-skip",
+  "target": "tracker.sh claim (depends_on)",
+  "kind": "bash-unit",
+  "cmd": "unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; mkdir -p factory/specs .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; printf -- '---\nid: 001\ntitle: waits-on-real\nstatus: specd\ndepends_on: 002\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: dep-building\nstatus: building\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 003\ntitle: waits-on-typo\nstatus: specd\ndepends_on: 099\n---\nbody\n' > factory/specs/003-c.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if CLAIMED=$(tracker_claim specd building build-loop 2>/dev/null); then EC=0; else EC=$?; fi; EV=$(cat .agentic/observability/events-*.jsonl 2>/dev/null | jq -cs '[.[] | select(.event==\"tracker_skip\")] | first'); jq -n --argjson ec \"$EC\" --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" --arg s3 \"$(_tracker_field factory/specs/003-c.md status)\" --argjson ev \"${EV:-null}\" '{ec: $ec, s1: $s1, s3: $s3, ev: $ev}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 1" },
+    { "type": "jq", "expr": ".s1 == \"specd\" and .s3 == \"specd\"" },
+    { "type": "jq", "expr": ".ev.event == \"tracker_skip\" and (.ev.detail.skipped | length) == 2" },
+    { "type": "jq", "expr": ".ev.detail.reason == \"depends_on unmet\"" }
+  ],
+  "_note": "two waiting specs (one on a building dep, one on a nonexistent id — typo protection), nothing claimable: exit 1, statuses untouched, and ONE tracker_skip event naming both. Lock must be released (statuses readable after)",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

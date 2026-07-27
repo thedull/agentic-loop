@@ -4,6 +4,7 @@ title: <short imperative title>
 status: queued
 profile: standard
 created: YYYY-MM-DD
+depends_on: <optional: space-separated spec ids, e.g. 003 005 — omit when independent>
 claimed_by:
 branch:
 pr:

@@ -8,20 +8,31 @@
 # function bodies below without touching any caller.
 #
 # Spec file contract (frontmatter, one `key: value` per line, `---` fences):
-#   id, title, status, profile, created, claimed_by, branch, pr
+#   id, title, status, profile, created, claimed_by, branch, pr,
+#   depends_on (optional: space-separated spec ids, e.g. "003 005")
 # Status state machine:
 #   queued -> specd -> building -> built -> reviewing -> pr-open -> done
 #   any state -> blocked (with reason recorded in the spec body's Caveats)
+#
+# Dependencies: a spec with depends_on is only claimable once EVERY listed id
+# is `done` (merged). built/pr-open do not count — unmerged work is not on
+# main, so a dependent build could not see it (the exact failure observed in
+# the field: dependents built against a base missing their dependency). Ids
+# matching no spec count as unmet — a typo shows up in `report` as a
+# perpetual `waits:` rather than silently passing. Dep-waiting specs are not
+# `blocked`; they simply stay put until claimable.
 #
 # Concurrency: claims are serialized through a mkdir lock (atomic on POSIX).
 # Single-writer rule: whoever holds a claim is the only writer of that file.
 #
 # CLI usage (for skills; also sourceable as a library):
 #   tracker.sh list <status>              print matching spec paths, oldest first
-#   tracker.sh claim <from> <to> <actor>  claim oldest <from> item; prints its path
+#   tracker.sh claim <from> <to> <actor>  claim oldest <from> item whose
+#                                         depends_on are all done; prints its path
 #   tracker.sh advance <file> <status> [key value]...   set status (+ extra fields)
 #   tracker.sh next-id                    print next zero-padded id (e.g. 004)
 #   tracker.sh report                     per-status counts + item lines
+#                                         (dep-waiting items gain "waits: <ids>")
 
 set -euo pipefail
 
@@ -105,25 +116,73 @@ tracker_list() {
   return 0
 }
 
-# tracker_claim FROM TO ACTOR — atomically move the oldest FROM item to TO,
-# recording the actor. Prints the claimed path; exits 1 if queue is empty.
+# _tracker_unmet FILE — print the space-separated depends_on ids that are not
+# yet `done` (ids matching no spec count as unmet). Empty output = claimable.
+_tracker_unmet() {
+  local file="$1" deps dep f status out=""
+  deps="$(_tracker_field "$file" depends_on)"
+  [[ -z "$deps" ]] && return 0
+  for dep in $deps; do
+    status=""
+    for f in "$FACTORY_SPECS_DIR"/*.md; do
+      [[ -e "$f" ]] || continue
+      if [[ "$(_tracker_field "$f" id)" == "$dep" ]]; then
+        status="$(_tracker_field "$f" status)"
+        break
+      fi
+    done
+    [[ "$status" == "done" ]] || out="${out:+$out }$dep"
+  done
+  printf '%s' "$out"
+  return 0
+}
+
+# tracker_claim FROM TO ACTOR — atomically move the oldest FROM item whose
+# depends_on are all done to TO, recording the actor. Dep-waiting items are
+# passed over (and logged as a tracker_skip event), not blocked. Prints the
+# claimed path; exits 1 if nothing is claimable (empty queue or all waiting).
 tracker_claim() {
-  local from="$1" to="$2" actor="$3" target
+  local from="$1" to="$2" actor="$3" target="" f
+  local -a skipped=()
   _tracker_valid_status "$from" || _tracker_die "unknown status '$from'"
   _tracker_valid_status "$to"   || _tracker_die "unknown status '$to'"
   mkdir -p "$(dirname "$TRACKER_LOCK_DIR")"
   tracker_lock
-  target="$(tracker_list "$from" | head -n 1 || true)"
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    if [[ -z "$(_tracker_unmet "$f")" ]]; then
+      target="$f"
+      break
+    fi
+    skipped+=("$(basename "$f")")
+  done < <(tracker_list "$from")
   if [[ -z "$target" ]]; then
     tracker_unlock
+    if [[ ${#skipped[@]} -gt 0 ]]; then
+      _tracker_obs_skip "$from" "$actor" "${skipped[@]}"
+      echo "tracker: nothing claimable — ${#skipped[@]} $from item(s) waiting on depends_on" >&2
+    fi
     return 1
   fi
   _tracker_set_field "$target" status "$to"
   _tracker_set_field "$target" claimed_by "$actor"
   _tracker_set_field "$target" claimed_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   tracker_unlock
+  [[ ${#skipped[@]} -gt 0 ]] && _tracker_obs_skip "$from" "$actor" "${skipped[@]}"
   _tracker_obs_transition "$target" "$from" "$to" "$actor"
   echo "$target"
+}
+
+# _tracker_obs_skip FROM ACTOR SKIPPED... — one tracker_skip event naming the
+# dep-waiting specs a claim passed over (mineable: dependency-stall frequency).
+_tracker_obs_skip() {
+  local from="$1" actor="$2"; shift 2
+  obs_event tracker_skip tracker "$(jq -cn \
+    --arg from "$from" --arg actor "$actor" \
+    --argjson skipped "$(printf '%s\n' "$@" | jq -R . | jq -cs .)" '
+    {detail: {reason: "depends_on unmet", from_status: $from,
+              skipped: $skipped, actor: $actor}}' \
+    2>/dev/null || echo '{}')"
 }
 
 # tracker_advance FILE STATUS [KEY VALUE]... — set status plus optional fields.
@@ -161,9 +220,10 @@ tracker_next_id() {
   printf '%03d\n' $((max + 1))
 }
 
-# tracker_report — per-status counts, then "status<TAB>id<TAB>title" lines.
+# tracker_report — per-status counts, then "status<TAB>id<TAB>title" lines;
+# items with unmet depends_on gain a trailing "waits: <ids>" column.
 tracker_report() {
-  local s f count
+  local s f count unmet
   for s in $VALID_STATUSES; do
     count="$(tracker_list "$s" | wc -l | tr -d ' ')"
     [[ "$count" == "0" ]] || echo "$s: $count"
@@ -171,10 +231,12 @@ tracker_report() {
   [[ -d "$FACTORY_SPECS_DIR" ]] || return 0
   for f in "$FACTORY_SPECS_DIR"/*.md; do
     [[ -e "$f" ]] || continue
-    printf '%s\t%s\t%s\n' \
+    unmet="$(_tracker_unmet "$f")"
+    printf '%s\t%s\t%s%s\n' \
       "$(_tracker_field "$f" status)" \
       "$(_tracker_field "$f" id)" \
-      "$(_tracker_field "$f" title)"
+      "$(_tracker_field "$f" title)" \
+      "${unmet:+	waits: $unmet}"
   done
 }
 

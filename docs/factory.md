@@ -106,7 +106,13 @@ morning. Adaptive depth resolves that:
 
 Field by field: **frontmatter** (id/title/status/`profile` — `hardened` is
 a reserved flag for correctness-critical work, tooling not built yet, see
-Roadmap) carries the tracker's state machine. **objective** is one
+Roadmap) carries the tracker's state machine. An optional **`depends_on:
+<ids>`** declares that this spec consumes another spec's output: the tracker
+will not claim it until every listed spec is `done` (merged — `pr-open`
+doesn't count, because unmerged work isn't on main and a dependent build
+couldn't see it). The spec stage asks about ordering when ideas in a batch
+look coupled; dep-waiting specs simply wait — they are never `blocked`, and
+`report` shows what they wait on. **objective** is one
 imperative sentence ("and also" means two specs). **user_intent_verbatim**
 is your words, uncut — it stops telephone-game drift downstream.
 **input_paths** are the seams touched, paths only, never inlined content.
@@ -342,9 +348,11 @@ directly.
 ```
 tracker.sh list <status>              matching spec paths, oldest first
 tracker.sh claim <from> <to> <actor>  atomically claim oldest <from> item
+                                      whose depends_on are all done
 tracker.sh advance <file> <status> [key value]...   set status + fields
 tracker.sh next-id                    next zero-padded id (e.g. 004)
 tracker.sh report                     per-status counts + item lines
+                                      (dep-waiting items gain "waits: <ids>")
 ```
 
 The shipped backend is plain files: `factory/specs/NNN-slug.md`, a `status:`
@@ -390,6 +398,14 @@ still failed after two escalated attempts; the generated check passed
 *before* any implementation existed (Red Gate caught a vacuous check); or a
 reviewer fix needed a spec-level decision. The spec's Notes/Revision log say
 which.
+
+**Why wasn't my spec picked up at all — it's just sitting in `specd`?**
+It's waiting on a dependency: its `depends_on` lists specs that aren't
+`done` yet. `tracker.sh report` shows `waits: <ids>` next to it. This is
+deliberate — building it anyway would base it on a `main` that doesn't
+contain its dependency (the field failure that motivated the gate). Merge
+the dependency's PR and the next loop iteration claims it. A `waits:` on an
+id that never resolves usually means a typo in `depends_on`.
 
 **What happens when I hit my usage cap mid-run?**
 `usage_gate.sh check`, run before every claim, sees a window cross 90%, logs

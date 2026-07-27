@@ -23,8 +23,12 @@ marked `blocked` with questions recorded — never guessed through.
    a fixed `/loop`, end this iteration (later iterations re-check).
 
 2. **Claim.** `scripts/lib/tracker.sh claim specd building build-loop` — if
-   it exits 1 the queue is empty: append `build idle: no specd items` to
-   `.agentic/STATUS.md` and stop.
+   it exits 1 nothing is claimable: either the queue is empty, or every
+   `specd` item is waiting on `depends_on` (the claim's stderr says which,
+   and `tracker.sh report` shows `waits: <ids>` per item). Append
+   `build idle: no claimable specd items` to `.agentic/STATUS.md` and stop —
+   dep-waiting specs become claimable on their own once you merge their
+   dependencies; never build one by hand around the gate.
 
 3. **Isolate.** From the claimed spec's filename derive `<slug>`; create a
    git worktree on branch `claude/idea-<slug>` (reuse the branch if it exists

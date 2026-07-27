@@ -1,0 +1,13 @@
+{
+  "id": "tracker-054-claim-skips-unmet-dependency",
+  "target": "tracker.sh claim (depends_on)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: dependent\nstatus: specd\ndepends_on: 003\n---\nbody\n' > factory/specs/001-dependent.md; printf -- '---\nid: 002\ntitle: independent\nstatus: specd\n---\nbody\n' > factory/specs/002-independent.md; printf -- '---\nid: 003\ntitle: dep-still-open\nstatus: pr-open\n---\nbody\n' > factory/specs/003-dep.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; CLAIMED=$(tracker_claim specd building build-loop); jq -n --arg claimed \"$CLAIMED\" --arg s1 \"$(_tracker_field factory/specs/001-dependent.md status)\" --arg s2 \"$(_tracker_field factory/specs/002-independent.md status)\" '{claimed: $claimed, s1: $s1, s2: $s2}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".claimed == \"factory/specs/002-independent.md\"" },
+    { "type": "jq", "expr": ".s1 == \"specd\" and .s2 == \"building\"" }
+  ],
+  "_note": "oldest spec waits on a pr-open dependency (NOT done — unmerged work is not on main); the claim must pass over it and take the next eligible item, leaving the dependent untouched",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

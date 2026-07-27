@@ -72,6 +72,11 @@ In that session:
 - [ ] Each spec must end with a **real** `check_cmd` — a command that FAILS
       today and passes when the idea is built. `true` is vacuous and the Red
       Gate will block it.
+- [ ] If an idea builds on another's output, say so during grilling — the
+      spec records `depends_on: <ids>` and the factory won't claim it until
+      those are merged (`done`). Dependents wait, they don't block; but they
+      also won't build until you merge, so coupled batches finish across
+      days unless you merge mid-day.
 - [ ] Verify the queue: `./scripts/lib/tracker.sh report` → items in `specd`.
 
 ## Phase 3 — unattended run (day)
