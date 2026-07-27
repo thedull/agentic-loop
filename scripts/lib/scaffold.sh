@@ -48,6 +48,15 @@
 #               their version; reported, never acted on
 #   missing     the plugin ships it, the project does not have it yet
 #
+# Region-managed files (see `_scaffold_is_region_managed`) get two extra states
+# instead of the whole-file verdicts above. Their ownership is per-REGION: the
+# project owns the file, the plugin owns marked spans inside it. Whole-file
+# ownership cannot express that, and forcing it to made projects choose between
+# customizing and ever receiving an update again.
+#   regions-updatable  plugin regions moved; nothing conflicts — safe auto-merge
+#   regions-conflict   corrupt markers, an owner disagreement, or a hand-edit
+#                      inside a plugin region — a human must look
+#
 # Never fatal: an unreadable stamp or an absent plugin degrades to "modified"/
 # "unknown" rather than failing the caller.
 
@@ -55,6 +64,28 @@
 # want to survive individual failures. The CLI block below sets its own flags.
 
 SCAFFOLD_STAMP_PATH="${SCAFFOLD_STAMP_PATH:-scripts/.agentic-scaffold.json}"
+
+# Files whose ownership is per-region rather than whole-file. Everything here
+# must carry @agentic-loop markers in the plugin's copy; workflow.sh does the
+# merge. Keep the list tiny — region ownership is for files a project is
+# EXPECTED to edit (its production line), not for library scripts.
+_scaffold_region_managed() {
+  cat <<'REGIONS'
+.claude/workflows/factory.js	//
+REGIONS
+}
+
+# _scaffold_is_region_managed DEST — print its comment prefix, or nothing.
+_scaffold_is_region_managed() {
+  _scaffold_region_managed | awk -F'\t' -v d="$1" '$1==d {print $2; exit}'
+}
+
+# _scaffold_workflow_lib — path to workflow.sh next to this file ("" if absent).
+_scaffold_workflow_lib() {
+  local d; d="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  [[ -f "$d/workflow.sh" ]] && printf '%s' "$d/workflow.sh"
+  return 0
+}
 
 # --- manifest -----------------------------------------------------------------
 # dest<TAB>source<TAB>tier. dest is relative to the PROJECT, source to the
@@ -138,6 +169,16 @@ scaffold_stamped_sum() {
   return 0
 }
 
+# scaffold_region_sums DEST — {region: checksum} recorded for a region-managed
+# file ("{}" when unstamped). This is what lets a hand-edit INSIDE a plugin
+# region be told apart from that region simply being an older upstream body.
+scaffold_region_sums() {
+  [[ -f "$SCAFFOLD_STAMP_PATH" ]] || { printf '{}'; return 0; }
+  jq -c --arg f "$1" '(.region_checksums[$f] // {})' \
+    "$SCAFFOLD_STAMP_PATH" 2>/dev/null || printf '{}'
+  return 0
+}
+
 # scaffold_plugin_version ROOT — the plugin's own declared version.
 scaffold_plugin_version() {
   jq -r '.version // empty' "$1/.claude-plugin/plugin.json" 2>/dev/null
@@ -186,19 +227,30 @@ scaffold_write_stamp() {
   local version; version="$(scaffold_plugin_version "$root")"
   [[ -f "$SCAFFOLD_STAMP_PATH" ]] && keep="$(jq -c '.keep // []' \
     "$SCAFFOLD_STAMP_PATH" 2>/dev/null || echo '[]')"
+  local rsums='{}' pfx wf one
+  wf="$(_scaffold_workflow_lib)"
   while IFS=$'\t' read -r dest src _tier; do
     [[ -n "$dest" ]] || continue
     sum="$(scaffold_checksum "$root/$src")"
     [[ -n "$sum" ]] || continue
     sums="$(printf '%s' "$sums" | jq -c --arg f "$dest" --arg s "$sum" \
             '.[$f] = $s' 2>/dev/null)" || return 1
+    # Region-managed files also get per-region sums, taken from UPSTREAM's
+    # body for the same reason the file-level sum is (see the note above).
+    pfx="$(_scaffold_is_region_managed "$dest")"
+    if [[ -n "$pfx" && -n "$wf" ]]; then
+      one="$(bash "$wf" sums "$root/$src" "$pfx" 2>/dev/null)"
+      [[ -n "$one" ]] && rsums="$(printf '%s' "$rsums" | jq -c \
+        --arg f "$dest" --argjson r "$one" '.[$f] = $r' 2>/dev/null)"
+    fi
   done < <(scaffold_manifest "$type")
   mkdir -p "$(dirname "$SCAFFOLD_STAMP_PATH")" 2>/dev/null || true
   jq -n --arg v "$version" --arg t "$type" --arg src "$label" \
         --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson sums "$sums" \
-        --argjson keep "$keep" '
+        --argjson keep "$keep" --argjson rsums "$rsums" '
     {plugin_version: $v, project_type: $t, source: $src,
-     updated_at: $at, keep: $keep, checksums: $sums}' \
+     updated_at: $at, keep: $keep, checksums: $sums,
+     region_checksums: $rsums}' \
     > "$SCAFFOLD_STAMP_PATH" || return 1
   return 0
 }
@@ -254,6 +306,32 @@ scaffold_status() {
     up="$(scaffold_checksum "$root/$src")"
     if [[ -n "$cur" && "$cur" == "$up" ]]; then
       printf '%s\tok\n' "$dest"; continue
+    fi
+    # Region-managed: differing bytes are EXPECTED (the project owns most of
+    # the file), so ask workflow.sh which regions actually moved.
+    local pfx wf verdict nconf nref nnew orph
+    pfx="$(_scaffold_is_region_managed "$dest")"
+    wf="$(_scaffold_workflow_lib)"
+    if [[ -n "$pfx" && -n "$wf" ]]; then
+      # shellcheck disable=SC1090
+      verdict="$(bash "$wf" diff "$dest" "$root/$src" "$pfx" \
+                 "$(scaffold_region_sums "$dest")" 2>/dev/null)"
+      if [[ -z "$verdict" ]]; then
+        printf '%s\tregions-conflict\tunparseable markers\n' "$dest"; continue
+      fi
+      nconf="$(jq -r '.conflict | length' <<<"$verdict" 2>/dev/null || echo 0)"
+      nref="$(jq -r '.refreshed | length' <<<"$verdict" 2>/dev/null || echo 0)"
+      nnew="$(jq -r '.new | length' <<<"$verdict" 2>/dev/null || echo 0)"
+      orph="$(jq -r '.orphaned | join(",")' <<<"$verdict" 2>/dev/null)"
+      if [[ "$nconf" != "0" ]]; then
+        printf '%s\tregions-conflict\t%s\n' "$dest" \
+          "$(jq -r '[.conflict[].region] | join(",")' <<<"$verdict")"
+      elif [[ "$nref" != "0" || "$nnew" != "0" ]]; then
+        printf '%s\tregions-updatable%s\n' "$dest" "${orph:+	orphaned:$orph}"
+      else
+        printf '%s\tok%s\n' "$dest" "${orph:+	orphaned:$orph}"
+      fi
+      continue
     fi
     if _scaffold_is_kept "$dest"; then
       printf '%s\tkept\n' "$dest"       # the user already decided; do not re-ask
@@ -321,8 +399,32 @@ scaffold_trace() {
 scaffold_summary() {
   scaffold_status "$@" | awk -F'\t' '
     {c[$2]++}
-    END {printf "{\"ok\":%d,\"stale\":%d,\"modified\":%d,\"unverified\":%d,\"kept\":%d,\"missing\":%d}\n",
-                c["ok"], c["stale"], c["modified"], c["unverified"], c["kept"], c["missing"]}'
+    END {printf "{\"ok\":%d,\"stale\":%d,\"modified\":%d,\"unverified\":%d,\"kept\":%d,\"missing\":%d,\"regions-updatable\":%d,\"regions-conflict\":%d}\n",
+                c["ok"], c["stale"], c["modified"], c["unverified"], c["kept"], c["missing"],
+                c["regions-updatable"], c["regions-conflict"]}'
+  return 0
+}
+
+# scaffold_merge_regions ROOT [TYPE] — refresh plugin-owned regions in every
+# region-managed file. dest<TAB>json-verdict per file. Files whose markers are
+# corrupt, or that hold a hand-edit inside a plugin region, are reported and
+# left untouched — this never overwrites without the merge engine's consent.
+scaffold_merge_regions() {
+  local root="$1" type="${2:-}" dest src _tier pfx wf verdict
+  wf="$(_scaffold_workflow_lib)"
+  [[ -n "$wf" ]] || { echo "scaffold: workflow.sh not found beside scaffold.sh" >&2; return 1; }
+  while IFS=$'\t' read -r dest src _tier; do
+    [[ -n "$dest" ]] || continue
+    pfx="$(_scaffold_is_region_managed "$dest")"
+    [[ -n "$pfx" ]] || continue
+    [[ -f "$dest" && -f "$root/$src" ]] || continue
+    if verdict="$(bash "$wf" merge "$dest" "$root/$src" "$pfx" \
+                  "$(scaffold_region_sums "$dest")" 2>/dev/null)"; then
+      printf '%s\t%s\n' "$dest" "$verdict"
+    else
+      printf '%s\t%s\n' "$dest" '{"error":"corrupt markers — not merged"}'
+    fi
+  done < <(scaffold_manifest "$type")
   return 0
 }
 
@@ -341,6 +443,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     stamp)       [[ $# -ge 2 ]] || { echo "scaffold: stamp needs <plugin-root> <type>" >&2; exit 2; }
                  scaffold_write_stamp "$@" ;;
     integrity)   scaffold_integrity ;;
+    merge-regions) [[ $# -ge 1 ]] || { echo "scaffold: merge-regions needs a plugin root" >&2; exit 2; }
+                 scaffold_merge_regions "$@" ;;
+    region-sums) [[ $# -ge 1 ]] || { echo "scaffold: region-sums needs a dest path" >&2; exit 2; }
+                 scaffold_region_sums "$1" ;;
     keep)        [[ $# -ge 1 ]] || { echo "scaffold: keep needs at least one path" >&2; exit 2; }
                  scaffold_keep "$@" ;;
     version)     scaffold_field plugin_version ;;

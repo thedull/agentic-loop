@@ -1,0 +1,17 @@
+{
+  "id": "workflow-200-region-refresh-updates-plugin-only",
+  "target": "workflow.sh merge — an owner=plugin region's body is replaced by the template's; an owner=project region and unmarked text are left alone",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// unmarked line 1' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"old greeting\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'my custom notes here' '// @agentic-loop:end region=notes' '// unmarked line 2'; wf_file template.js '// unmarked line 1' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"new greeting\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'ignored project template notes' '// @agentic-loop:end region=notes' '// unmarked line 2'; VERDICT=$(workflow_merge project.js template.js '//' '{}'); BODY=$(cat project.js); jq -n --argjson v \"$VERDICT\" --arg body \"$BODY\" '{verdict:$v, body:$body}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".verdict.refreshed == [\"greet\"]" },
+    { "type": "jq", "expr": ".body | contains(\"new greeting\")" },
+    { "type": "jq", "expr": "(.body | contains(\"old greeting\")) | not" },
+    { "type": "jq", "expr": ".body | contains(\"my custom notes here\")" },
+    { "type": "jq", "expr": ".body | contains(\"// unmarked line 1\")" },
+    { "type": "jq", "expr": ".body | contains(\"// unmarked line 2\")" }
+  ],
+  "_note": "Guards the core split: a plugin-owned region refreshes from the template while a project-owned region (even one the template also defines, with different content) and text outside any marker survive untouched.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

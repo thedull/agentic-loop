@@ -4,8 +4,9 @@ description: >-
   Factory review stage: claim the oldest built spec, run a blind fresh-context
   review (security, optimization, test quality) with findings typed by layer,
   apply a bounded revision, verify in a real browser when the change has a UI,
-  open a PR with an executive summary and test steps, and log the evening
-  digest. Designed to run unattended — one item per invocation, loopable.
+  open a PR with an executive summary and a hand-checkable test plan, and log
+  the evening digest. Designed to run unattended — one item per invocation,
+  loopable.
 ---
 
 # agentic-loop:review — built branch → PR + digest
@@ -80,10 +81,52 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
 
 9. **Open the PR.** Push the branch (`git push -u origin claude/idea-<slug>`)
    and open a PR: title = spec title; body = executive summary (what changed
-   and why, ≤10 lines), the acceptance checklist with pass/fail, manual test
-   steps, screenshots, caveats/assumptions carried from envelopes, and the
-   spec file reference. No remote configured → record `pr: local` and note
-   the branch in the digest instead.
+   and why, ≤10 lines), the acceptance checklist with pass/fail, the **test
+   plan** (below — mandatory, never omitted), screenshots,
+   caveats/assumptions carried from envelopes, and the spec file reference.
+   No remote configured → record `pr: local` and note the branch in the
+   digest instead.
+
+   ### The test plan (every PR, no exceptions)
+
+   The reviewer ran what it could; the human still has to trust it. The test
+   plan is how they check the work in their own hands, so write it for
+   someone who has NOT read the diff and does not know the codebase.
+
+   ```markdown
+   ## Test plan
+
+   Bench: `cd ../<repo>-benches/<slug>` — branch is merged with `main`
+   and set up.   <!-- omit this line when the bench flag is off -->
+
+   **Automated (already run — re-run to confirm):**
+   - [ ] `<check_cmd>` → passes (`<n>/<n>`)
+   - [ ] `<project suite cmd>` → passes (`<n>/<n>`)
+
+   **By hand — each maps to one acceptance criterion:**
+   - [ ] AC1 — Given <state>, when <action>, then <observable outcome>
+   - [ ] AC2 — …
+
+   **Edge cases and failure modes worth poking:**
+   - [ ] <the thing most likely to break: empty input, offline, concurrent…>
+
+   **Not verified in this environment** (be honest — this is the most
+   useful section):
+   - [ ] <e.g. real hardware panel, live tmux, a paid API path>
+   ```
+
+   Rules that make it worth reading:
+   - **One checkbox per acceptance criterion**, in the spec's own
+     Given/When/Then words — they were written to be one step from a test,
+     so this is a transcription, not an invention.
+   - **Every command is copy-pasteable and complete** — real paths, real
+     flags, no `<placeholders>` left unfilled and no "run the tests".
+   - **State what you could NOT check** and why. A reviewer who says
+     everything passed, when a whole class went unexercised, is the failure
+     this pipeline exists to prevent. Live-device, paid-API and
+     UI-on-real-hardware gaps go here, not into silence.
+   - Never write a checkbox you did not either run yourself or genuinely
+     need the human to run. Padding the list trains them to skim it.
 
 10. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
    append the digest entry to `.agentic/STATUS.md`:

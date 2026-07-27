@@ -1,0 +1,15 @@
+{
+  "id": "workflow-208-merge-is-idempotent",
+  "target": "workflow.sh merge — running merge twice against the same template leaves the second run's bytes identical to the first run's result (a re-run is a silent no-op)",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// top' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"old\");' '// @agentic-loop:end region=greet' '// bottom'; wf_file template.js '// top' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"new\");' '// @agentic-loop:end region=greet' '// bottom'; FIRST=$(workflow_merge project.js template.js '//' '{}'); cp project.js after_first.js; SECOND=$(workflow_merge project.js template.js '//' '{}'); MATCH=$(cmp -s project.js after_first.js && echo true || echo false); jq -n --argjson f \"$FIRST\" --argjson s \"$SECOND\" --argjson match \"$MATCH\" '{first:$f, second:$s, match:$match}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".first.refreshed == [\"greet\"]" },
+    { "type": "jq", "expr": ".second.refreshed == []" },
+    { "type": "jq", "expr": ".second.unchanged == [\"greet\"]" },
+    { "type": "jq", "expr": ".match == true" }
+  ],
+  "_note": "Guards the cmp-before-write guard in workflow_merge: once a region matches the template, a re-run must classify it unchanged (not refreshed again) and must not rewrite the file — verified with a byte-exact cmp between the post-first-merge and post-second-merge file, not just 'no error'.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

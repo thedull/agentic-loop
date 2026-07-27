@@ -1,0 +1,14 @@
+{
+  "id": "workflow-204-corrupt-markers-refuse",
+  "target": "workflow.sh merge — a dangling end marker (no open region) exits 3 and writes nothing; the project file is byte-identical afterward",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// stray end marker below' '// @agentic-loop:end region=ghost' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet'; wf_file template.js '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet'; cp project.js expected.js; workflow_merge project.js template.js '//' '{}' >/dev/null 2>merge.err; MERGE_EXIT=$?; MATCH=$(cmp -s project.js expected.js && echo true || echo false); jq -n --argjson exitcode $MERGE_EXIT --argjson m \"$MATCH\" --arg err \"$(cat merge.err)\" '{exit:$exitcode, match:$m, stderr:$err}'; exit \"$MERGE_EXIT\"",
+  "checks": [
+    { "type": "exit_code", "equals": 3 },
+    { "type": "jq", "expr": ".exit == 3" },
+    { "type": "jq", "expr": ".match == true" },
+    { "type": "jq", "expr": ".stderr | contains(\"CORRUPT\")" }
+  ],
+  "_note": "A dangling `end` (no matching `begin`) must abort before touching disk. Checks both the harness-observed exit code (via the trailing `exit \"$MERGE_EXIT\"`) and the captured merge exit status, plus a byte-exact cmp against a pre-call copy — 'writes nothing' is the safety property, not just the nonzero exit.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

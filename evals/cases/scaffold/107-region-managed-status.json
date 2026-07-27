@@ -1,0 +1,12 @@
+{
+  "id": "scaffold-107-region-managed-status",
+  "target": "scaffold.sh status — a region-managed file reports regions-updatable, not modified",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.10.0; mkdir -p fake/templates/workflows .claude/workflows scripts/lib; cp \"$PLUGIN_ROOT/scripts/lib/workflow.sh\" scripts/lib/workflow.sh; printf '%s\\n' '// @agentic-loop:begin region=p owner=plugin' 'const P = \"v2\"' '// @agentic-loop:end region=p' > fake/templates/workflows/factory.js; printf '%s\\n' '// @agentic-loop:begin region=p owner=plugin' 'const P = \"v1\"' '// @agentic-loop:end region=p' '// @agentic-loop:begin region=mine owner=project' 'const MINE = 1' '// @agentic-loop:end region=mine' > .claude/workflows/factory.js; scaffold_status fake software-unattended | awk -F'\\t' '$1==\".claude/workflows/factory.js\" {print $2}' | jq -R '{state: .}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".state == \"regions-updatable\"" }
+  ],
+  "_note": "guards the whole point of region ownership: a project workflow that legitimately differs from the template (it carries a project-owned region) must NOT be reported as `modified` — that verdict is what forced projects to choose between customizing and ever updating again.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

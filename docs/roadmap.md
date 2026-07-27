@@ -58,7 +58,13 @@ development process itself get streamlined from evidence, not vibes.
   a future session doesn't re-attempt it (`research/audition-dom.md`).
 - **Type registry**: packs self-describe (name, interview questions,
   scaffold recipe) so third-party plugins can register kinds instead of
-  hardcoding the init matrix.
+  hardcoding the init matrix. **Line kinds fold into this same registry**
+  rather than getting a parallel one: an entry adds `line: {path, template,
+  comment_prefix, regions[]}` and `scripts/lib/workflow.sh` merges it — the
+  engine is already comment-style-parameterized (proven by an eval using `#`),
+  so a Markdown-based line like premiere-bridge's `edit-podcast` needs no
+  redesign, only a registry entry. Deliberately not built yet: zero consumers
+  exist today, since that pipeline is a SKILL.md rather than a workflow.
 
 ## Design rules that hold across all of it
 

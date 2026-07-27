@@ -1,0 +1,14 @@
+{
+  "id": "workflow-202-new-region-inserted-at-anchor",
+  "target": "workflow.sh merge — a template region absent from the project is spliced in right after its after= anchor, not appended at file end",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// header comment' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'mine' '// @agentic-loop:end region=notes' '// footer comment'; wf_file template.js '// header comment' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=footer owner=plugin after=greet' 'console.log(\"footer new\");' '// @agentic-loop:end region=footer' '// @agentic-loop:begin region=notes owner=project' 'template notes ignored' '// @agentic-loop:end region=notes' '// footer comment'; wf_file expected.js '// header comment' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet' '' '// @agentic-loop:begin region=footer owner=plugin after=greet' 'console.log(\"footer new\");' '// @agentic-loop:end region=footer' '// @agentic-loop:begin region=notes owner=project' 'mine' '// @agentic-loop:end region=notes' '// footer comment'; VERDICT=$(workflow_merge project.js template.js '//' '{}'); MATCH=$(cmp -s project.js expected.js && echo true || echo false); jq -n --argjson v \"$VERDICT\" --argjson m \"$MATCH\" '{verdict:$v, match:$m}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".verdict.new == [{\"region\":\"footer\",\"after\":\"greet\"}]" },
+    { "type": "jq", "expr": ".verdict.unchanged == [\"greet\"]" },
+    { "type": "jq", "expr": ".match == true" }
+  ],
+  "_note": "Regression guard for splice-at-anchor: a naive implementation could append new upstream regions at EOF instead of positioning them per after=, which would silently reorder generated files (e.g. a review-prompt region landing after an unrelated trailer instead of next to build-prompt). expected.js encodes the exact anchored position, including the blank line the splice logic inserts before the new block, and confirms the pre-existing project-owned region is undisturbed by the insertion.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

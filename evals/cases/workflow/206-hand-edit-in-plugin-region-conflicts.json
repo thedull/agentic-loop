@@ -1,0 +1,15 @@
+{
+  "id": "workflow-206-hand-edit-in-plugin-region-conflicts",
+  "target": "workflow.sh diff/merge — a plugin region whose body differs from BOTH the template and its stamped checksum is a conflict, is NOT overwritten, and refreshed stays empty",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// header' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"v1 greeting\");' '// @agentic-loop:end region=greet' '// footer'; STAMP=$(workflow_sums project.js '//'); wf_file project.js '// header' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"v2 HAND EDITED greeting\");' '// @agentic-loop:end region=greet' '// footer'; wf_file template.js '// header' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"v3 upstream greeting\");' '// @agentic-loop:end region=greet' '// footer'; cp project.js expected.js; DIFF=$(workflow_diff project.js template.js '//' \"$STAMP\"); MERGE=$(workflow_merge project.js template.js '//' \"$STAMP\"); MATCH=$(cmp -s project.js expected.js && echo true || echo false); jq -n --argjson d \"$DIFF\" --argjson m \"$MERGE\" --argjson match \"$MATCH\" '{diff:$d, merge:$m, match:$match}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".diff.conflict == [{\"region\":\"greet\",\"reason\":\"edited inside a plugin-owned region — refusing to overwrite\"}]" },
+    { "type": "jq", "expr": ".diff.refreshed == []" },
+    { "type": "jq", "expr": ".merge == .diff" },
+    { "type": "jq", "expr": ".match == true" }
+  ],
+  "_note": "The core promise of region ownership: a hand edit inside a plugin region must never be silently clobbered by an upstream refresh, and must never be silently accepted as 'already current' either. STAMP is computed with workflow_sums on the true v1 body (what upstream actually shipped) BEFORE the hand edit, so v2 (the hand edit) differs from both the stamp (v1) and the template (v3) — the three-way condition the conflict branch exists for. Regresses xeneon-edge-mac's fork-drops-a-policy-clause failure this file's header documents.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

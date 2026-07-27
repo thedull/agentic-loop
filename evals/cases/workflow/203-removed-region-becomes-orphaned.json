@@ -1,0 +1,15 @@
+{
+  "id": "workflow-203-removed-region-becomes-orphaned",
+  "target": "workflow.sh merge — a project plugin-region absent from the template is reported as orphaned and its body is kept verbatim, not deleted",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// top' '// @agentic-loop:begin region=legacy owner=plugin' 'console.log(\"legacy code\");' '// @agentic-loop:end region=legacy' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet' '// bottom'; wf_file template.js '// top' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"hi\");' '// @agentic-loop:end region=greet' '// bottom'; cp project.js expected.js; VERDICT=$(workflow_merge project.js template.js '//' '{}'); MATCH=$(cmp -s project.js expected.js && echo true || echo false); BODY=$(cat project.js); jq -n --argjson v \"$VERDICT\" --argjson m \"$MATCH\" --arg body \"$BODY\" '{verdict:$v, match:$m, body:$body}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".verdict.orphaned == [\"legacy\"]" },
+    { "type": "jq", "expr": ".verdict.refreshed == []" },
+    { "type": "jq", "expr": ".match == true" },
+    { "type": "jq", "expr": ".body | contains(\"legacy code\")" }
+  ],
+  "_note": "Upstream dropping a region (e.g. retiring a build-prompt sub-block) must never silently delete the project's copy — it's reported as orphaned so a human can decide, and the merge leaves the file byte-identical (cmp against a pre-merge copy) rather than stripping the now-unrecognized block.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

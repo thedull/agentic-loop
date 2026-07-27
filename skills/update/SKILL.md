@@ -40,6 +40,31 @@ their own scripts beside ours (`scripts/build-app.sh`, `scripts/assets/*.mjs`
 were both seen in the field). Copy the manifest's files individually. Never
 `rm -rf scripts/`.
 
+**Region-managed** — a third category, currently just
+`.claude/workflows/factory.js`. The *project* owns the file; the plugin owns
+marked spans inside it (`// @agentic-loop:begin region=… owner=plugin`). Never
+copy these files wholesale — that would destroy the project's own line. Merge
+them with `scaffold.sh merge-regions`, which refreshes only plugin regions and
+preserves everything else byte-for-byte. This category exists because
+whole-file ownership forced a choice between customizing a line and ever
+receiving an update again; one project forked instead and silently lost the
+`needs_escalation` rule.
+
+## Step 0 — refuse to update a live factory
+
+Swapping `tracker.sh` or the workflow while a loop holds a claim risks a
+half-applied state machine. Before anything else, from the project root:
+
+```bash
+ls -d .agentic/tracker.lock 2>/dev/null        # a claim is in flight
+./scripts/lib/tracker.sh report | grep -E '^(building|reviewing)'
+```
+
+Either one non-empty → **stop**. Name the blocking spec and say: let the run
+finish, or stop the loop, then re-run. Do not offer to force it. (A `building`
+row with no live session usually means an interrupted run — say so, and point
+at the spec so the user can reset it deliberately.)
+
 ## Steps
 
 1. **Announce the source, loudly.** Print the plugin root you resolved and its
@@ -75,6 +100,18 @@ were both seen in the field). Copy the manifest's files individually. Never
      step 4.
    - `kept` — the user already chose to hold their own version on an earlier
      run. Report it, never touch it, never re-ask.
+   - `regions-updatable` — region-managed file; plugin regions have moved and
+     nothing conflicts. **Safe to merge without asking** — only plugin-owned
+     spans change, and the project's own content is preserved byte-for-byte.
+     A trailing `orphaned:<names>` column means the project still carries
+     regions upstream no longer ships (usually a customization the plugin has
+     since absorbed): report them as "safe to delete by hand", never delete
+     them yourself.
+   - `regions-conflict` — corrupt/unbalanced markers, an `owner` disagreement,
+     or a hand-edit **inside** a plugin region. Do not merge that file. Show
+     the offending region names and the diff, and let the user decide: keep
+     their text (then the region stays conflicted until they revert it or the
+     line skill flips its `owner` to `project`), or restore the plugin's.
 
 4. **Resolve `unverified` before touching anything.** For each such file:
 
@@ -102,6 +139,17 @@ were both seen in the field). Copy the manifest's files individually. Never
 6. **Apply.** Copy each approved file from `$PLUGIN_ROOT/<source>` to
    `<dest>`, creating parent directories as needed, then
    `chmod +x scripts/*.sh scripts/lib/*.sh`. Copy only manifest files.
+
+   **Region-managed files are merged, never copied:**
+
+   ```bash
+   "$PLUGIN_ROOT/scripts/lib/scaffold.sh" merge-regions "$PLUGIN_ROOT" <type>
+   ```
+
+   It prints `dest<TAB>{json}` per file — report `refreshed` / `new` /
+   `orphaned` region names so the user sees what actually moved inside their
+   line. A file it could not parse comes back with `{"error": …}` and is left
+   untouched; surface that rather than retrying.
 
 7. **Re-stamp, and record every "keep mine".** From the project root:
 

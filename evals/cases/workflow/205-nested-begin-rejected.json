@@ -1,0 +1,14 @@
+{
+  "id": "workflow-205-nested-begin-rejected",
+  "target": "workflow.sh diff — a nested begin (a second begin while one is already open) exits 3",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// @agentic-loop:begin region=outer owner=plugin' 'console.log(\"outer\");' '// @agentic-loop:begin region=inner owner=plugin' 'console.log(\"inner\");' '// @agentic-loop:end region=inner' '// @agentic-loop:end region=outer'; wf_file template.js '// @agentic-loop:begin region=outer owner=plugin' 'console.log(\"outer\");' '// @agentic-loop:end region=outer'; workflow_diff project.js template.js '//' '{}' >/dev/null 2>diff.err; DIFF_EXIT=$?; jq -n --argjson exitcode $DIFF_EXIT --arg err \"$(cat diff.err)\" '{exit:$exitcode, stderr:$err}'; exit \"$DIFF_EXIT\"",
+  "checks": [
+    { "type": "exit_code", "equals": 3 },
+    { "type": "jq", "expr": ".exit == 3" },
+    { "type": "jq", "expr": ".stderr | contains(\"CORRUPT\")" },
+    { "type": "jq", "expr": ".stderr | contains(\"nested begin\")" }
+  ],
+  "_note": "Covers the diff path (workflow-204 covers merge) for the other structural-corruption class: a begin encountered while a region is still open. This guards against a scanner that only checks for unclosed-at-EOF and misses mid-file nesting.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

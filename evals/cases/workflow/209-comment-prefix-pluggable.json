@@ -1,0 +1,16 @@
+{
+  "id": "workflow-209-comment-prefix-pluggable",
+  "target": "workflow.sh merge — the same refresh/preserve behavior holds with a '#' PREFIX (shell-style line file), including not misparsing a shebang line",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.sh '#!/usr/bin/env bash' '# @agentic-loop:begin region=greet owner=plugin' 'echo \"old greeting\"' '# @agentic-loop:end region=greet' '# @agentic-loop:begin region=notes owner=project' '# my shell notes' '# @agentic-loop:end region=notes' 'echo done'; wf_file template.sh '#!/usr/bin/env bash' '# @agentic-loop:begin region=greet owner=plugin' 'echo \"new greeting\"' '# @agentic-loop:end region=greet' '# @agentic-loop:begin region=notes owner=project' '# upstream notes ignored' '# @agentic-loop:end region=notes' 'echo done'; VERDICT=$(workflow_merge project.sh template.sh '#' '{}'); BODY=$(cat project.sh); jq -n --argjson v \"$VERDICT\" --arg body \"$BODY\" '{verdict:$v, body:$body}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".verdict.refreshed == [\"greet\"]" },
+    { "type": "jq", "expr": ".body | contains(\"new greeting\")" },
+    { "type": "jq", "expr": "(.body | contains(\"old greeting\")) | not" },
+    { "type": "jq", "expr": ".body | contains(\"# my shell notes\")" },
+    { "type": "jq", "expr": ".body | startswith(\"#!/usr/bin/env bash\")" }
+  ],
+  "_note": "PREFIX is documented as the only language-specific knob; this case exercises it end to end on a shell file rather than assuming the '//' default generalizes. The shebang line ('#!...') contains the prefix but not the marker text, so it must survive as plain content — a scanner that matches on prefix alone rather than prefix+marker-text would misfire here.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

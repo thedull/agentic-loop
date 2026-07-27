@@ -223,10 +223,19 @@ Codespaces badge, Cloudflare Pages, Vercel/Netlify hobby tiers) are
 documented project hooks, used only if already wired up.
 
 **PR anatomy.** Push the branch, open a PR: title = spec title; body =
-executive summary (≤10 lines), acceptance checklist with pass/fail, manual
-test steps, screenshots, caveats carried from envelopes, spec file
+executive summary (≤10 lines), acceptance checklist with pass/fail, a
+**test plan**, screenshots, caveats carried from envelopes, spec file
 reference. No remote configured → record `pr: local` and note the branch in
-the digest instead. Every completed item also appends one digest line to
+the digest instead.
+
+The test plan is mandatory on every PR and is written for someone who has
+not read the diff: the bench path to run it from, the automated commands
+(complete and copy-pasteable), one checkbox per acceptance criterion in the
+spec's own Given/When/Then words, the edge cases worth poking, and — the
+section that earns the rest its credibility — **what could not be verified
+in this environment** (real hardware, live tmux, paid API paths). A review
+that reports everything green while a whole class went unexercised is the
+exact failure this pipeline exists to prevent. Every completed item also appends one digest line to
 `.agentic/STATUS.md` — this, multiplied by however many ideas cleared, is
 what you read in the evening:
 
@@ -406,6 +415,42 @@ signatures, and nothing in `skills/spec`, `skills/build`, `skills/review`,
 or `factory.js` changes. Not built in v1 — the file backend is
 zero-dependency and matches this repo's evidence-backed files+git-as-memory
 decision — but the seam exists so it won't require a rewrite later.
+
+## Your line is yours — region ownership
+
+No two factory lines are identical. Yours will need things the stock one
+doesn't: a port that must stay up, a package manager quirk, strictly serial
+building, an extra stage. `.claude/workflows/factory.js` is **the project's
+file** — edit it.
+
+The exception is the spans marked `owner=plugin`:
+
+```js
+// @agentic-loop:begin region=review-prompt owner=plugin after=build-prompt
+…the stage contract and its safety policy…
+// @agentic-loop:end region=review-prompt
+```
+
+Those carry policy and stage contracts, and `/agentic-loop:update` refreshes
+them **in place** — so improvements reach a line you have customized, instead
+of forcing a choice between the two. Everything outside a marker is yours and
+an update never touches it.
+
+This exists because of a real failure. A project needed a different line, had
+no seam, and forked the workflow. The fork silently dropped the review stage's
+`record needs_escalation instead` rule and pinned a skill path to a plugin
+version that had since moved. Forking loses policy by omission, quietly.
+
+So: **never edit inside a plugin region.** A hand-edit there is detected and
+that region stops updating — the merge refuses rather than clobbering your
+text, but you have also frozen yourself out of the fix you wanted. Add to
+`PROJECT_BUILD_ADDENDUM` / `PROJECT_REVIEW_ADDENDUM`, or add your own
+`owner=project` region, and `/agentic-loop:line` will do it correctly for you.
+
+Where things belong: machine realities → the addendum constants; sequencing
+(serial vs batched, caps) → `MAX_IDEAS` and the `pipeline()` wiring, already
+project-owned; spec ordering → `depends_on:` in the spec, not the workflow; a
+runnable checkout per PR → `/agentic-loop:config bench on`, not the workflow.
 
 ## Roadmap (v2)
 

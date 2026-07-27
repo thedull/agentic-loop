@@ -1,0 +1,15 @@
+{
+  "id": "workflow-207-owner-mismatch-refuses",
+  "target": "workflow.sh diff/merge — the same region name with owner=plugin in the project but owner=project in the template is a conflict, not a merge",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// top' '// @agentic-loop:begin region=shared owner=plugin' 'console.log(\"plugin owned in project\");' '// @agentic-loop:end region=shared' '// bottom'; wf_file template.js '// top' '// @agentic-loop:begin region=shared owner=project' 'console.log(\"now project owned upstream\");' '// @agentic-loop:end region=shared' '// bottom'; cp project.js expected.js; DIFF=$(workflow_diff project.js template.js '//' '{}'); MERGE=$(workflow_merge project.js template.js '//' '{}'); MATCH=$(cmp -s project.js expected.js && echo true || echo false); jq -n --argjson d \"$DIFF\" --argjson m \"$MERGE\" --argjson match \"$MATCH\" '{diff:$d, merge:$m, match:$match}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".diff.conflict == [{\"region\":\"shared\",\"reason\":\"owner mismatch: project=plugin template=project\"}]" },
+    { "type": "jq", "expr": ".diff.refreshed == []" },
+    { "type": "jq", "expr": ".merge == .diff" },
+    { "type": "jq", "expr": ".match == true" }
+  ],
+  "_note": "region= is the only identity the merge trusts, but ownership itself can disagree between project and template (e.g. upstream reclassified a region from plugin- to project-owned). That disagreement must surface as a conflict rather than silently replacing project content or silently keeping it as if nothing changed — checked against the actual reason string the code emits.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}

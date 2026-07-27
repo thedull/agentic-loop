@@ -149,6 +149,12 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
    it up without a restart). The `/agentic-loop:*` skills work immediately;
    only `/factory` needs this.
 
+   Also say, once, that **the workflow file is theirs to shape**: the spans
+   marked `owner=plugin` inside it stay updatable via `/agentic-loop:update`,
+   everything else is project-owned, and `/agentic-loop:line` makes changes
+   without breaking that split. Projects that forked their line instead lost
+   safety policy silently — worth thirty seconds now.
+
 The four native subagents (`loop-planner`, `loop-worker-cheap`,
 `loop-consolidator`, `loop-reviewer`) ship with the plugin itself and are
 available in every project where the plugin is enabled — nothing to copy.

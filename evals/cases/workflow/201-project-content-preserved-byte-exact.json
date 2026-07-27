@@ -1,0 +1,13 @@
+{
+  "id": "workflow-201-project-content-preserved-byte-exact",
+  "target": "workflow.sh merge — unusual project content (trailing spaces, blank lines, unicode, a decoy line that looks like a marker but uses the wrong prefix) survives a merge byte-for-byte",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/workflow.sh\"; source \"$FIXTURES/workflow-fixture.sh\"; wf_file project.js '// unmarked line with trailing spaces:   ' '' '<!-- @agentic-loop:begin region=decoy -->' 'unicode: héllo wörld 日本語 🎉' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"PLACEHOLDER\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'these are my project notes, do not touch   ' '// @agentic-loop:end region=notes' '' '// trailing file comment'; wf_file template.js '// unmarked line with trailing spaces:   ' '' '<!-- @agentic-loop:begin region=decoy -->' 'unicode: héllo wörld 日本語 🎉' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"REPLACED\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'ignored upstream notes text' '// @agentic-loop:end region=notes' '' '// trailing file comment'; wf_file expected.js '// unmarked line with trailing spaces:   ' '' '<!-- @agentic-loop:begin region=decoy -->' 'unicode: héllo wörld 日本語 🎉' '// @agentic-loop:begin region=greet owner=plugin' 'console.log(\"REPLACED\");' '// @agentic-loop:end region=greet' '// @agentic-loop:begin region=notes owner=project' 'these are my project notes, do not touch   ' '// @agentic-loop:end region=notes' '' '// trailing file comment'; VERDICT=$(workflow_merge project.js template.js '//' '{}'); MATCH=$(cmp -s project.js expected.js && echo true || echo false); jq -n --argjson v \"$VERDICT\" --argjson m \"$MATCH\" '{verdict:$v, match:$m}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".verdict.refreshed == [\"greet\"]" },
+    { "type": "jq", "expr": ".match == true" }
+  ],
+  "_note": "expected.js is hand-built with the exact same wf_file primitive as project.js, differing only in the refreshed region's body, so cmp -s is a true byte-exact assertion — not a substring check that could hide truncated whitespace, dropped blank lines, or mangled unicode. The HTML-style decoy marker line (right syntax, wrong comment prefix) guards against the scanner false-positiving on text that merely mentions a marker.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}
