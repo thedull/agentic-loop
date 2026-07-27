@@ -87,6 +87,19 @@ _scaffold_workflow_lib() {
   return 0
 }
 
+# _scaffold_regions_adopted DEST PFX WF — true when DEST actually carries
+# markers. A project scaffolded before regions existed has NONE, and merging
+# into it would splice every plugin region on top of the equivalent inline
+# code — producing a file with two copies of each stage (caught in a dry run
+# against a real project, 2026-07-27, before any project was touched). Such a
+# file is not region-managed yet: it falls back to the whole-file lattice,
+# where it reads `stale` and is simply replaced, arriving WITH markers.
+_scaffold_regions_adopted() {
+  local n
+  n="$(bash "$3" regions "$1" "$2" 2>/dev/null | grep -c . || true)"
+  [[ "${n:-0}" -gt 0 ]]
+}
+
 # --- manifest -----------------------------------------------------------------
 # dest<TAB>source<TAB>tier. dest is relative to the PROJECT, source to the
 # PLUGIN ROOT; they differ wherever init renames on copy. Keep in sync with
@@ -312,7 +325,7 @@ scaffold_status() {
     local pfx wf verdict nconf nref nnew orph
     pfx="$(_scaffold_is_region_managed "$dest")"
     wf="$(_scaffold_workflow_lib)"
-    if [[ -n "$pfx" && -n "$wf" ]]; then
+    if [[ -n "$pfx" && -n "$wf" ]] && _scaffold_regions_adopted "$dest" "$pfx" "$wf"; then
       # shellcheck disable=SC1090
       verdict="$(bash "$wf" diff "$dest" "$root/$src" "$pfx" \
                  "$(scaffold_region_sums "$dest")" 2>/dev/null)"
@@ -418,6 +431,12 @@ scaffold_merge_regions() {
     pfx="$(_scaffold_is_region_managed "$dest")"
     [[ -n "$pfx" ]] || continue
     [[ -f "$dest" && -f "$root/$src" ]] || continue
+    # Not yet adopted (no markers) → the plain copy in the update's apply step
+    # installs the marked template; merging here would duplicate every stage.
+    if ! _scaffold_regions_adopted "$dest" "$pfx" "$wf"; then
+      printf '%s\t%s\n' "$dest" '{"skipped":"no regions yet — replace whole-file"}'
+      continue
+    fi
     if verdict="$(bash "$wf" merge "$dest" "$root/$src" "$pfx" \
                   "$(scaffold_region_sums "$dest")" 2>/dev/null)"; then
       printf '%s\t%s\n' "$dest" "$verdict"

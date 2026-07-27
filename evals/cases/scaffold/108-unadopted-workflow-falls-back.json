@@ -1,0 +1,14 @@
+{
+  "id": "scaffold-108-unadopted-workflow-falls-back",
+  "target": "scaffold.sh status/merge-regions — a marker-less workflow is NOT region-merged",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.10.0; mkdir -p fake/templates/workflows .claude/workflows; printf '%s\\n' '// @agentic-loop:begin region=p owner=plugin' 'const P = 1' '// @agentic-loop:end region=p' > fake/templates/workflows/factory.js; printf '%s\\n' 'const OLD_INLINE = \"pre-region workflow\"' > .claude/workflows/factory.js; scaffold_fake_stamp \"$SCAFFOLD_STAMP_PATH\" 0.9.0 software-unattended .claude/workflows/factory.js; ST=$(scaffold_status fake software-unattended | awk -F'\\t' '$1 ~ /factory.js/ {print $2}'); MG=$(scaffold_merge_regions fake software-unattended | head -1); LINES=$(wc -l < .claude/workflows/factory.js | tr -d ' '); jq -n --arg st \"$ST\" --arg mg \"$MG\" --arg l \"$LINES\" '{state: $st, merge: $mg, lines: ($l|tonumber)}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".state != \"regions-updatable\" and .state != \"regions-conflict\"" },
+    { "type": "jq", "expr": ".merge | test(\"no regions yet\")" },
+    { "type": "jq", "expr": ".lines == 1" }
+  ],
+  "_note": "regression found by dry-running the real rollout: merging plugin regions into a workflow that predates markers spliced all four regions ON TOP of the equivalent inline code (114 -> 179 lines, two copies of every stage). A marker-less file must fall back to the whole-file lattice and be replaced, not merged. The lines check proves the file was left untouched by merge-regions.",
+  "provenance": { "source": "hand", "date": "2026-07-27" }
+}
