@@ -235,12 +235,27 @@ spec's own Given/When/Then words, the edge cases worth poking, and — the
 section that earns the rest its credibility — **what could not be verified
 in this environment** (real hardware, live tmux, paid API paths). A review
 that reports everything green while a whole class went unexercised is the
-exact failure this pipeline exists to prevent. Every completed item also appends one digest line to
+exact failure this pipeline exists to prevent.
+
+**Where it reaches you.** The PR body is canonical — GitHub renders `- [ ]`
+as interactive checkboxes, so the plan is a live worksheet you tick off in
+the browser, not a static document. When benches are enabled the same text
+is also written to `<bench>/TEST-PLAN.md`, because hands-on review happens
+in a terminal in the bench directory, not in a browser tab; it is identical
+text, never a summary, and it lives in the worktree so it is never committed
+to the branch.
+
+The digest line then carries the triage signal:
+`plan: <n> checks, <m> need device` — how many by-hand checks there are, and
+how many of them this environment could not do for you. `6 checks, 0 need
+device` means skim and merge; `12 checks, 5 need device` means set aside
+real time at the hardware. That count is what makes an evening pass over
+five PRs orderable. Every completed item also appends one digest line to
 `.agentic/STATUS.md` — this, multiplied by however many ideas cleared, is
 what you read in the evening:
 
 ```
-pr-open: 004 Add rate-limit retry — https://github.com/you/repo/pull/12 | tests: pass | caveats: 1 | escalation: no
+pr-open: 004 Add rate-limit retry — https://github.com/you/repo/pull/12 | tests: pass | caveats: 1 | escalation: no | plan: 6 checks, 0 need device
 ```
 
 ## Review benches (optional)
@@ -262,6 +277,13 @@ removed. A bench with uncommitted changes is never deleted out from under
 you — reconcile leaves it and reports why. A non-trivial merge conflict
 against the default branch aborts that one bench and reports it rather than
 guessing; every other bench still gets reconciled.
+
+The review stage also drops the PR's test plan into the bench as
+`TEST-PLAN.md`, so the checklist is beside the running app. That one file is
+deliberately excluded from the uncommitted-changes check — it is the
+pipeline's own artifact, not your work, and counting it would make every
+bench permanently undeletable. Anything else you leave in a bench still
+protects it from removal.
 
 ```bash
 scripts/lib/bench.sh reconcile     # ensure/prune to match the tracker (idempotent)

@@ -117,7 +117,11 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 ## Phase 4 — evening review (~10 min)
 
 - [ ] Read `.agentic/STATUS.md`: one line per item —
-      `pr-open: … | tests: … | caveats: n | escalation: yes/no | run: <id>`.
+      `pr-open: … | tests: … | caveats: n | escalation: yes/no |
+      plan: <n> checks, <m> need device | run: <id>`.
+- [ ] **Order your evening by `plan:`** — `0 need device` items are skim-and-
+      merge; the ones with a high device count are what deserve the time you
+      have at the hardware. Do those while you are there.
 - [ ] Work each PR's **test plan** (every PR has one): the automated commands
       are already run — re-run to confirm — then the by-hand checkboxes, one
       per acceptance criterion. Read the *"not verified in this environment"*
@@ -125,7 +129,9 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 - [ ] If you enabled benches (`/agentic-loop:config bench on`), each open PR
       has a ready checkout at `../<repo>-benches/<slug>`, already merged with
       `main` and set up — `cd` there and run the thing rather than reading a
-      diff. A bench reporting a conflict needs a manual merge before it is
+      diff. The same test plan is sitting in it as `TEST-PLAN.md`, so you can
+      work the checklist beside the running app instead of alt-tabbing to the
+      PR. A bench reporting a conflict needs a manual merge before it is
       worth testing (a stale branch re-surfaces already-fixed bugs).
 - [ ] For anything surprising: `./scripts/observe_render.sh --run <id>` and
       open the HTML report — every subagent/shim call with model, tokens,

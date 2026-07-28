@@ -132,11 +132,18 @@ bench_ensure() {
 }
 
 # bench_remove SLUG — remove a bench, but never one with uncommitted work.
+#
+# TEST-PLAN.md is excluded from that check: the review stage drops it into the
+# bench for hands-on testing, so counting it as "the user's uncommitted work"
+# would make every bench permanently undeletable and the reconcile loop would
+# silently stop cleaning up.
 bench_remove() {
-  local slug="$1" path
+  local slug="$1" path dirty
   path="$(_bench_dir)/$slug"
   [[ -d "$path" ]] || return 0
-  if [[ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]]; then
+  dirty="$(git -C "$path" status --porcelain 2>/dev/null \
+           | grep -v '^?? TEST-PLAN\.md$' || true)"
+  if [[ -n "$dirty" ]]; then
     echo "bench: $slug has uncommitted changes — kept (remove by hand when done)" >&2
     _bench_obs kept_dirty "$slug" '{}'
     return 0

@@ -128,10 +128,38 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    - Never write a checkbox you did not either run yourself or genuinely
      need the human to run. Padding the list trains them to skim it.
 
+   **Also drop a copy in the bench** — only when benches are on
+   (`jq -r '.bench.enabled // false' .agentic/config.json` is true) and the
+   bench exists. The PR body stays canonical; this copy exists because
+   hands-on review happens in a terminal in the bench directory, not in a
+   browser tab:
+
+   ```bash
+   BENCH="$(./scripts/lib/bench.sh list | awk -v s="<slug>" '$1==s {print s}')"
+   # write the SAME test-plan text to <bench dir>/TEST-PLAN.md
+   ```
+
+   Resolve the bench dir the way `bench.sh` does (config `.bench.dir`, else
+   `../<repo>-benches`). Write the identical text — never a summarized or
+   re-worded variant, or the two copies drift and neither can be trusted.
+   `TEST-PLAN.md` lives in the bench worktree, so it is never committed to
+   the branch. If benches are off or the bench is missing, skip this silently.
+
 10. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
    append the digest entry to `.agentic/STATUS.md`:
    `pr-open: <id> <title> — <url> | tests: <pass/fail> | caveats: <n> |
-   escalation: <yes/no>`. When observability is enabled, append
+   escalation: <yes/no> | plan: <n> checks, <m> need device`
+
+   The **`plan:`** field is the evening triage signal: `<n>` is how many
+   by-hand checkboxes the test plan has, `<m>` how many of them need
+   something this environment could not provide (real hardware, a paid API,
+   a live account) — i.e. the size of the *"not verified in this
+   environment"* section. `plan: 6 checks, 0 need device` says skim and
+   merge; `plan: 12 checks, 5 need device` says set aside real time at the
+   panel. Write `plan: none` only if you genuinely produced no plan, which
+   should not happen.
+
+   When observability is enabled, append
    ` | run: <run id>` (from `.agentic/observability/state/run`, or
    `$AGENTIC_RUN_ID` under a headless loop) so the digest line links to its
    tree: `/agentic-loop:config render` visualizes the run. This block is what
