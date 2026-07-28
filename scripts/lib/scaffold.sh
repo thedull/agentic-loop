@@ -28,6 +28,10 @@
 #
 # CLI:
 #   scaffold.sh manifest [type]        dest<TAB>source<TAB>tier, one per line
+#   scaffold.sh install <plugin-root> [type]   copy manifest files; REFUSES to
+#                                      clobber an adopted region-managed file
+#   scaffold.sh merge-regions <plugin-root> [type]   refresh plugin regions in
+#                                      the files `install` refused
 #   scaffold.sh status <plugin-root>   dest<TAB>state per file (see below)
 #   scaffold.sh trace <dest> <src> <plugin-root>   commit an unverified file
 #                                      matches, proving it a clean old copy
@@ -98,6 +102,44 @@ _scaffold_regions_adopted() {
   local n
   n="$(bash "$3" regions "$1" "$2" 2>/dev/null | grep -c . || true)"
   [[ "${n:-0}" -gt 0 ]]
+}
+
+# scaffold_install ROOT [TYPE] — copy every manifest file that differs, and
+# REFUSE to copy an adopted region-managed file.
+#
+# This exists because the ownership rule was documentation, not a gate. A
+# hand-rolled `cp` loop over the manifest overwrote a project's region-managed
+# workflow wholesale on 2026-07-27, destroying its project-owned sequencing
+# and machine-specific prompt addenda — the exact failure region ownership is
+# for, caused by bypassing merge-regions. Prose told the caller not to; nothing
+# stopped them. Now the copy path itself refuses, loudly.
+#
+# Emits dest<TAB>action (installed | refreshed | skipped-region-managed | same).
+# Callers pair this with `merge-regions`, which handles the refused files.
+scaffold_install() {
+  local root="$1" type="${2:-}" dest src _tier pfx wf
+  wf="$(_scaffold_workflow_lib)"
+  while IFS=$'\t' read -r dest src _tier; do
+    [[ -n "$dest" && -f "$root/$src" ]] || continue
+    pfx="$(_scaffold_is_region_managed "$dest")"
+    # Only an ADOPTED file is refused: one with no markers yet has nothing to
+    # preserve, and a plain copy is how it receives them in the first place.
+    if [[ -n "$pfx" && -n "$wf" && -f "$dest" ]] \
+       && _scaffold_regions_adopted "$dest" "$pfx" "$wf"; then
+      printf '%s\tskipped-region-managed\n' "$dest"
+      continue
+    fi
+    if [[ ! -f "$dest" ]]; then
+      mkdir -p "$(dirname "$dest")" 2>/dev/null
+      cp "$root/$src" "$dest" && printf '%s\tinstalled\n' "$dest"
+    elif cmp -s "$root/$src" "$dest"; then
+      printf '%s\tsame\n' "$dest"
+    else
+      cp "$root/$src" "$dest" && printf '%s\trefreshed\n' "$dest"
+    fi
+  done < <(scaffold_manifest "$type")
+  chmod +x scripts/*.sh scripts/lib/*.sh 2>/dev/null
+  return 0
 }
 
 # --- manifest -----------------------------------------------------------------
@@ -463,6 +505,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     stamp)       [[ $# -ge 2 ]] || { echo "scaffold: stamp needs <plugin-root> <type>" >&2; exit 2; }
                  scaffold_write_stamp "$@" ;;
     integrity)   scaffold_integrity ;;
+    install)     [[ $# -ge 1 ]] || { echo "scaffold: install needs a plugin root" >&2; exit 2; }
+                 scaffold_install "$@" ;;
     merge-regions) [[ $# -ge 1 ]] || { echo "scaffold: merge-regions needs a plugin root" >&2; exit 2; }
                  scaffold_merge_regions "$@" ;;
     region-sums) [[ $# -ge 1 ]] || { echo "scaffold: region-sums needs a dest path" >&2; exit 2; }

@@ -136,15 +136,27 @@ at the spec so the user can reset it deliberately.)
    is evidence of intent, and silently reverting it is the one failure this
    skill must never have.
 
-6. **Apply.** Copy each approved file from `$PLUGIN_ROOT/<source>` to
-   `<dest>`, creating parent directories as needed, then
-   `chmod +x scripts/*.sh scripts/lib/*.sh`. Copy only manifest files.
-
-   **Region-managed files are merged, never copied:**
+6. **Apply — use the two provided commands; never hand-roll a copy loop.**
 
    ```bash
+   "$PLUGIN_ROOT/scripts/lib/scaffold.sh" install "$PLUGIN_ROOT" <type>
    "$PLUGIN_ROOT/scripts/lib/scaffold.sh" merge-regions "$PLUGIN_ROOT" <type>
    ```
+
+   `install` copies manifest files (reporting `installed` / `refreshed` /
+   `same`) and **refuses** any adopted region-managed file, reporting
+   `skipped-region-managed`. `merge-regions` then refreshes exactly those.
+   Run both, in that order.
+
+   This is a gate, not a style preference: a hand-rolled `cp` loop over the
+   manifest destroyed a project's customized production line on 2026-07-27 —
+   its sequencing and machine-specific prompt addenda — because copying is
+   the wrong operation for a file the project co-owns. `install` refuses so
+   that mistake fails loudly instead of silently.
+
+   If a file the user chose to **keep** appears in `install`'s output as
+   `refreshed`, you skipped step 5's per-file confirmation — restore it and
+   redo that step.
 
    It prints `dest<TAB>{json}` per file — report `refreshed` / `new` /
    `orphaned` region names so the user sees what actually moved inside their

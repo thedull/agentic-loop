@@ -1,0 +1,15 @@
+{
+  "id": "scaffold-109-install-refuses-adopted-region-file",
+  "target": "scaffold.sh install — refuses to clobber an adopted region-managed file",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\"; source \"$FIXTURES/scaffold-fixture.sh\"; export SCAFFOLD_STAMP_PATH=scripts/.agentic-scaffold.json; scaffold_fake_plugin fake 0.11.0; mkdir -p fake/templates/workflows .claude/workflows scripts/lib; cp \"$PLUGIN_ROOT/scripts/lib/workflow.sh\" scripts/lib/workflow.sh; printf '%s\\n' '// @agentic-loop:begin region=p owner=plugin' 'const P = \"upstream\"' '// @agentic-loop:end region=p' > fake/templates/workflows/factory.js; printf '%s\\n' 'const MINE = 1' '// @agentic-loop:begin region=p owner=plugin' 'const P = \"upstream\"' '// @agentic-loop:end region=p' '// @agentic-loop:begin region=mine owner=project' 'const PORT = 8787' '// @agentic-loop:end region=mine' > .claude/workflows/factory.js; ADOPTED=$(scaffold_install fake software-unattended | awk -F'\\t' '$1 ~ /factory.js/ {print $2}'); MINE=$(grep -c 'PORT = 8787' .claude/workflows/factory.js); printf '%s\\n' 'const OLD = 1' > .claude/workflows/factory.js; UNADOPTED=$(scaffold_install fake software-unattended | awk -F'\\t' '$1 ~ /factory.js/ {print $2}'); HASMARKERS=$(grep -c '@agentic-loop:begin' .claude/workflows/factory.js); jq -n --arg a \"$ADOPTED\" --arg u \"$UNADOPTED\" --argjson m \"$MINE\" --argjson h \"$HASMARKERS\" '{adopted_action: $a, unadopted_action: $u, project_region_kept: $m, markers_after: $h}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".adopted_action == \"skipped-region-managed\"" },
+    { "type": "jq", "expr": ".project_region_kept == 1" },
+    { "type": "jq", "expr": ".unadopted_action == \"refreshed\"" },
+    { "type": "jq", "expr": ".markers_after > 0" }
+  ],
+  "_note": "regression test for a real incident (2026-07-27): a hand-rolled cp loop over the manifest overwrote a project's region-managed workflow wholesale, destroying its project-owned sequencing and machine-specific prompt addenda. The ownership rule was documentation, not a gate. Guards both directions — an ADOPTED file (has markers) is refused so merge-regions handles it; an UNADOPTED one (no markers) is still copied, which is how it receives markers in the first place.",
+  "provenance": { "source": "mined", "run_id": null, "date": "2026-07-27" }
+}
