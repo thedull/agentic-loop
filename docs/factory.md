@@ -546,6 +546,138 @@ Where things belong: machine realities → the addendum constants; sequencing
 project-owned; spec ordering → `depends_on:` in the spec, not the workflow; a
 runnable checkout per PR → `/agentic-loop:config bench on`, not the workflow.
 
+## What broke, and the rule it became
+
+Nearly every mechanism above exists because something failed first. This is
+the honest version of the design history — kept because the failures are more
+instructive than the features, and because a reader deciding whether to trust
+an unattended pipeline deserves to know what it survived.
+
+They cluster into six lessons.
+
+### 1. Documentation is not a control
+
+The single most expensive assumption in the project: that writing a rule down
+makes agents (and humans) follow it.
+
+| What happened | What it cost |
+|---|---|
+| Bench provisioning shipped as a step in the review skill's prose. Runs skipped it. | Open PRs with nothing to test from — the exact gap benches existed to close |
+| Region ownership was documented one morning; **that same day** a hand-rolled `cp` loop over the manifest overwrote a project's customized workflow — its `MAX_IDEAS`, its port rule, both prompt addenda | A destroyed production line, recovered only because the change was uncommitted |
+| The review stage's test plan was "should include" text | Plans that were thorough on easy items and silent on the ones needing hardware |
+
+**The rule: gates, not documentation.** If a step matters, it must be
+mechanically enforced, and the mechanism must fail loudly. `bench.sh
+reconcile` re-derives its invariant every iteration instead of trusting an
+agent to remember. `scaffold.sh install` *refuses* an adopted region-managed
+file rather than describing why copying it is wrong. The test plan is a
+required PR section with a digest field (`plan: <n> checks, <m> need device`)
+that makes an empty one visible at a glance.
+
+The uncomfortable detail worth keeping in the retelling: the person who
+ignored the region-ownership doc was the agent that had written it hours
+earlier. "The agent will read the docs" is not a safety property.
+
+### 2. Ownership must be sub-file, or people fork
+
+Three projects ran a byte-identical copy of the stock workflow. A fourth
+needed one machine-specific rule — a live app owning port 8787 — and, having
+no seam to express it, **forked** the whole file.
+
+The fork silently dropped the review prompt's *"record `needs_escalation`
+instead"* clause and pinned a skill path to plugin version `0.6.0`, which was
+four releases stale before anyone noticed. Nobody deleted the safety rule;
+it was lost by omission, which is how safety rules usually die.
+
+**The rule: whole-file ownership forces a choice between customizing and
+receiving updates, and customization always wins.** `scripts/lib/workflow.sh`
+made ownership *sub-file*: the project owns the file, the plugin owns marked
+regions inside it, and `/agentic-loop:update` refreshes only those. A
+hand-edit **inside** a plugin region is detected against a stamped checksum
+and refused rather than clobbered — the one failure that path must never have.
+
+### 3. Reconcile, don't remember
+
+State that is remembered drifts. State that is re-derived cannot.
+
+- The build worktree is ephemeral by design, which is right for isolation and
+  wrong for a review that means *running the thing* on real hardware.
+- A bench branched before a fix landed on `main` re-surfaced already-fixed
+  bugs and burned a full evening feedback round. Twice.
+- A bench for a spec that left the queue belonged to no cleanup path at all,
+  so it leaked forever — never refreshed, never removed, quietly rotting.
+
+**The rule:** every bench is merged with the current default branch on every
+iteration, and a non-trivial conflict **aborts and reports** rather than
+guessing. The invariant — every `pr-open` spec has a fresh bench, every
+retired spec has none — is checked and repaired mechanically, so an iteration
+that forgets is fixed by the next one.
+
+### 4. Fail closed on anything you cannot verify
+
+A dependent spec was built against a `main` that did not contain its
+dependency, because the dependency's PR was open but unmerged.
+
+**The rule: only merged work counts.** `depends_on` is satisfied by `done` —
+`built` and `pr-open` deliberately do not qualify, since unmerged work is not
+on `main` and a dependent build cannot see it. An id matching no spec counts
+as unmet too, so a typo surfaces as a permanent `waits:` instead of silently
+passing.
+
+The same posture governs `superseded`. It would have been easy to let the
+status alone unblock dependents; that would have recreated the original
+failure with extra steps. Instead it requires a citation, and the citation is
+**checked** — a commit must be an ancestor of the default tip, a spec id must
+itself be `done`. An unverifiable claim is recorded but unblocks nobody.
+
+### 5. Distribution has three clocks, and they drift apart
+
+There is the plugin repo, the *installed* plugin cache, and each project's
+scaffolded copy. They are three different versions, and "update" means
+something different for each.
+
+The trap: updating a project from a **stale cache** silently moves it
+*backwards*. Two projects scaffolded months apart were both still carrying a
+`tracker.sh` from before `depends_on` existed and had never heard of
+`bench.sh`. Fixing the plugin fixed neither.
+
+**The rule:** `/agentic-loop:update` announces the resolved plugin root and
+version *loudly* before doing anything, and every project carries a committed
+stamp recording what upstream shipped — so a fresh clone still gets a correct
+verdict about what has drifted.
+
+### 6. The harness needs the same rigor as the product
+
+Two failures in the machinery itself, both self-inflicted:
+
+- An eval created a bare git remote **outside** its per-case sandbox, so
+  parallel cases collided through shared temp state. It went out at 45 pass /
+  **1 fail** because the commit happened without reading the suite summary.
+- A `git reset --hard origin/main` discarded a local, unpushed commit
+  containing an entire project migration. Recovered by cherry-pick from the
+  reflog — but only because someone went looking.
+
+**The rules:** every case builds in its own sandbox from a shared fixture and
+touches nothing outside it; read the summary before you commit; check for
+unpushed commits before any destructive git operation.
+
+And the practice that has caught the most: **mutation-test the guards.**
+Every safety check has an eval, and each one is verified by *removing the
+check and confirming the eval fails*. A guard whose test passes with the
+guard deleted is not a guard. This caught a real one — a check that appeared
+to cover two cases turned out to cover only one.
+
+### The meta-lesson
+
+Two independent failures — a stale bench and a forgotten step — both traced
+to the same root: *a human or agent was trusted to remember something*. The
+fix in both cases was to delete the remembering and re-derive the state.
+
+And a candid one: the gap between "we documented it" and "it is enforced"
+was crossed only after the documented rule was violated by the author of the
+documentation, on the same day. Every mechanism in this file is downstream of
+somebody — usually the machine — doing the wrong thing convincingly.
+
 ## Roadmap (v2)
 
 Deferred on purpose — each is a real feature, but none were needed to make

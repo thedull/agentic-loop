@@ -476,6 +476,7 @@ details > .details-body > :last-child { margin-bottom: 0; }
       <button class="tab" role="tab" aria-selected="false" data-level="1">Basic</button>
       <button class="tab" role="tab" aria-selected="false" data-level="2">Advanced</button>
       <button class="tab" role="tab" aria-selected="false" data-level="3">Expert</button>
+      <button class="tab" role="tab" aria-selected="false" data-level="4">Factory</button>
     </div>
   </div>
 </div>
@@ -936,7 +937,7 @@ finalize_envelope "$OUTPUT" --worker "example"</code></pre>
 
 <div class="callout">
   <p>
-    <strong>Next step:</strong> read <code>HANDOFF.md</code> in the repo root for the
+    <strong>Next step:</strong> read <code>docs/HANDOFF.md</code> for the
     full design rationale, evidence-backed decisions, and open threads. The envelope
     contract is formally defined in <code>scripts/lib/validate_envelope.jq</code>.
   </p>
@@ -944,6 +945,289 @@ finalize_envelope "$OUTPUT" --worker "example"</code></pre>
 
 <div class="level-nav">
   <a data-nav="2">&larr; Advanced</a>
+  <span class="spacer"></span>
+  <a data-nav="4">Factory &rarr;</a>
+</div>
+</section>
+
+<!-- ═══════════════════════════ LEVEL 4 ═══════════════════════════ -->
+<section class="level" id="level-4" role="tabpanel">
+<div class="level-label">Level 4</div>
+<h2>The factory: ideas in the morning, PRs in the evening</h2>
+
+<p>
+  Everything before this is you driving. The factory is the same loop running
+  <strong>unattended</strong>: you spend five minutes per idea in the morning,
+  the pipeline builds and reviews each one during the day, and you come back to
+  pull requests with test plans attached. One PR per idea, never merged for you.
+</p>
+
+<div class="flow-diagram">
+  <span class="flow-box">idea</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">spec</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">build</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">review</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-box">PR + digest</span>
+</div>
+
+<p>
+  Each spec is a markdown file in <code>factory/specs/</code> whose
+  <code>status:</code> frontmatter field <em>is</em> the state machine.
+  Every skill and workflow goes through <code>scripts/lib/tracker.sh</code> and
+  never touches that frontmatter directly &mdash; which is what makes a GitHub
+  Issues or Jira backend a swap of one file later.
+</p>
+
+<pre><code>queued &rarr; specd &rarr; building &rarr; built &rarr; reviewing &rarr; pr-open &rarr; done</code></pre>
+
+<h3>The three-command day</h3>
+
+<div class="step">
+  <div class="step-marker">AM</div>
+  <div class="step-body">
+    <h3>Seed the queue</h3>
+    <p>
+      <code>/agentic-loop:spec "your idea in one sentence"</code> &mdash; it grills
+      you one question at a time, adapting depth to the idea's size, and exploring
+      the repo between questions so it never asks what it can read.
+    </p>
+    <p>
+      The spec must end with a real <code>check_cmd</code>: one command that
+      <strong>fails today</strong> and passes when the idea is built. This is the
+      highest-leverage field in the whole system &mdash; it is what lets a machine
+      decide done-ness without a human in the loop.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">PM</div>
+  <div class="step-body">
+    <h3>Let it run</h3>
+    <p>
+      <code>/factory</code>, or <code>/loop 60m /factory</code> to keep draining
+      the queue. A usage gate runs before every claim: if a subscription window
+      crosses 90%, the run logs a postponement with the reset time and stops
+      claiming rather than burning your cap.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-marker">EVE</div>
+  <div class="step-body">
+    <h3>Review and merge</h3>
+    <p>
+      Read <code>.agentic/STATUS.md</code> &mdash; one digest line per item. Order
+      your evening by the <code>plan:</code> field: items reading
+      <code>0 need device</code> are skim-and-merge, the rest need your hands.
+    </p>
+<pre><code>pr-open: 013 Custom touch-strip layouts — https://… | tests: pass |
+         caveats: 1 | escalation: no | plan: 12 checks, 3 need device</code></pre>
+  </div>
+</div>
+
+<div class="callout callout-success">
+  <div class="callout-title">The rule that makes it safe to leave alone</div>
+  <p>
+    The factory <strong>never merges</strong> and never calls a metered tier
+    unattended. When it wants frontier help it records
+    <code>needs_escalation</code> and leaves the spend decision for your evening.
+    Both of those are policy in plugin-owned code, not advice in a prompt.
+  </p>
+</div>
+
+<h3>Special cases &mdash; the things that actually happen</h3>
+
+<p>
+  A clean run is the easy half. Everything below is a real situation from
+  running three factories, and the mechanism that now handles it.
+</p>
+
+<details>
+  <summary>You stopped wanting a spec built &mdash; or shipped it by hand</summary>
+  <div class="details-body">
+    <p>
+      Do <strong>not</strong> mark it <code>done</code> (it never shipped) and do
+      not mark it <code>blocked</code> (that means "stuck, help me", and it is the
+      failure signal <code>evals/mine.sh</code> mines). Run
+      <code>/agentic-loop:shelve &lt;id&gt;</code> and pick the honest exit:
+    </p>
+    <ul>
+      <li><code>shelved</code> &mdash; not now. Reversible with
+        <code>restore</code>. Anything depending on it <strong>stalls</strong>.</li>
+      <li><code>superseded</code> &mdash; the outcome landed some other way.
+        Dependents become <strong>claimable</strong>.</li>
+    </ul>
+    <p>
+      <code>superseded</code> demands a citation &mdash; a commit or a spec id
+      &mdash; and it is <em>checked, not believed</em>: the commit must be an
+      ancestor of your default branch, the spec must itself be <code>done</code>.
+      An unverifiable claim is still recorded but unblocks nobody.
+    </p>
+<pre><code>./scripts/lib/tracker.sh supersede factory/specs/017-foo.md you 227b9fe "PR #16"</code></pre>
+    <p>
+      The skill then reports every spec the removal strands and walks you through
+      each one: drop the dependency, re-point it, or shelve that too. It never
+      rewires anything you didn't choose.
+    </p>
+  </div>
+</details>
+
+<details>
+  <summary>A spec sits in the queue forever and never gets claimed</summary>
+  <div class="details-body">
+    <p>Run <code>./scripts/lib/tracker.sh report</code> and read the last columns:</p>
+<pre><code>specd  011  M-size player          waits: 010
+specd  012  Widget library panel   waits: 010    stalled: 010</code></pre>
+    <p>
+      <code>waits:</code> is ordinary progress &mdash; merge the dependency and the
+      next iteration claims it. <code>stalled:</code> means the dependency can
+      <strong>never</strong> clear on its own: it is shelved, superseded against an
+      unverified citation, or a typo matching no spec at all. No amount of merging
+      fixes a stalled row; it needs a decision.
+    </p>
+    <p>
+      Only <em>merged</em> work satisfies a dependency. <code>pr-open</code>
+      deliberately does not count &mdash; unmerged work is not on <code>main</code>,
+      and a dependent build cannot see it. That distinction exists because a
+      dependent once got built against a base missing its dependency.
+    </p>
+  </div>
+</details>
+
+<details>
+  <summary>Your project needs the loop to work differently</summary>
+  <div class="details-body">
+    <p>
+      Like a real factory, no two production lines are identical. One project
+      needs strict serial ordering; another has a live app owning a port that must
+      never be killed. <code>.claude/workflows/factory.js</code> is
+      <strong>your file</strong> &mdash; edit sequencing, add stages, tune tiering.
+    </p>
+    <p>
+      The spans marked <code>owner=plugin</code> are the exception: they carry the
+      safety policy and stage contracts, and <code>/agentic-loop:update</code>
+      refreshes them in place so improvements keep reaching you.
+    </p>
+<pre><code>// @agentic-loop:begin region=review-prompt owner=plugin
+// …plugin-owned; refreshed on update, refuses hand-edits…
+// @agentic-loop:end region=review-prompt
+
+const PROJECT_BUILD_ADDENDUM = `
+   PORT RULE: the packaged app owns 127.0.0.1:8787 — never kill it.`</code></pre>
+    <p>
+      Machine realities go in the project-owned addendum constants, which are
+      appended to the plugin's prompts. Use
+      <code>/agentic-loop:line</code> to shape it.
+    </p>
+  </div>
+</details>
+
+<div class="callout callout-warning">
+  <div class="callout-title">Why not just fork the workflow?</div>
+  <p>
+    A project tried exactly that. The fork silently dropped the review prompt's
+    <em>"record <code>needs_escalation</code> instead"</em> clause and pinned a
+    skill path to plugin version <code>0.6.0</code>, four releases stale before
+    anyone noticed. Nobody deleted the safety rule &mdash; it was lost by
+    omission, which is how safety rules usually die. Sub-file ownership exists
+    so customizing never costs you updates.
+  </p>
+</div>
+
+<details>
+  <summary>You need to actually run the thing to review it</summary>
+  <div class="details-body">
+    <p>
+      The build worktree is ephemeral by design &mdash; right for isolation, wrong
+      for a review that means launching an app on real hardware. Turn on benches:
+    </p>
+<pre><code>/agentic-loop:config bench on</code></pre>
+    <p>
+      Every open PR gets a persistent checkout, already merged with current
+      <code>origin/main</code>, with project setup run once, plus a copy of that
+      PR's <code>TEST-PLAN.md</code> dropped in so you test where you are working.
+    </p>
+    <p>
+      Freshness is half the point: a bench branched before a fix landed on
+      <code>main</code> re-surfaces already-fixed bugs and burns a whole evening.
+      A non-trivial conflict <strong>aborts and reports</strong> rather than
+      guessing. The invariant &mdash; every open PR has a fresh bench, every
+      retired spec has none &mdash; is re-derived every iteration, so an iteration
+      that forgets is fixed by the next one.
+    </p>
+  </div>
+</details>
+
+<details>
+  <summary><code>/agentic-loop:update</code> refuses to run</summary>
+  <div class="details-body">
+    <p>
+      Deliberate. A held claim plus a swapped <code>tracker.sh</code> is a
+      half-applied state machine. Update refuses while
+      <code>.agentic/tracker.lock</code> exists or any spec is
+      <code>building</code>/<code>reviewing</code>.
+    </p>
+    <p>
+      A <code>building</code> row with <em>no</em> live session usually means an
+      interrupted run &mdash; check for a recorded <code>branch:</code> and how old
+      <code>claimed_at:</code> is before deciding it is dead.
+    </p>
+    <p>
+      Update the installed plugin <strong>first</strong>: update copies from the
+      installed cache, so a stale cache will happily move your project
+      <em>backwards</em>.
+    </p>
+<pre><code>claude plugin update agentic-loop@agentic-loop   # then, in the project:
+/agentic-loop:update</code></pre>
+  </div>
+</details>
+
+<details>
+  <summary><code>/factory</code> doesn't exist right after init</summary>
+  <div class="details-body">
+    <p>
+      It is a project workflow in <code>.claude/workflows/</code>, created
+      mid-session &mdash; and that directory isn't watched until a session starts
+      with it already present. Restart Claude Code. Plugin skills
+      (<code>/agentic-loop:*</code>) are unaffected.
+    </p>
+  </div>
+</details>
+
+<h3>The thread running through all of it</h3>
+
+<p>
+  Every mechanism on this page replaced a prose instruction that got skipped.
+  Bench provisioning was a documented step, and runs skipped it. Region
+  ownership was documented, and a blind copy loop destroyed a customized line
+  the same day &mdash; by the agent that had written the documentation hours
+  earlier.
+</p>
+
+<p>
+  So: <strong>gates, not documentation</strong>. If a step matters it is
+  mechanically enforced and fails loudly. And every guard has an eval that is
+  verified by <em>deleting the guard and confirming the eval fails</em> &mdash;
+  a guard whose test passes without it is not a guard.
+</p>
+
+<div class="callout">
+  <p>
+    <strong>Go deeper:</strong> <code>docs/factory.md</code> is the full
+    reference &mdash; every stage contract, the cost model, and a section on
+    what broke during development and the rule each failure became.
+    <code>templates/RUNBOOK.md</code> is the day-to-day operating checklist.
+  </p>
+</div>
+
+<div class="level-nav">
+  <a data-nav="3">&larr; Expert</a>
   <span class="spacer"></span>
 </div>
 </section>

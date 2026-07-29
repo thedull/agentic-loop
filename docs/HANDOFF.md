@@ -82,7 +82,8 @@ agentic-scaffolding/            (plugin root)
 │   ├── hooks-spawn-guard.json  opt-in PreToolUse spawn-budget cap
 │   └── agentic-state/          .agentic/ scaffold (PLAN/STATUS/decisions/artifacts)
 ├── README.md                   install + rationale summary
-└── HANDOFF.md                  this file
+├── docs/HANDOFF.md             this file
+└── docs/                       factory.md, tutorial.html, field reports, analyses
 ```
 
 Distribution model: **agents live in the plugin** (available in every project where it's enabled); **scripts + CLAUDE.md + state dirs are copied per-project** by init, because `${CLAUDE_PLUGIN_ROOT}` doesn't resolve inside markdown — copies keep projects self-contained with stable paths.
