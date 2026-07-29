@@ -68,22 +68,23 @@ them.
    superseded when the work did not land is exactly how dependents once got
    built against a base missing their dependency.
 
-4. **Shelve: expect the mid-stage refusal.**
+4. **Shelve: same command shape.**
 
    ```bash
    ./scripts/lib/tracker.sh shelve <file> <actor> "<reason>"
    ```
 
-   Exit **3** means the spec is `building` or `reviewing` and an unattended
+5. **Either way, expect the mid-stage refusal.** Exit **3** from `shelve` or
+   `supersede` means the spec is `building` or `reviewing` and an unattended
    stage may be writing that very file. Explain that in plain language and
-   offer the choice: let the run finish, or shelve anyway. Only re-run with
+   offer the choice: let the run finish, or go ahead anyway. Only re-run with
    `TRACKER_FORCE_LIVE=1` after the user explicitly confirms. Do not reach
    for the override on your own.
 
    Everything else — `queued`, `specd`, `built`, `pr-open`, `blocked` — is at
-   rest between stages and shelves with no override needed.
+   rest between stages and needs no override.
 
-5. **Report the downstream damage — always, even when it is zero.**
+6. **Report the downstream damage — always, even when it is zero.**
 
    ```bash
    ./scripts/lib/tracker.sh dependents <id> --transitive
@@ -94,7 +95,7 @@ them.
    spec pulled each one in. Empty output is a real result — say "nothing
    depends on this" rather than staying silent.
 
-6. **Repair each chain, one spec at a time.** For every dependent, offer
+7. **Repair each chain, one spec at a time.** For every dependent, offer
    exactly three options and **take no default**:
 
    - **drop** — the dependency is no longer needed
@@ -118,7 +119,7 @@ them.
    claimable and usually need no rewire at all. Say that instead of walking
    the user through a list of non-problems.
 
-7. **Close with the resulting state, not the state you started from.**
+8. **Close with the resulting state, not the state you started from.**
 
    ```bash
    ./scripts/lib/tracker.sh report
@@ -128,7 +129,7 @@ them.
    on their own. `waits:` alone is ordinary progress. If any `stalled:`
    remains, name it and say it is still waiting on a decision.
 
-8. **Leftover artifacts — report, and ask before touching anything public.**
+9. **Leftover artifacts — report, and ask before touching anything public.**
    Read `branch` and `pr` from the spec (they survive a shelve untouched, on
    purpose, so a restore is exact).
 
@@ -153,7 +154,7 @@ shelved, or if it has no `shelved_from` (a hand-edited file): guessing where a
 spec belongs is worse than refusing, since a wrong guess silently reinserts it
 at the wrong stage.
 
-After restoring, re-check the chains you rewired in step 6 — dropping a
+After restoring, re-check the chains you rewired in step 7 — dropping a
 dependency is not undone by a restore, and the user may want it back.
 
 ## Rules

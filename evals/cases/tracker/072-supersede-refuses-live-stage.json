@@ -1,0 +1,15 @@
+{
+  "id": "tracker-072-supersede-refuses-live-stage",
+  "target": "tracker.sh supersede — the mid-stage gate applies here too, not only to shelve",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: in-flight\nstatus: building\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: reviewing-now\nstatus: reviewing\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 003\ntitle: at-rest\nstatus: pr-open\n---\nbody\n' > factory/specs/003-c.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if tracker_supersede factory/specs/001-a.md me abc123 r >/dev/null 2>&1; then B=0; else B=$?; fi; if tracker_supersede factory/specs/002-b.md me abc123 r >/dev/null 2>&1; then R=0; else R=$?; fi; if TRACKER_FORCE_LIVE=1 tracker_supersede factory/specs/001-a.md me abc123 r >/dev/null 2>&1; then F=0; else F=$?; fi; if tracker_supersede factory/specs/003-c.md me abc123 r >/dev/null 2>&1; then A=0; else A=$?; fi; jq -n --argjson b \"$B\" --argjson r \"$R\" --argjson f \"$F\" --argjson a \"$A\" --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" --arg s2 \"$(_tracker_field factory/specs/002-b.md status)\" --arg s3 \"$(_tracker_field factory/specs/003-c.md status)\" --arg by2 \"$(_tracker_field factory/specs/002-b.md superseded_by)\" '{b: $b, r: $r, f: $f, a: $a, s1: $s1, s2: $s2, s3: $s3, by2: $by2}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".b == 3 and .r == 3" },
+    { "type": "jq", "expr": ".s2 == \"reviewing\" and .by2 == \"\"" },
+    { "type": "jq", "expr": ".f == 0 and .s1 == \"superseded\"" },
+    { "type": "jq", "expr": ".a == 0 and .s3 == \"superseded\"" }
+  ],
+  "_note": "shelve and supersede both take a spec out of the queue, so both can yank a file an unattended stage is mid-write on — but only shelve was gated, so a spec reading `building` could be superseded with no confirmation at all (found in the field on 2026-07-29, claude-deck spec 017). Guard B still prevented corruption, which is why this was a missing prompt rather than a data hole. Asserts all four arms: refused while building, refused while reviewing (writing nothing), forced through, and freely allowed at rest.",
+  "provenance": { "source": "mined", "run_id": null, "date": "2026-07-29" }
+}

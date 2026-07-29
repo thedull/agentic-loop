@@ -60,8 +60,9 @@
 #   tracker.sh dep-replace <file> <old> <new>        re-point one depends_on id
 #
 # Exit codes: 0 ok · 1 `claim` found nothing claimable · 2 usage/hard error
-#             3 `shelve` refused — the spec is mid-stage (building/reviewing);
-#               re-run with TRACKER_FORCE_LIVE=1 to override deliberately.
+#             3 `shelve`/`supersede` refused — the spec is mid-stage
+#               (building/reviewing); re-run with TRACKER_FORCE_LIVE=1 to
+#               override deliberately.
 
 set -euo pipefail
 
@@ -406,9 +407,14 @@ tracker_restore() {
 # way. REF is mandatory: it is the citation that dependents are unblocked
 # against, and _tracker_supersede_lands checks it rather than trusting it.
 #
-# Recording is never refused — the claim may be true but unverifiable from
-# here (a fix in another repo). What an unverifiable citation does NOT do is
+# An unverifiable CITATION is never refused — the claim may be true but
+# uncheckable from here (a fix in another repo). What it does NOT do is
 # unblock anyone; that is reported, loudly, on stderr.
+#
+# A live STAGE is refused, exactly as in tracker_shelve (exit 3). Both take a
+# spec out of the queue, so both can yank a file an unattended agent is
+# mid-write on; gating only one of them left a spec that read `building`
+# superseded with no confirmation at all.
 tracker_supersede() {
   local file="$1" actor="${2:-}" ref="${3:-}" reason="${4:-}" prev
   [[ -f "$file" ]] || _tracker_die "no such spec file: $file"
@@ -417,6 +423,12 @@ tracker_supersede() {
   mkdir -p "$(dirname "$TRACKER_LOCK_DIR")"
   tracker_lock
   prev="$(_tracker_field "$file" status)"
+  if _tracker_live_status "$prev" && [[ "${TRACKER_FORCE_LIVE:-0}" != "1" ]]; then
+    tracker_unlock
+    echo "tracker: $file is '$prev' — a stage may be writing it right now." >&2
+    echo "tracker: let the run finish, or re-run with TRACKER_FORCE_LIVE=1 to supersede anyway." >&2
+    return 3
+  fi
   _tracker_set_field "$file" status superseded
   _tracker_set_field "$file" superseded_by "$ref"
   _tracker_set_field "$file" superseded_reason "$reason"

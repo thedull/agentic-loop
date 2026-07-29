@@ -447,10 +447,10 @@ dependency gating in the first place.
   `advance <file> built`, and silently undo your decision with no trace.
   Instead it fails loudly and the agent stops.
 
-Shelving a `building` or `reviewing` spec is refused (exit 3) unless you pass
-`TRACKER_FORCE_LIVE=1`, since a stage may be writing that file right now.
-Every other status shelves freely — including `pr-open`, which keeps its
-`branch` and `pr` untouched so `restore` puts it back exactly.
+Shelving **or superseding** a `building` or `reviewing` spec is refused (exit
+3) unless you pass `TRACKER_FORCE_LIVE=1`, since a stage may be writing that
+file right now. Every other status goes through freely — including `pr-open`,
+which keeps its `branch` and `pr` untouched so `restore` puts it back exactly.
 
 Benches need no attention: `bench.sh reconcile` retires them for shelved and
 superseded specs the same way it does for merged ones.
