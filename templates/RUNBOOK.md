@@ -74,10 +74,12 @@ In that session:
       Gate will block it.
 - [ ] If an idea builds on another's output, say so during grilling — the
       spec records `depends_on: <ids>` and the factory won't claim it until
-      those are merged (`done`). Dependents wait, they don't block; but they
-      also won't build until you merge, so coupled batches finish across
-      days unless you merge mid-day.
+      those are merged (`done`, or a verified `superseded`). Dependents wait,
+      they don't block; but they also won't build until you merge, so coupled
+      batches finish across days unless you merge mid-day.
 - [ ] Verify the queue: `./scripts/lib/tracker.sh report` → items in `specd`.
+      A `stalled:` column on any row means that item can **never** be
+      claimed — see Phase 4.
 
 ## Phase 3 — unattended run (day)
 
@@ -141,6 +143,27 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 - [ ] Answer `blocked` specs (the question is in the spec's Notes), set them
       back with `./scripts/lib/tracker.sh advance <file> specd` if they
       should retry tomorrow.
+- [ ] **Retire what you no longer want built** — `/agentic-loop:shelve <id>`.
+      Evenings are when this comes up: you hotfixed something by hand, or a
+      spec stopped being worth it. Do NOT mark it `done` (it never shipped)
+      and do NOT mark it `blocked` (that means "stuck, help me", and it's the
+      failure signal `evals/mine.sh` mines). Two honest exits, and the
+      difference is entirely about what happens downstream:
+      **`shelved`** = not now, reversible with `restore`, and everything
+      depending on it **stalls** until you rewire the chain.
+      **`superseded`** = the outcome landed some other way, and dependents
+      become **claimable**.
+
+      `superseded` requires a citation — a commit sha or a spec id — and it's
+      checked, not believed: the commit must be an ancestor of your default
+      branch, the spec must itself be `done`. An unverifiable citation is
+      still recorded but unblocks nobody, and shows up as `stalled:`.
+      The skill reports every spec the removal strands and walks you through
+      each one (drop the dependency / re-point it / shelve that too).
+- [ ] Check for `stalled:` in `tracker.sh report`. Those are dependency
+      chains that can never clear on their own — a shelved dependency, an
+      unverified supersede, or a typo in `depends_on`. Unlike `waits:`,
+      merging something will not fix them; they need a decision.
 - [ ] `./evals/mine.sh` — drafts eval cases from today's failures into
       `evals/cases/_inbox/`; curate the good ones into real suites.
 
@@ -173,4 +196,8 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 | Every headless call: "Failed to authenticate: OAuth session expired" | re-run `/login` in any interactive `claude` session |
 | Everything suddenly bills dollars | an `ANTHROPIC_API_KEY` leaked into scope — unset it; `doctor.sh` catches this |
 | No events in `.agentic/observability/` | observability is opt-in — `/agentic-loop:config observability on` (or `AGENTIC_OBSERVE=1` for one run) |
+| A spec you "cancelled" got built anyway | you edited the title or a frontmatter field by hand — the factory reads `status:` and nothing else, so a title saying SUPERSEDED is a comment. Use `/agentic-loop:shelve`; it sets the status through the tracker seam |
+| A spec sits in `specd` forever with `waits:` that never clears | look for a `stalled:` column on the same row — the dependency is shelved, superseded-but-unverified, or a typo. No amount of merging fixes it; rewire the chain |
+| `shelve`/`supersede` exits 3 | the spec is `building` or `reviewing` and an unattended stage may be writing it. Let the run finish, or re-run with `TRACKER_FORCE_LIVE=1` if you know it's dead (no `.agentic/tracker.lock`, no branch recorded, claim hours old) |
+| A stage errors out saying the spec is `shelved` | you pulled it out of the queue mid-run. That's the guard working — the stage would otherwise have silently reverted your decision. Note the branch it reports and let it stop |
 | A plugin feature you know shipped isn't in this project | project scaffolds are copies and don't self-update — run `/agentic-loop:update` (`doctor.sh` reports the drift). Update `claude plugin update agentic-loop` FIRST: update copies from the *installed* plugin, so a stale cache updates the project to a stale version |

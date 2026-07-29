@@ -414,14 +414,20 @@ you didn't make (terminal state is always an open PR).
 ## Deprioritizing a spec
 
 Work moves faster than the queue. A spec gets claimed, then the fix lands by
-hand, or priorities shift, and it stops being worth building. There are two
-honest ways out, and they are **not** interchangeable:
+hand, or priorities shift, and it stops being worth building. Two states exist
+for that — plus `blocked`, which is often reached for by mistake and means
+something else entirely. All three are off the main line, and none is
+interchangeable with another:
 
 | Status | Means | Dependents |
 |---|---|---|
 | `blocked` | stuck; needs a human answer. The spec still wants doing | stall |
 | `shelved` | nobody is building this now. Reversible | **stall** — rewire needed |
 | `superseded` | the outcome already exists (a hotfix, another spec) | **claimable**, if verified |
+
+Routing a deprioritization through `blocked` is the tempting mistake: it tells
+the next reader the spec is waiting on them, and it poisons the failure signal
+`evals/mine.sh` mines from `blocked` transitions.
 
 Run `/agentic-loop:shelve <id>`. It asks which of the two applies, performs
 the transition, then reports every downstream spec the removal strands and
@@ -451,6 +457,14 @@ Shelving **or superseding** a `building` or `reviewing` spec is refused (exit
 3) unless you pass `TRACKER_FORCE_LIVE=1`, since a stage may be writing that
 file right now. Every other status goes through freely — including `pr-open`,
 which keeps its `branch` and `pr` untouched so `restore` puts it back exactly.
+
+**Shelving is reversible.** `tracker.sh restore <file> <actor>` puts the spec
+back at whatever status it held — including into `pr-open` with its branch and
+PR intact, since `shelve` deliberately touches nothing but its own bookkeeping.
+Restore refuses on a spec that was never shelved, or one with no recorded
+`shelved_from`: guessing where a spec belongs would silently reinsert it at the
+wrong stage. (Rewired dependencies are *not* undone by a restore — re-check
+any chain you changed.)
 
 Benches need no attention: `bench.sh reconcile` retires them for shelved and
 superseded specs the same way it does for merged ones.
