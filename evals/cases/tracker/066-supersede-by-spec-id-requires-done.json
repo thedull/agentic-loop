@@ -1,0 +1,13 @@
+{
+  "id": "tracker-066-supersede-by-spec-id-requires-done",
+  "target": "_tracker_supersede_lands — a spec-id citation counts only when that spec is done",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: dependent\nstatus: specd\ndepends_on: 002\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: dep\nstatus: built\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 003\ntitle: absorbed-it\nstatus: pr-open\n---\nbody\n' > factory/specs/003-c.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_supersede factory/specs/002-b.md me 003 'folded into 003' >/dev/null 2>&1; BEFORE=\"$(_tracker_unmet factory/specs/001-a.md)\"; _tracker_set_field factory/specs/003-c.md status done; AFTER=\"$(_tracker_unmet factory/specs/001-a.md)\"; jq -n --arg b \"$BEFORE\" --arg a \"$AFTER\" '{before: $b, after: $a}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".before == \"002\"" },
+    { "type": "jq", "expr": ".after == \"\"" }
+  ],
+  "_note": "chaining through a spec that has NOT merged yet must not unblock — pr-open is exactly the state tracker.sh's header says does not count, and routing round it via superseded_by would reopen that hole. The same citation starts satisfying the moment 003 actually merges.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

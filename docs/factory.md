@@ -58,7 +58,7 @@ flowchart TD
         grill["adaptive grilling"] --> emit["emit factory/specs/NNN-slug.md"] --> gate["spec review gate (non-trivial only)"]
     end
 
-    gate -->|"specd"| queue[("factory/specs/ state machine:\nqueued->specd->building->built->\nreviewing->pr-open|blocked->done")]
+    gate -->|"specd"| queue[("factory/specs/ state machine:\nqueued->specd->building->built->\nreviewing->pr-open|blocked->done\nany->shelved|superseded (off-ramps)")]
 
     usage{{"usage_gate.sh check (before every claim)"}}
     queue -->|"claim specd->building"| usage
@@ -110,8 +110,9 @@ Roadmap) carries the tracker's state machine. An optional **`depends_on:
 <ids>`** declares that this spec consumes another spec's output: the tracker
 will not claim it until every listed spec is `done` (merged — `pr-open`
 doesn't count, because unmerged work isn't on main and a dependent build
-couldn't see it). The spec stage asks about ordering when ideas in a batch
-look coupled; dep-waiting specs simply wait — they are never `blocked`, and
+couldn't see it) or a **verified** `superseded` (see "Deprioritizing a
+spec"). The spec stage asks about ordering when ideas in a batch look
+coupled; dep-waiting specs simply wait — they are never `blocked`, and
 `report` shows what they wait on. **objective** is one
 imperative sentence ("and also" means two specs). **user_intent_verbatim**
 is your words, uncut — it stops telephone-game drift downstream.
@@ -410,21 +411,78 @@ the interactive session — `doctor.sh` checks this); no retry-storm against a
 capped window (`run_headless.sh` recognizes a cap error and stops); no merge
 you didn't make (terminal state is always an open PR).
 
+## Deprioritizing a spec
+
+Work moves faster than the queue. A spec gets claimed, then the fix lands by
+hand, or priorities shift, and it stops being worth building. There are two
+honest ways out, and they are **not** interchangeable:
+
+| Status | Means | Dependents |
+|---|---|---|
+| `blocked` | stuck; needs a human answer. The spec still wants doing | stall |
+| `shelved` | nobody is building this now. Reversible | **stall** — rewire needed |
+| `superseded` | the outcome already exists (a hotfix, another spec) | **claimable**, if verified |
+
+Run `/agentic-loop:shelve <id>`. It asks which of the two applies, performs
+the transition, then reports every downstream spec the removal strands and
+walks you through repairing each chain — drop the dependency, re-point it, or
+shelve that spec too. It never rewires anything you didn't choose.
+
+**`superseded` is checked, not believed.** It requires a citation — a
+commit-ish or a spec id — and dependents are unblocked only if that citation
+verifies: a commit must be an ancestor of the default branch tip, a spec id
+must itself be `done`. An unverifiable claim is still recorded (it may be
+true, just not provable from here) but unblocks nobody, and shows up as
+`stalled:` in `report`. This is the same fail-closed posture as an unknown
+dependency id, and for the same reason: a spec marked superseded when the
+work did *not* land recreates the exact field failure that motivated
+dependency gating in the first place.
+
+**Two mechanical guards** back this up, because prose gets skipped:
+
+- `advance` cannot *set* `shelved`/`superseded` — that would write the status
+  without the bookkeeping `restore` needs, leaving the spec unrestorable.
+- `advance` cannot move a spec *out of* them either. Otherwise a stage still
+  running when you shelve its spec would finish, call
+  `advance <file> built`, and silently undo your decision with no trace.
+  Instead it fails loudly and the agent stops.
+
+Shelving a `building` or `reviewing` spec is refused (exit 3) unless you pass
+`TRACKER_FORCE_LIVE=1`, since a stage may be writing that file right now.
+Every other status shelves freely — including `pr-open`, which keeps its
+`branch` and `pr` untouched so `restore` puts it back exactly.
+
+Benches need no attention: `bench.sh reconcile` retires them for shelved and
+superseded specs the same way it does for merged ones.
+
 ## Tracker connectors
 
 `scripts/lib/tracker.sh` is a small, deliberate seam: every skill and
-workflow goes through five functions and never touches spec frontmatter
+workflow goes through these functions and never touches spec frontmatter
 directly.
 
 ```
 tracker.sh list <status>              matching spec paths, oldest first
 tracker.sh claim <from> <to> <actor>  atomically claim oldest <from> item
-                                      whose depends_on are all done
+                                      whose depends_on are all satisfied
 tracker.sh advance <file> <status> [key value]...   set status + fields
 tracker.sh next-id                    next zero-padded id (e.g. 004)
 tracker.sh report                     per-status counts + item lines
-                                      (dep-waiting items gain "waits: <ids>")
+                                      (dep-waiting items gain "waits: <ids>",
+                                       dead chains also "stalled: <ids>")
+tracker.sh field <file> <key>         one frontmatter value
+
+# taking a spec out of the line — see "Deprioritizing a spec"
+tracker.sh shelve <file> <actor> [reason]           deprioritized, reversible
+tracker.sh restore <file> <actor>                   undo a shelve
+tracker.sh supersede <file> <actor> <ref> [reason]  outcome landed elsewhere
+tracker.sh dependents <id> [--transitive]           reverse dependency lookup
+tracker.sh dep-drop <file> <id>                     remove one depends_on id
+tracker.sh dep-replace <file> <old> <new>           re-point one depends_on id
 ```
+
+Exit codes: `0` ok · `1` `claim` found nothing claimable · `2` usage/hard
+error · `3` `shelve` refused because the spec is mid-stage.
 
 The shipped backend is plain files: `factory/specs/NNN-slug.md`, a `status:`
 frontmatter field as the state machine, claims serialized through an atomic
@@ -511,8 +569,18 @@ It's waiting on a dependency: its `depends_on` lists specs that aren't
 `done` yet. `tracker.sh report` shows `waits: <ids>` next to it. This is
 deliberate — building it anyway would base it on a `main` that doesn't
 contain its dependency (the field failure that motivated the gate). Merge
-the dependency's PR and the next loop iteration claims it. A `waits:` on an
-id that never resolves usually means a typo in `depends_on`.
+the dependency's PR and the next loop iteration claims it.
+
+If the same row also shows **`stalled: <ids>`**, it is not waiting — it is
+stuck. Those ids name dependencies that can never clear on their own: a
+shelved spec, a superseded one whose citation doesn't verify, or a typo
+matching no spec at all. Nothing downstream will move until a human rewires
+the chain; `/agentic-loop:shelve` walks you through it.
+
+**I don't want this spec built anymore — how do I take it out?**
+`/agentic-loop:shelve`. See "Deprioritizing a spec" below. Do not mark it
+`done` (it never shipped) and do not mark it `blocked` (that means "stuck,
+help me", and is the failure signal `evals/mine.sh` mines).
 
 **What happens when I hit my usage cap mid-run?**
 `usage_gate.sh check`, run before every claim, sees a window cross 90%, logs

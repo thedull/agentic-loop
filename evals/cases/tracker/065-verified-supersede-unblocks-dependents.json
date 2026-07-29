@@ -1,0 +1,14 @@
+{
+  "id": "tracker-065-verified-supersede-unblocks-dependents",
+  "target": "tracker.sh supersede — a commit-ish on the default branch satisfies the dependency",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: dependent\nstatus: specd\ndepends_on: 002\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: dep\nstatus: built\n---\nbody\n' > factory/specs/002-b.md; git init -q .; git add -A; git -c user.email=t@test -c user.name=test commit -qm 'the hotfix'; SHA=\"$(git rev-parse HEAD)\"; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_supersede factory/specs/002-b.md me \"$SHA\" 'landed by hand' >/dev/null 2>&1; UNMET=\"$(_tracker_unmet factory/specs/001-a.md)\"; if CLAIMED=$(tracker_claim specd building loop 2>/dev/null); then EC=0; else EC=$?; fi; jq -n --argjson ec \"$EC\" --arg unmet \"$UNMET\" --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" '{ec: $ec, unmet: $unmet, s1: $s1}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 0" },
+    { "type": "jq", "expr": ".unmet == \"\"" },
+    { "type": "jq", "expr": ".s1 == \"building\"" }
+  ],
+  "_note": "the user's actual case: work landed by hand outside the factory, so the spec is irrelevant but its dependents are genuinely unblocked. Verification is real git ancestry, not a trusted flag — delete the `git init` line from this setup and it degrades to 064's behavior, which is the mutation test for the check.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

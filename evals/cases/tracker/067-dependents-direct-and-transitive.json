@@ -1,0 +1,16 @@
+{
+  "id": "tracker-067-dependents-direct-and-transitive",
+  "target": "tracker.sh dependents — reverse lookup, direct and transitive",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: root\nstatus: specd\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: mid\nstatus: specd\ndepends_on: 001\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 003\ntitle: leaf\nstatus: queued\ndepends_on: 002\n---\nbody\n' > factory/specs/003-c.md; printf -- '---\nid: 004\ntitle: diamond\nstatus: queued\ndepends_on: 001 002\n---\nbody\n' > factory/specs/004-d.md; printf -- '---\nid: 005\ntitle: unrelated\nstatus: queued\n---\nbody\n' > factory/specs/005-e.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; DIRECT=\"$(tracker_dependents 001 | awk -F'\\t' '{print $2}' | sort | tr '\\n' ',')\"; TRANS=\"$(tracker_dependents 001 --transitive | awk -F'\\t' '{print $2\":\"$4}' | sort | tr '\\n' ',')\"; NDIR=\"$(tracker_dependents 001 | wc -l | tr -d ' ')\"; NTRANS=\"$(tracker_dependents 001 --transitive | wc -l | tr -d ' ')\"; NONE=\"$(tracker_dependents 005 | wc -l | tr -d ' ')\"; jq -n --arg d \"$DIRECT\" --arg t \"$TRANS\" --arg nd \"$NDIR\" --arg nt \"$NTRANS\" --arg none \"$NONE\" '{direct: $d, trans: $t, nd: $nd, nt: $nt, none: $none}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".direct == \"002,004,\"" },
+    { "type": "jq", "expr": ".nd == \"2\"" },
+    { "type": "jq", "expr": ".trans == \"002:1,003:2,004:1,\"" },
+    { "type": "jq", "expr": ".nt == \"3\"" },
+    { "type": "jq", "expr": ".none == \"0\"" }
+  ],
+  "_note": "004 depends on BOTH 001 and 002, so a naive walk would print it twice and the shelve skill would interview the user about the same spec twice; the dedupe is what stops that. Depth is what lets the skill order the conversation nearest-first.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

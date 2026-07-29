@@ -1,0 +1,14 @@
+{
+  "id": "tracker-062-advance-cannot-set-gated-status",
+  "target": "tracker.sh advance — Guard A, gated statuses are unreachable without their bookkeeping",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: thing\nstatus: built\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if ( tracker_advance factory/specs/001-a.md shelved ) >/dev/null 2>&1; then A=0; else A=$?; fi; if ( tracker_advance factory/specs/001-a.md superseded ) >/dev/null 2>&1; then B=0; else B=$?; fi; if ( tracker_claim built shelved loop ) >/dev/null 2>&1; then C=0; else C=$?; fi; jq -n --argjson a \"$A\" --argjson b \"$B\" --argjson c \"$C\" --arg st \"$(_tracker_field factory/specs/001-a.md status)\" --arg from \"$(_tracker_field factory/specs/001-a.md shelved_from)\" '{a: $a, b: $b, c: $c, st: $st, from: $from}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".a == 2 and .b == 2 and .c == 2" },
+    { "type": "jq", "expr": ".st == \"built\"" },
+    { "type": "jq", "expr": ".from == \"\"" }
+  ],
+  "_note": "the bypass hole: `advance <file> shelved` writes the status with no shelved_from, producing a spec that can never be restored — silently. Both advance and claim must refuse, since either could reach the status otherwise.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

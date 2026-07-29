@@ -1,0 +1,16 @@
+{
+  "id": "tracker-064-unverified-supersede-does-not-unblock",
+  "target": "tracker.sh supersede — an uncheckable citation leaves dependents unmet",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: dependent\nstatus: specd\ndepends_on: 002\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: dep\nstatus: built\n---\nbody\n' > factory/specs/002-b.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_supersede factory/specs/002-b.md me no-such-ref-xyz 'landed by hand' >/dev/null 2>&1; if CLAIMED=$(tracker_claim specd building loop 2>/dev/null); then EC=0; else EC=$?; fi; jq -n --argjson ec \"$EC\" --arg s2 \"$(_tracker_field factory/specs/002-b.md status)\" --arg by \"$(_tracker_field factory/specs/002-b.md superseded_by)\" --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" --arg unmet \"$(_tracker_unmet factory/specs/001-a.md)\" '{ec: $ec, s2: $s2, by: $by, s1: $s1, unmet: $unmet}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 1" },
+    { "type": "jq", "expr": ".s1 == \"specd\"" },
+    { "type": "jq", "expr": ".unmet == \"002\"" },
+    { "type": "jq", "expr": ".s2 == \"superseded\"" },
+    { "type": "jq", "expr": ".by == \"no-such-ref-xyz\"" }
+  ],
+  "_note": "the headline hazard. Marking a spec superseded when the work did NOT land recreates the field failure in tracker.sh's header — dependents building against a base missing their dependency. The status is still recorded (the claim may be true but uncheckable from here) but it unblocks nobody. Paired with 065, which proves a real citation DOES unblock, so this is not just 'supersede never works'.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

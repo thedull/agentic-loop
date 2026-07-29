@@ -1,0 +1,18 @@
+{
+  "id": "tracker-057-shelve-preserves-restore-state",
+  "target": "tracker.sh shelve — records shelved_from, leaves PR/branch untouched",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: shipped\nstatus: pr-open\nbranch: claude/idea-thing\npr: https://example.test/pull/9\nclaimed_by: review-loop\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_shelve factory/specs/001-a.md me 'superseded by hotfix' >/dev/null; jq -n --arg st \"$(_tracker_field factory/specs/001-a.md status)\" --arg from \"$(_tracker_field factory/specs/001-a.md shelved_from)\" --arg br \"$(_tracker_field factory/specs/001-a.md branch)\" --arg pr \"$(_tracker_field factory/specs/001-a.md pr)\" --arg cb \"$(_tracker_field factory/specs/001-a.md claimed_by)\" --arg rs \"$(_tracker_field factory/specs/001-a.md shelved_reason)\" --arg at \"$(_tracker_field factory/specs/001-a.md shelved_at)\" '{st: $st, from: $from, br: $br, pr: $pr, cb: $cb, rs: $rs, at: $at}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".st == \"shelved\"" },
+    { "type": "jq", "expr": ".from == \"pr-open\"" },
+    { "type": "jq", "expr": ".br == \"claude/idea-thing\"" },
+    { "type": "jq", "expr": ".pr == \"https://example.test/pull/9\"" },
+    { "type": "jq", "expr": ".cb == \"review-loop\"" },
+    { "type": "jq", "expr": ".rs == \"superseded by hotfix\"" },
+    { "type": "jq", "expr": ".at != \"\"" }
+  ],
+  "_note": "branch/pr/claimed_by MUST survive a shelve byte-for-byte — that is the whole reason a shelve/restore round trip on a pr-open spec is exact rather than lossy. If a future edit makes shelve reset those fields, restoring the spec would orphan its PR.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "tracker-070-waits-column-unchanged-for-existing-parsers",
+  "target": "tracker.sh report — the new column is strictly additive",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: plain\nstatus: queued\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: waiting\nstatus: queued\ndepends_on: 010\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 010\ntitle: dep\nstatus: building\n---\nbody\n' > factory/specs/010-c.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; R=\"$(tracker_report)\"; N1=\"$(printf '%s' \"$R\" | awk -F'\\t' '$2==\"001\" {print NF}')\"; N2=\"$(printf '%s' \"$R\" | awk -F'\\t' '$2==\"002\" {print NF}')\"; T1=\"$(printf '%s' \"$R\" | awk -F'\\t' '$2==\"001\" {print $3}')\"; jq -n --arg n1 \"$N1\" --arg n2 \"$N2\" --arg t1 \"$T1\" '{n1: $n1, n2: $n2, t1: $t1}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".n1 == \"3\"" },
+    { "type": "jq", "expr": ".n2 == \"4\"" },
+    { "type": "jq", "expr": ".t1 == \"plain\"" }
+  ],
+  "_note": "a spec with nothing wrong still emits exactly three fields, and a merely-waiting one exactly four — the stalled: column appears only when there is something dead to name. Anything already reading status/id/title positionally keeps working.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

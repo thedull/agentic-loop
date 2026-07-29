@@ -1,0 +1,14 @@
+{
+  "id": "tracker-059-shelve-refuses-live-stage",
+  "target": "tracker.sh shelve — exit 3 while a stage may be mid-write",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: in-flight\nstatus: building\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: reviewing-now\nstatus: reviewing\n---\nbody\n' > factory/specs/002-b.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if tracker_shelve factory/specs/001-a.md me >/dev/null 2>&1; then B=0; else B=$?; fi; if tracker_shelve factory/specs/002-b.md me >/dev/null 2>&1; then R=0; else R=$?; fi; jq -n --argjson b \"$B\" --argjson r \"$R\" --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" --arg s2 \"$(_tracker_field factory/specs/002-b.md status)\" --arg f1 \"$(_tracker_field factory/specs/001-a.md shelved_from)\" '{b: $b, r: $r, s1: $s1, s2: $s2, f1: $f1}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".b == 3 and .r == 3" },
+    { "type": "jq", "expr": ".s1 == \"building\" and .s2 == \"reviewing\"" },
+    { "type": "jq", "expr": ".f1 == \"\"" }
+  ],
+  "_note": "exit 3 specifically, not a generic 2 — the shelve skill distinguishes 'refused, offer the force flag' from 'usage error, stop'. Nothing may be written on refusal: a half-shelved spec whose status stayed `building` but gained shelved_from would restore to the wrong place.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

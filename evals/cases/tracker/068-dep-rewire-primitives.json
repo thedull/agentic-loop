@@ -1,0 +1,16 @@
+{
+  "id": "tracker-068-dep-rewire-primitives",
+  "target": "tracker.sh dep-drop / dep-replace",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 010\ntitle: multi\nstatus: queued\ndepends_on: 001 002 003\n---\nbody\n' > factory/specs/010-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_dep_drop factory/specs/010-a.md 002; AFTER_DROP=\"$(_tracker_field factory/specs/010-a.md depends_on)\"; tracker_dep_replace factory/specs/010-a.md 003 007; AFTER_REP=\"$(_tracker_field factory/specs/010-a.md depends_on)\"; if ( tracker_dep_replace factory/specs/010-a.md 099 100 ) >/dev/null 2>&1; then MISS=0; else MISS=$?; fi; UNCHANGED=\"$(_tracker_field factory/specs/010-a.md depends_on)\"; tracker_dep_drop factory/specs/010-a.md 001; tracker_dep_drop factory/specs/010-a.md 007; EMPTY=\"$(_tracker_field factory/specs/010-a.md depends_on)\"; jq -n --arg d \"$AFTER_DROP\" --arg r \"$AFTER_REP\" --argjson m \"$MISS\" --arg u \"$UNCHANGED\" --arg e \"$EMPTY\" '{drop: $d, rep: $r, miss: $m, unchanged: $u, empty: $e}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".drop == \"001 003\"" },
+    { "type": "jq", "expr": ".rep == \"001 007\"" },
+    { "type": "jq", "expr": ".miss == 2" },
+    { "type": "jq", "expr": ".unchanged == \"001 007\"" },
+    { "type": "jq", "expr": ".empty == \"\"" }
+  ],
+  "_note": "dep-replace on an id that is not there must FAIL rather than no-op: a silent no-op reads as a successful rewire, and the user walks away believing a chain was repaired when it was not. Dropping the last dependency must leave the field empty, not a stale list.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

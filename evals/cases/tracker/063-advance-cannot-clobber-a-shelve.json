@@ -1,0 +1,14 @@
+{
+  "id": "tracker-063-advance-cannot-clobber-a-shelve",
+  "target": "tracker.sh advance — Guard B, a returning stage cannot silently undo a shelve",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: raced\nstatus: building\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; TRACKER_FORCE_LIVE=1 tracker_shelve factory/specs/001-a.md human 'no longer needed' >/dev/null; if ( tracker_advance factory/specs/001-a.md built branch claude/idea-raced ) >/dev/null 2>&1; then EC=0; else EC=$?; fi; if ( TRACKER_FORCE_LIVE=1 tracker_advance factory/specs/001-a.md built ) >/dev/null 2>&1; then F=0; else F=$?; fi; jq -n --argjson ec \"$EC\" --argjson f \"$F\" --arg st \"$(_tracker_field factory/specs/001-a.md status)\" '{ec: $ec, f: $f, st: $st}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 2" },
+    { "type": "jq", "expr": ".f == 0" },
+    { "type": "jq", "expr": ".st == \"built\"" }
+  ],
+  "_note": "the race this guard exists for: a human shelves a spec while its build stage is still running; that stage finishes and calls `advance <file> built`, which without the guard reverts the human's decision leaving no trace at all. First assertion: the unaware stage is refused. Second: an operator who knows what they are doing can still force it, so the guard is a gate and not a wall.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

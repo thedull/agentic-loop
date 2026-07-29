@@ -146,7 +146,11 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    the branch. If benches are off or the bench is missing, skip this silently.
 
 10. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
-   append the digest entry to `.agentic/STATUS.md`:
+   append the digest entry to `.agentic/STATUS.md`.
+
+   If `advance` fails saying the spec is `shelved` or `superseded`, a human
+   pulled it out of the queue mid-review. **Stop and report** the PR url so
+   the work isn't lost — do not retry and do not force. Then the entry:
    `pr-open: <id> <title> — <url> | tests: <pass/fail> | caveats: <n> |
    escalation: <yes/no> | plan: <n> checks, <m> need device`
 

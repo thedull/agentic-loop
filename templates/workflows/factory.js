@@ -62,7 +62,8 @@ const SCOUT_PROMPT =
    2. Run: scripts/lib/bench.sh reconcile
       - no-op unless .bench.enabled is set in .agentic/config.json; otherwise
         ensures every pr-open spec has a fresh review bench and removes
-        benches for done specs. Never fails this step either way.
+        benches for specs that have left the queue (done, shelved,
+        superseded). Never fails this step either way.
    3. Run: scripts/lib/tracker.sh list specd
    4. Return the gate verdict and up to ${MAX_IDEAS} spec file paths, oldest first.
       Specs waiting on unmet depends_on are not claimable — tracker.sh skips

@@ -1,0 +1,14 @@
+{
+  "id": "tracker-071-supersede-requires-a-citation",
+  "target": "tracker.sh supersede — refuses without a REF",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: thing\nstatus: built\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if ( tracker_supersede factory/specs/001-a.md me ) >/dev/null 2>&1; then EC=0; else EC=$?; fi; if ( tracker_supersede factory/specs/001-a.md me '' 'reason only' ) >/dev/null 2>&1; then E2=0; else E2=$?; fi; jq -n --argjson ec \"$EC\" --argjson e2 \"$E2\" --arg st \"$(_tracker_field factory/specs/001-a.md status)\" --arg by \"$(_tracker_field factory/specs/001-a.md superseded_by)\" '{ec: $ec, e2: $e2, st: $st, by: $by}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 2 and .e2 == 2" },
+    { "type": "jq", "expr": ".st == \"built\"" },
+    { "type": "jq", "expr": ".by == \"\"" }
+  ],
+  "_note": "the citation is what makes `superseded` safe to unblock dependents against — a supersede with no ref would be an unfalsifiable claim, and the verification in _tracker_supersede_lands would have nothing to check. Requiring it at the entry point is why that function can assume a ref exists.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

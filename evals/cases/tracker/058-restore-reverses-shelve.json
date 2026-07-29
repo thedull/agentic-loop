@@ -1,0 +1,15 @@
+{
+  "id": "tracker-058-restore-reverses-shelve",
+  "target": "tracker.sh restore — returns the spec to the status it was shelved from",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: built-thing\nstatus: built\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_shelve factory/specs/001-a.md me >/dev/null; MID=\"$(_tracker_field factory/specs/001-a.md status)\"; tracker_restore factory/specs/001-a.md me >/dev/null; jq -n --arg mid \"$MID\" --arg st \"$(_tracker_field factory/specs/001-a.md status)\" --arg from \"$(_tracker_field factory/specs/001-a.md shelved_from)\" --arg ra \"$(_tracker_field factory/specs/001-a.md restored_at)\" '{mid: $mid, st: $st, from: $from, ra: $ra}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".mid == \"shelved\"" },
+    { "type": "jq", "expr": ".st == \"built\"" },
+    { "type": "jq", "expr": ".from == \"\"" },
+    { "type": "jq", "expr": ".ra != \"\"" }
+  ],
+  "_note": "shelved_from must be CLEARED on restore, not left behind: a stale value would let a second restore silently move a spec that was never shelved.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

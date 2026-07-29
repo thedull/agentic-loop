@@ -1,0 +1,15 @@
+{
+  "id": "bench-096-reconcile-removes-retired-benches",
+  "target": "bench.sh reconcile — a bench is retired when its spec leaves the queue, not only when it merges",
+  "kind": "bash-unit",
+  "cmd": "source \"$FIXTURES/bench-repo.sh\"; bench_fixture_setup; cd work; export FACTORY_BENCH_DIR=\"$PWD/../benches\"; mkdir -p .agentic; echo '{\"bench\":{\"enabled\":true}}' > .agentic/config.json; bench_fixture_spec . pr-open feature 001; source \"$PLUGIN_ROOT/scripts/lib/bench.sh\"; bench_reconcile 2>/dev/null; MADE=$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo 1 || echo 0); tracker_shelve factory/specs/001-t.md me 'deprioritized' >/dev/null; bench_reconcile 2>/dev/null; AFTER_SHELVE=$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo 1 || echo 0); tracker_restore factory/specs/001-t.md me >/dev/null; bench_reconcile 2>/dev/null; BACK=$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo 1 || echo 0); tracker_supersede factory/specs/001-t.md me 001 'landed by hand' >/dev/null 2>&1; bench_reconcile 2>/dev/null; AFTER_SUP=$([ -d \"$FACTORY_BENCH_DIR/feature\" ] && echo 1 || echo 0); jq -n --argjson m \"$MADE\" --argjson s \"$AFTER_SHELVE\" --argjson b \"$BACK\" --argjson u \"$AFTER_SUP\" '{made: $m, after_shelve: $s, back: $b, after_sup: $u}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".made == 1" },
+    { "type": "jq", "expr": ".after_shelve == 0" },
+    { "type": "jq", "expr": ".back == 1" },
+    { "type": "jq", "expr": ".after_sup == 0" }
+  ],
+  "_note": "a spec that was pr-open and is then shelved or superseded belongs to NEITHER of reconcile's loops, so before this fix its bench leaked forever — never refreshed, never removed, silently rotting against the freshness rule the file exists to enforce. The restore step in the middle proves the invariant is reconciled from current state rather than remembered: un-shelving brings the bench straight back.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

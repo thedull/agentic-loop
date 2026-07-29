@@ -67,6 +67,8 @@ already in the queue) — record `depends_on: <ids>` in its frontmatter. The
 tracker will not claim it until every listed spec is `done` (merged), which
 prevents the observed field failure: a dependent built against a base that
 never contained its dependency, or blocked wastefully discovering it mid-run.
+(A dependency is also satisfied by a `superseded` spec whose citation
+verifies — the work landed some other way. Nothing else counts.)
 When coupling is plausible but not certain, ask — one question, "does B need
 A's <thing> to exist first?" — rather than guessing either way. Independent
 ideas get no `depends_on` line at all.

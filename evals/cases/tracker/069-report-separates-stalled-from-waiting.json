@@ -1,0 +1,15 @@
+{
+  "id": "tracker-069-report-separates-stalled-from-waiting",
+  "target": "tracker.sh report — the stalled: column names dead chains only",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: on-a-live-dep\nstatus: queued\ndepends_on: 010\n---\nbody\n' > factory/specs/001-a.md; printf -- '---\nid: 002\ntitle: on-a-shelved-dep\nstatus: queued\ndepends_on: 011\n---\nbody\n' > factory/specs/002-b.md; printf -- '---\nid: 003\ntitle: on-a-typo\nstatus: queued\ndepends_on: 099\n---\nbody\n' > factory/specs/003-c.md; printf -- '---\nid: 004\ntitle: mixed\nstatus: queued\ndepends_on: 010 011\n---\nbody\n' > factory/specs/004-d.md; printf -- '---\nid: 010\ntitle: still-going\nstatus: building\n---\nbody\n' > factory/specs/010-e.md; printf -- '---\nid: 011\ntitle: dropped\nstatus: built\n---\nbody\n' > factory/specs/011-f.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; tracker_shelve factory/specs/011-f.md me 'deprioritized' >/dev/null; R=\"$(tracker_report)\"; row() { printf '%s' \"$R\" | awk -F'\\t' -v i=\"$1\" '$2==i {print $4\"|\"$5}'; }; jq -n --arg r1 \"$(row 001)\" --arg r2 \"$(row 002)\" --arg r3 \"$(row 003)\" --arg r4 \"$(row 004)\" '{r1: $r1, r2: $r2, r3: $r3, r4: $r4}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".r1 == \"waits: 010|\"" },
+    { "type": "jq", "expr": ".r2 == \"waits: 011|stalled: 011\"" },
+    { "type": "jq", "expr": ".r3 == \"waits: 099|stalled: 099\"" },
+    { "type": "jq", "expr": ".r4 == \"waits: 010 011|stalled: 011\"" }
+  ],
+  "_note": "the whole point of the column. A dep that is merely `building` clears on its own; a shelved one never does, and before this split the two were indistinguishable in the report. Row 004 is the discriminating case: it must list BOTH ids as waiting but only the shelved one as stalled, so a naive 'copy waits into stalled' implementation fails here.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

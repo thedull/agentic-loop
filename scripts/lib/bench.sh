@@ -155,20 +155,29 @@ bench_remove() {
   return 0
 }
 
+# Statuses whose benches should not exist: the PR is merged, or the spec left
+# the queue. `done` alone is not enough — a spec that was pr-open and is then
+# shelved or superseded belongs to NEITHER loop below, so its bench would leak
+# forever: never refreshed, never removed, and quietly rotting against the
+# freshness rule this file exists to enforce.
+_BENCH_RETIRED_STATUSES="done shelved superseded"
+
 # bench_reconcile — the invariant, enforced. Idempotent; safe every iteration.
 bench_reconcile() {
   bench_enabled || return 0
-  local f branch slug
+  local f branch slug s
   while IFS= read -r f; do
     [[ -n "$f" ]] && bench_ensure "$f"
   done < <(tracker_list pr-open)
-  while IFS= read -r f; do
-    [[ -n "$f" ]] || continue
-    branch="$(_tracker_field "$f" branch)"
-    [[ -n "$branch" ]] || continue
-    slug="$(_bench_slug "$branch" "$f")"
-    bench_remove "$slug"
-  done < <(tracker_list done)
+  for s in $_BENCH_RETIRED_STATUSES; do
+    while IFS= read -r f; do
+      [[ -n "$f" ]] || continue
+      branch="$(_tracker_field "$f" branch)"
+      [[ -n "$branch" ]] || continue
+      slug="$(_bench_slug "$branch" "$f")"
+      bench_remove "$slug"
+    done < <(tracker_list "$s")
+  done
   return 0
 }
 

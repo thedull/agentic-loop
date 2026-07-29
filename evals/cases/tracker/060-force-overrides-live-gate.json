@@ -1,0 +1,14 @@
+{
+  "id": "tracker-060-force-overrides-live-gate",
+  "target": "tracker.sh shelve — TRACKER_FORCE_LIVE=1 overrides the mid-stage refusal",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; printf -- '---\nid: 001\ntitle: in-flight\nstatus: building\n---\nbody\n' > factory/specs/001-a.md; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; if TRACKER_FORCE_LIVE=1 tracker_shelve factory/specs/001-a.md me 'abandoning the run' >/dev/null 2>&1; then EC=0; else EC=$?; fi; jq -n --argjson ec \"$EC\" --arg st \"$(_tracker_field factory/specs/001-a.md status)\" --arg from \"$(_tracker_field factory/specs/001-a.md shelved_from)\" '{ec: $ec, st: $st, from: $from}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 0" },
+    { "type": "jq", "expr": ".st == \"shelved\"" },
+    { "type": "jq", "expr": ".from == \"building\"" }
+  ],
+  "_note": "paired with 059 — together they prove the gate actually reads the flag rather than always refusing or always allowing. shelved_from must record `building` so restore puts the spec back mid-pipeline, where a human can decide to re-run the stage.",
+  "provenance": { "source": "hand", "date": "2026-07-28" }
+}

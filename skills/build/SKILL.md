@@ -72,6 +72,12 @@ marked `blocked` with questions recorded — never guessed through.
    worktree if your platform requires, and stop. One spec per invocation —
    the loop cadence, not this skill, decides throughput.
 
+   If `advance` fails saying the spec is `shelved` or `superseded`, a human
+   took it out of the queue while you were building. **Stop and report** —
+   do not retry, and never force past it. Say what you built and on which
+   branch so the work is findable; the shelve was a deliberate decision and
+   overriding it would erase that decision silently.
+
 ## Unattended rules
 
 - `needs_input` from any worker, or any question only the user can answer →
