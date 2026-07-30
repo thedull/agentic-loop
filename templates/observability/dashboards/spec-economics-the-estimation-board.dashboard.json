@@ -1,0 +1,173 @@
+{
+  "title": "Agentic Loop \u2014 Spec Economics (the estimation board)",
+  "dashboardId": "",
+  "description": "Generated from templates/observability/dashboards.md \u2014 board: Spec Economics (the estimation board)",
+  "role": "",
+  "owner": "",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "default",
+      "panels": [
+        {
+          "id": "panel1",
+          "type": "bar",
+          "title": "Tokens per spec",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT spec_id, SUM(usage_input_tokens + usage_output_tokens) AS tokens FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') AND spec_id IS NOT NULL GROUP BY spec_id ORDER BY tokens DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "spec_id",
+                    "alias": "spec_id",
+                    "column": "spec_id",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "tokens",
+                    "alias": "tokens",
+                    "column": "tokens",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel2",
+          "type": "bar",
+          "title": "Errors per spec",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT spec_id, SUM(CASE WHEN status IN ('error','partial') THEN 1 ELSE 0 END) AS llm_errors FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') AND spec_id IS NOT NULL GROUP BY spec_id ORDER BY llm_errors DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "spec_id",
+                    "alias": "spec_id",
+                    "column": "spec_id",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "llm_errors",
+                    "alias": "llm_errors",
+                    "column": "llm_errors",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel3",
+          "type": "table",
+          "title": "Re-open leaderboard",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT detail_spec_file AS spec, COUNT(*) - 1 AS reopens FROM agentic WHERE event = 'tracker_transition' AND detail_to_status = 'building' GROUP BY detail_spec_file HAVING COUNT(*) > 1 ORDER BY reopens DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "spec",
+                    "alias": "spec",
+                    "column": "spec",
+                    "color": null
+                  },
+                  {
+                    "label": "reopens",
+                    "alias": "reopens",
+                    "column": "reopens",
+                    "color": null
+                  }
+                ],
+                "y": [],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "list": []
+  }
+}

@@ -1,0 +1,363 @@
+{
+  "title": "Agentic Loop \u2014 The Factory (weekly trends)",
+  "dashboardId": "",
+  "description": "Generated from templates/observability/dashboards.md \u2014 board: The Factory (weekly trends)",
+  "role": "",
+  "owner": "",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "default",
+      "panels": [
+        {
+          "id": "panel1",
+          "type": "line",
+          "title": "Latency: p50/p90 stage duration by phase",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, phase, approx_percentile_cont(duration_ms, 0.5) AS p50, approx_percentile_cont(duration_ms, 0.9) AS p90 FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') AND duration_ms IS NOT NULL GROUP BY t, phase ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "p50",
+                    "alias": "p50",
+                    "column": "p50",
+                    "color": null
+                  },
+                  {
+                    "label": "p90",
+                    "alias": "p90",
+                    "column": "p90",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [
+                  {
+                    "label": "phase",
+                    "alias": "phase",
+                    "column": "phase",
+                    "color": null
+                  }
+                ],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel2",
+          "type": "bar",
+          "title": "Traffic: activity by phase",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, phase, COUNT(*) AS events FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') GROUP BY t, phase ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "events",
+                    "alias": "events",
+                    "column": "events",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [
+                  {
+                    "label": "phase",
+                    "alias": "phase",
+                    "column": "phase",
+                    "color": null
+                  }
+                ],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel3",
+          "type": "line",
+          "title": "Errors: LLM-layer error rate",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, SUM(CASE WHEN status IN ('error','partial') THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS err_pct FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') GROUP BY t ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "err_pct",
+                    "alias": "err_pct",
+                    "column": "err_pct",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel4",
+          "type": "bar",
+          "title": "Saturation: gate postpones per day",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, COUNT(*) AS postpones FROM agentic WHERE event = 'gate' GROUP BY t ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "postpones",
+                    "alias": "postpones",
+                    "column": "postpones",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel5",
+          "type": "bar",
+          "title": "Spend by phase",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, phase, SUM(est_cost_usd) AS metered_usd FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') GROUP BY t, phase ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "metered_usd",
+                    "alias": "metered_usd",
+                    "column": "metered_usd",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [
+                  {
+                    "label": "phase",
+                    "alias": "phase",
+                    "column": "phase",
+                    "color": null
+                  }
+                ],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel6",
+          "type": "line",
+          "title": "Deterministic vs stochastic activity",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(ts) AS t, SUM(CASE WHEN event IN ('shim_call','agent_start','agent_stop', 'headless_iteration') THEN 1 ELSE 0 END) AS stochastic, SUM(CASE WHEN event NOT IN ('shim_call','agent_start','agent_stop', 'headless_iteration','run_start','run_end') THEN 1 ELSE 0 END) AS deterministic FROM agentic GROUP BY t ORDER BY t",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "t",
+                    "alias": "t",
+                    "column": "t",
+                    "color": null
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "stochastic",
+                    "alias": "stochastic",
+                    "column": "stochastic",
+                    "color": null
+                  },
+                  {
+                    "label": "deterministic",
+                    "alias": "deterministic",
+                    "column": "deterministic",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "list": []
+  }
+}

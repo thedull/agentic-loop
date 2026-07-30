@@ -1,0 +1,12 @@
+{
+  "id": "observability-017-shipped-dashboards-are-valid-and-complete",
+  "target": "templates/observability/dashboards/*.json — the checked-in output stays valid v8 dashboard JSON with the full 14-panel set (gates drift between dashboards.md and the shipped files, without needing python3 in the eval sandbox)",
+  "kind": "bash-unit",
+  "cmd": "cd \"$PLUGIN_ROOT\"; jq -s '{boards: length, total_panels: (map(.tabs[0].panels | length) | add), titles: map(.title) | sort}' templates/observability/dashboards/*.dashboard.json",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".boards == 3 and .total_panels == 14" },
+    { "type": "jq", "expr": ".titles | any(. | test(\"Tonight\")) and any(. | test(\"Factory\")) and any(. | test(\"Spec Economics\"))" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}
