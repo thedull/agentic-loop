@@ -58,6 +58,8 @@
 #   tracker.sh dependents <id> [--transitive]        reverse dependency lookup
 #   tracker.sh dep-drop <file> <id>                  remove one depends_on id
 #   tracker.sh dep-replace <file> <old> <new>        re-point one depends_on id
+#   tracker.sh reconcile-done [actor]     advance pr-open specs whose branch/PR
+#                                         is verifiably merged (stamps done_at)
 #
 # Exit codes: 0 ok · 1 `claim` found nothing claimable · 2 usage/hard error
 #             3 `shelve`/`supersede` refused — the spec is mid-stage
@@ -552,6 +554,55 @@ tracker_next_id() {
   printf '%03d\n' $((max + 1))
 }
 
+# tracker_reconcile_done [ACTOR] — advance every pr-open spec whose work
+# provably landed on the default branch to `done`, stamping `done_at`.
+#
+# A safety net, not the primary path: the operator stamping `done` at merge
+# time still works and still wins. This exists because nothing *guarantees*
+# that stamp — a merged PR whose spec stays `pr-open` strands every dependent
+# (deps count only `done`) and silently truncates cycle-time data. The scout
+# runs this once per factory iteration.
+#
+# Verification is fail-closed, the _tracker_supersede_lands posture:
+#   1. git evidence  — the recorded branch resolves and is an ancestor of the
+#                      default-branch tip (merge commits, fast-forwards);
+#   2. gh evidence   — squash/rebase merges leave no ancestry, so when the
+#                      recorded pr is an https URL and `gh` is on PATH, the
+#                      forge's MERGED state counts.
+# Neither verifies -> the spec is left exactly as it is. Never guesses.
+tracker_reconcile_done() {
+  local actor="${1:-reconcile}" f branch pr base state merged
+  [[ -d "$FACTORY_SPECS_DIR" ]] || return 0
+  # `|| true` inside the substitutions: unlike _tracker_supersede_lands (only
+  # ever called in condition contexts), this runs straight from the CLI
+  # dispatch, where a repo with no origin would errexit the bare assignment.
+  base="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  [[ -n "$base" ]] || base="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+  [[ -n "$base" ]] || base="main"
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    merged=0
+    branch="$(_tracker_field "$f" branch)"
+    if [[ -n "$branch" ]] \
+       && git rev-parse --verify --quiet "${branch}^{commit}" >/dev/null 2>&1 \
+       && git merge-base --is-ancestor "$branch" "$base" 2>/dev/null; then
+      merged=1
+    fi
+    if [[ "$merged" -eq 0 ]]; then
+      pr="$(_tracker_field "$f" pr)"
+      if [[ "$pr" == https://* ]] && command -v gh >/dev/null 2>&1; then
+        state="$(gh pr view "$pr" --json state --jq .state 2>/dev/null || true)"
+        if [[ "$state" == "MERGED" ]]; then merged=1; fi
+      fi
+    fi
+    if [[ "$merged" -eq 1 ]]; then
+      tracker_advance "$f" done done_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      echo "reconciled done: $f"
+    fi
+  done < <(tracker_list pr-open)
+  return 0
+}
+
 # tracker_report — per-status counts, then "status<TAB>id<TAB>title" lines;
 # items with unmet depends_on gain a trailing "waits: <ids>" column, and any
 # whose wait can never clear on its own gain a further "stalled: <ids>".
@@ -600,6 +651,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     dependents)  tracker_dependents "$@" ;;
     dep-drop)    tracker_dep_drop "$@" ;;
     dep-replace) tracker_dep_replace "$@" ;;
-    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|shelve|restore|supersede|dependents|dep-drop|dep-replace ..." ;;
+    reconcile-done) tracker_reconcile_done "$@" ;;
+    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
   esac
 fi
