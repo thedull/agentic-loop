@@ -127,7 +127,9 @@ data-mining substrate: `./evals/mine.sh` turns logged failures into draft
 eval cases, and `./evals/run_eval.sh` runs the suites (free tiers always $0).
 Reference: [`docs/observability.md`](docs/observability.md) ·
 [`evals/README.md`](evals/README.md) · design rationale:
-[`docs/observability-evals-analysis.md`](docs/observability-evals-analysis.md)
+[`docs/observability-evals-analysis.md`](docs/observability-evals-analysis.md) ·
+architecture, metrics & roadmap:
+[`docs/observability-architecture.md`](docs/observability-architecture.md)
 
 ## Design rationale (why it's built this way)
 

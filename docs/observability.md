@@ -2,7 +2,8 @@
 
 Opt-in event log + run-tree reports for the loop and the factory. Design
 rationale: `docs/observability-evals-analysis.md` §1–2. This page is the
-operating reference.
+operating reference. Architecture, metric catalog, platform comparison and
+the forward roadmap: [`observability-architecture.md`](observability-architecture.md).
 
 ## Enable / disable
 
