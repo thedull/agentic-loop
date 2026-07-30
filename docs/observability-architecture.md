@@ -243,6 +243,15 @@ headroom for the PKM and the Hermes agent it already hosts.
 | Vercel / Heroku | n/a | **The cold-start question answers itself at the architecture level: wrong model entirely.** An ingestion store needs a persistent process and a persistent disk; serverless platforms provide neither natively (marketplace databases reintroduce cost and a second vendor). Cold starts would also make the evening-review dashboard sluggish at exactly its moment of use — but that is the secondary objection |
 | Budget VPS (Hetzner CX22, 2 vCPU/4 GB) | ~€4.4 | Honest option, more headroom than e2-micro, 20 TB egress. But it pays monthly for what the Mini does free, and reintroduces the off-box privacy surface. Becomes the right answer only if the Mini's headroom genuinely runs out |
 
+> **Topology clarification (2026-07-30).** The loop runs on the dev laptop;
+> the Mini is the always-on "own cloud" box — so the recommendation is
+> producer/store split: capture + push on each loop machine, the store on
+> the Mini, both sides and the phone joined by the tailnet (which spans
+> networks — the phone reaches the dashboard from any LAN or cellular).
+> The pipeline is offline-first by construction: capture is local-always,
+> the push cursor holds across disconnects and flushes the backlog on
+> reconnect, and prune refuses to rotate unacknowledged lines.
+
 ## 7. Platform comparison
 
 The contest was run openly — LLM-native SaaS, classic log stacks, lightweight

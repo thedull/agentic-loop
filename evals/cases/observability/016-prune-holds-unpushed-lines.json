@@ -1,0 +1,12 @@
+{
+  "id": "observability-016-prune-holds-unpushed-lines",
+  "target": "observe_prune.sh — never gzip lines the export stack has not acknowledged",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability/state; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; printf '%s' '{\"observability\":{\"enabled\":true,\"stack\":{\"enabled\":true}}}' > .agentic/config.json; \"$PLUGIN_ROOT/scripts/observe_prune.sh\" --days 0 >/dev/null 2>&1; HELD=false; [ -f .agentic/observability/events-20260728.jsonl ] && [ ! -f .agentic/observability/events-20260728.jsonl.gz ] && HELD=true; printf '%s' '{\"events-20260728.jsonl\":10}' > .agentic/observability/state/push-cursor.json; \"$PLUGIN_ROOT/scripts/observe_prune.sh\" --days 0 >/dev/null 2>&1; GZ=false; [ -f .agentic/observability/events-20260728.jsonl.gz ] && GZ=true; jq -n --argjson held \"$HELD\" --argjson gz \"$GZ\" '{held: $held, gz_after_ack: $gz}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".held == true" },
+    { "type": "jq", "expr": ".gz_after_ack == true" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}
