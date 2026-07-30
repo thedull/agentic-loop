@@ -243,6 +243,21 @@ headroom for the PKM and the Hermes agent it already hosts.
 | Vercel / Heroku | n/a | **The cold-start question answers itself at the architecture level: wrong model entirely.** An ingestion store needs a persistent process and a persistent disk; serverless platforms provide neither natively (marketplace databases reintroduce cost and a second vendor). Cold starts would also make the evening-review dashboard sluggish at exactly its moment of use — but that is the secondary objection |
 | Budget VPS (Hetzner CX22, 2 vCPU/4 GB) | ~€4.4 | Honest option, more headroom than e2-micro, 20 TB egress. But it pays monthly for what the Mini does free, and reintroduces the off-box privacy surface. Becomes the right answer only if the Mini's headroom genuinely runs out |
 
+> **Dashboards are prebuilt, not hand-authored (2026-07-30).** The 14 panels
+> across all three boards were built against a real, live OpenObserve
+> 0.91.5 instance — pushed real events via `observe_push.sh`, verified
+> every query executes error-free and returns real rows, confirmed axis/
+> breakdown wiring visually in the UI — then shipped as importable JSON
+> (`templates/observability/dashboards/*.json`). `observe_dashboards_import.sh`
+> is the one-command install; `observe_dashboards_gen.py` (a maintainer-only,
+> build-time tool — never scaffolded, never run by the loop) regenerates
+> them from `dashboards.md` so the doc and the JSON can't drift. One real
+> finding from that process, worth knowing: OpenObserve only creates a
+> schema field once it has seen a non-null value for that key, so a
+> fresh/low-volume instance can show "field not found" on panels for event
+> types (gate, pr-open, LLM errors) that haven't fired yet — self-resolving,
+> not a defect, documented in the stack README.
+
 > **Topology clarification (2026-07-30).** The loop runs on the dev laptop;
 > the Mini is the always-on "own cloud" box — so the recommendation is
 > producer/store split: capture + push on each loop machine, the store on

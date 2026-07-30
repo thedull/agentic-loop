@@ -1,0 +1,291 @@
+{
+  "title": "Agentic Loop \u2014 Tonight (the phone board, evening review)",
+  "dashboardId": "",
+  "description": "Generated from templates/observability/dashboards.md \u2014 board: Tonight (the phone board, evening review)",
+  "role": "",
+  "owner": "",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "default",
+      "panels": [
+        {
+          "id": "panel1",
+          "type": "metric",
+          "title": "Today's metered spend ($)",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT SUM(est_cost_usd) AS metered_usd FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration')",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "label": "metered_usd",
+                    "alias": "metered_usd",
+                    "column": "metered_usd",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel2",
+          "type": "metric",
+          "title": "Today's subscription tokens",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT SUM(usage_input_tokens) AS tok_in, SUM(usage_output_tokens) AS tok_out FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') AND est_cost_usd IS NULL",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "label": "tok_in",
+                    "alias": "tok_in",
+                    "column": "tok_in",
+                    "color": null
+                  },
+                  {
+                    "label": "tok_out",
+                    "alias": "tok_out",
+                    "column": "tok_out",
+                    "color": null
+                  }
+                ],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel3",
+          "type": "table",
+          "title": "PRs opened",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT ts, detail_spec_file AS spec FROM agentic WHERE event = 'tracker_transition' AND detail_to_status = 'pr-open' ORDER BY ts DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "ts",
+                    "alias": "ts",
+                    "column": "ts",
+                    "color": null
+                  },
+                  {
+                    "label": "spec",
+                    "alias": "spec",
+                    "column": "spec",
+                    "color": null
+                  }
+                ],
+                "y": [],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel4",
+          "type": "table",
+          "title": "LLM-layer errors",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT ts, agent_type, tier, model, status, summary FROM agentic WHERE event IN ('shim_call','agent_stop','headless_iteration') AND status IN ('error','partial') ORDER BY ts DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "ts",
+                    "alias": "ts",
+                    "column": "ts",
+                    "color": null
+                  },
+                  {
+                    "label": "agent_type",
+                    "alias": "agent_type",
+                    "column": "agent_type",
+                    "color": null
+                  },
+                  {
+                    "label": "tier",
+                    "alias": "tier",
+                    "column": "tier",
+                    "color": null
+                  },
+                  {
+                    "label": "model",
+                    "alias": "model",
+                    "column": "model",
+                    "color": null
+                  },
+                  {
+                    "label": "status",
+                    "alias": "status",
+                    "column": "status",
+                    "color": null
+                  },
+                  {
+                    "label": "summary",
+                    "alias": "summary",
+                    "column": "summary",
+                    "color": null
+                  }
+                ],
+                "y": [],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "panel5",
+          "type": "table",
+          "title": "Gate postpones",
+          "description": "",
+          "config": {
+            "show_legends": true,
+            "legends_position": null,
+            "base_map": null,
+            "map_view": null
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT ts, detail_resets_at FROM agentic WHERE event = 'gate' ORDER BY ts DESC",
+              "vrlFunctionQuery": null,
+              "customQuery": true,
+              "fields": {
+                "stream": "agentic",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "ts",
+                    "alias": "ts",
+                    "column": "ts",
+                    "color": null
+                  },
+                  {
+                    "label": "detail_resets_at",
+                    "alias": "detail_resets_at",
+                    "column": "detail_resets_at",
+                    "color": null
+                  }
+                ],
+                "y": [],
+                "z": [],
+                "breakdown": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "",
+                "layer_type": "scatter",
+                "weight_fixed": 1.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "list": []
+  }
+}

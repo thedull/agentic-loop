@@ -1,9 +1,16 @@
 # Dashboard queries — the three boards
 
+**You probably don't need to read this file to get the dashboards** — run
+`./scripts/observe_dashboards_import.sh` (see `README.md` step 4) to import
+all 14 panels below as three ready-made, verified boards in one command.
+This file is the source those boards are generated from (via
+`scripts/observe_dashboards_gen.py`) and the reference for customizing a
+panel or writing your own query by hand.
+
 One panel per query, over the `agentic` stream (SQL tab in OpenObserve's
-panel editor). Field names are the event schema verbatim — see
-`docs/observability.md`. Every board splits metered $ from subscription
-tokens; nothing here blends them.
+panel editor, if you're building by hand). Field names are the event schema
+verbatim — see `docs/observability.md`. Every board splits metered $ from
+subscription tokens; nothing here blends them.
 
 The leaf-event filter appears in most queries — it is the same
 no-double-counting rule the renderer uses:

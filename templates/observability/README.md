@@ -26,27 +26,29 @@ event log maps onto almost verbatim.
 
 ## 1. Run OpenObserve (on the always-on machine)
 
-Native binary (preferred on a Mac Mini — no Docker daemon tax):
+A native binary avoids the Docker daemon tax on a Mac Mini — GitHub no
+longer ships raw binary releases, so grab one from
+[openobserve.ai/downloads](https://openobserve.ai/downloads) and run it with
+the same env vars as the Docker recipe below. Docker works identically if
+the daemon is already running for something else — this exact recipe was
+verified against a real OpenObserve 0.91.5 instance while building the
+dashboards in step 4:
 
 ```bash
-# download the darwin binary from https://github.com/openobserve/openobserve/releases
 mkdir -p ~/openobserve/data
-ZO_ROOT_USER_EMAIL="you@example.com" \
-ZO_ROOT_USER_PASSWORD="choose-a-real-password" \
-ZO_DATA_DIR="$HOME/openobserve/data" \
-./openobserve
-```
-
-Or Docker, if the daemon is already running for something else:
-
-```bash
 docker run -d --name openobserve --restart unless-stopped \
   -p 127.0.0.1:5080:5080 \
   -e ZO_ROOT_USER_EMAIL="you@example.com" \
-  -e ZO_ROOT_USER_PASSWORD="choose-a-real-password" \
+  -e ZO_ROOT_USER_PASSWORD="ChooseAReal1!" \
   -v "$HOME/openobserve/data:/data" \
   public.ecr.aws/zinclabs/openobserve:latest
 ```
+
+Two hard requirements the server enforces at boot (it panics and exits
+otherwise, not a friendly error): the email must look like a real address
+— `user@example.com`, not `user@local` — and the password needs 8-128
+chars with at least one uppercase, one lowercase, one digit, and one
+special character.
 
 Bind to `127.0.0.1` deliberately — the tailnet, not the LAN, is the way in
 (for both the phone AND the producers; see step 3).
@@ -74,7 +76,7 @@ exposed to the internet.
 # O2_URL points at the STORE over the tailnet — the serve URL, or the
 # machine's tailnet name with the raw port if you skip serve:
 O2_URL=https://<machine-name>.<tailnet>.ts.net
-O2_AUTH=you@example.com:choose-a-real-password
+O2_AUTH=you@example.com:ChooseAReal1!
 # optional: O2_ORG=default  O2_STREAM=agentic
 
 /agentic-loop:config observability stack on
@@ -90,8 +92,44 @@ backlog. Push before `observe_prune.sh` — and if you forget, prune holds
 any file with unacknowledged lines rather than rotating it out from under
 the push.
 
-## 4. Dashboards
+## 4. Dashboards — one command, not fifteen panels by hand
 
-Build the three boards from the queries in `dashboards.md` (one panel per
-query, ~10 minutes total). The local `./scripts/observe_metrics.sh` stays
-the source of truth for exact numbers — the boards are the glanceable view.
+```bash
+O2_URL=https://<machine-name>.<tailnet>.ts.net O2_AUTH=you@example.com:ChooseAReal1! \
+  ./scripts/observe_dashboards_import.sh
+```
+
+Imports all three prebuilt boards — **Tonight** (evening review), **The
+Factory** (weekly trends), **Spec Economics** (the estimation board), 14
+panels total — pre-wired to the right SQL, axes, and breakdowns. Run this
+once per OpenObserve instance, from wherever the plugin lives (it reads
+`templates/observability/dashboards/*.json` next to this file, not from a
+project — dashboard setup is a store-level action, done once, not per
+project). `--dry-run` lists what it would create without touching anything.
+
+These files aren't hand-authored: `scripts/observe_dashboards_gen.py`
+derives them from the SQL in `dashboards.md`, so the doc and the importable
+JSON can't silently drift apart. Every panel was verified end-to-end against
+a live instance — real events pushed via `observe_push.sh`, all 14 queries
+confirmed error-free and returning real rows (see
+`docs/observability-architecture.md`).
+
+**One real gotcha, worth knowing before your first import looks broken:**
+OpenObserve only creates a schema field once it has seen that key with a
+*non-null* value at least once. A brand-new instance fed only a few events
+will show "Search field not found" on panels for event types you haven't
+hit yet — Gate postpones, PRs opened, LLM-layer errors. This is not a bug
+in the dashboards; it self-resolves the first time each event type actually
+fires (a real gate postpone, a real PR-open transition, a real API error).
+Widen the time range (top right, default is 15 minutes) if a panel looks
+empty on data you know exists — that's the far more common cause.
+
+Want to customize a panel? Edit `dashboards.md`, then regenerate:
+```bash
+python3 scripts/observe_dashboards_gen.py \
+  templates/observability/dashboards.md templates/observability/dashboards
+```
+(Python is a maintainer-only, build-time convenience here — nothing in the
+loop itself ever depends on it.) The local `./scripts/observe_metrics.sh`
+stays the source of truth for exact numbers regardless; the boards are the
+glanceable view.
