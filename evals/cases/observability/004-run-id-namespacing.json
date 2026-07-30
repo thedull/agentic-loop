@@ -1,0 +1,12 @@
+{
+  "id": "observability-004-run-id-namespacing",
+  "target": "obs.sh context isolation — a parallel run never inherits another run's context",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; AGENTIC_RUN_ID=run-a \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id a.md; AGENTIC_RUN_ID=run-b \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe-b '{}'; AGENTIC_RUN_ID=run-a \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe-a '{}'; cat .agentic/observability/events-*.jsonl | jq -cs '{a: (map(select(.event==\"probe-a\")) | first), b: (map(select(.event==\"probe-b\")) | first)}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".a.phase == \"build\" and .a.spec_id == \"a.md\"" },
+    { "type": "jq", "expr": ".b.phase == null and .b.spec_id == null" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

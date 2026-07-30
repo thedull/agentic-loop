@@ -16,7 +16,8 @@ def nz: if . == null then 0 else . end;
 | ($ev | map(select(.event == "shim_call")))   as $shims
 | ($ev | map(select(.event == "headless_iteration"))) as $iters
 | ($ev | map(select(.event | IN("tracker_transition","gate","feature_toggle",
-                               "missing_dependency")))) as $marks
+                               "missing_dependency","phase_start","phase_end"))))
+                                                       as $marks
 
 # --- agent nodes (paired) ---------------------------------------------------
 | ($starts | map(. as $s

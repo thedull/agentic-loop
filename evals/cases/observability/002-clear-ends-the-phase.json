@@ -1,0 +1,13 @@
+{
+  "id": "observability-002-clear-ends-the-phase",
+  "target": "obs.sh context clear — phase_end marker, then untagged events",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase review --spec-id s.md; \"$PLUGIN_ROOT/scripts/observe.sh\" context clear; \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe '{}'; cat .agentic/observability/events-*.jsonl | jq -cs '{end: (map(select(.event==\"phase_end\")) | first), probe: (map(select(.event==\"probe\")) | first), ctx_gone: true}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".end.phase == \"review\" and .end.spec_id == \"s.md\"" },
+    { "type": "jq", "expr": ".end.duration_ms != null" },
+    { "type": "jq", "expr": ".probe.phase == null and .probe.spec_id == null" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}
