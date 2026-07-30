@@ -1,0 +1,13 @@
+{
+  "id": "observability-009-phase-rollup-spend-and-errors",
+  "target": "observe_metrics.sh phase — spend + LLM-error rate per stage",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" phase",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".build.events == 2 and .build.llm_errors == 1 and .build.metered_usd == 0.02" },
+    { "type": "jq", "expr": ".review.input_tokens == 3000 and .review.llm_errors == 0" },
+    { "type": "jq", "expr": ".build.p50_duration_ms == 900" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}
