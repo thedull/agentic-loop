@@ -105,8 +105,14 @@ ideas get no `depends_on` line at all.
    now — with the user if a finding needs a decision. This is the cheapest
    moment in the whole pipeline to fix a spec flaw.
 
-5. **Advance**: `scripts/lib/tracker.sh advance <file> specd`, then tell the
-   user the id, effort_budget, and check command, and move to the next idea.
+   Once the spec file exists, tag the gate work:
+   `scripts/observe.sh context set --phase spec --spec-id <spec file>` —
+   the review-gate subagent's events then carry the spec they vetted
+   (silent no-op when observability is off).
+
+5. **Advance**: `scripts/lib/tracker.sh advance <file> specd`, run
+   `scripts/observe.sh context clear`, then tell the user the id,
+   effort_budget, and check command, and move to the next idea.
 
 ## What NOT to do
 

@@ -22,6 +22,9 @@ writer of that file. Invocations:
 /agentic-loop:config <feature> status         → one feature
 /agentic-loop:config grill deep on|off        → sub-toggle: deep interviews
                                                  for large/domain-heavy ideas
+/agentic-loop:config observability stack on|off → sub-toggle: export the event
+                                                 log to a local OpenObserve
+                                                 (dashboards on your phone)
 /agentic-loop:config render [--tty]           → observability report (delegates
                                                  to scripts/observe_render.sh)
 ```
@@ -30,7 +33,8 @@ writer of that file. Invocations:
 
 | Feature | What it enables | Third-party dependency |
 |---|---|---|
-| `observability` | Unified JSONL event log (`.agentic/observability/`) capturing every subagent, shim call, headless iteration and factory transition; renderable as an HTML/tty tree | none |
+| `observability` | Unified JSONL event log (`.agentic/observability/`) capturing every subagent, shim call, headless iteration and factory transition; renderable as an HTML/tty tree, aggregable via `scripts/observe_metrics.sh` | none |
+| `observability` stack | `scripts/observe_push.sh` exports the event log (cursor-based, retry-safe) to a local OpenObserve store for phone-reachable dashboards. Setup recipe: `templates/observability/README.md` in the plugin; queries: `templates/observability/dashboards.md`. Requires `observability` on, plus `O2_URL`/`O2_AUTH` in the project's `.env` | openobserve running locally (+ tailscale for phone access) |
 | `minimize` | The code-minimization decision ladder is injected into build-stage worker briefs (smallest sufficient diff) | ponytail (rules content; plugin optional) |
 | `grill` | A relentless pre-planning interview runs before `loop-planner` decomposes ambiguous or high-stakes requests | none — native behavior in the `spec` skill (interview protocol inspired by grill-with-docs in `mattpocock/skills`; nothing to install) |
 | `grill` deep | `large`/new-domain ideas escalate to a deep interview: grill-with-docs (`/grilling` + `/domain-modeling`, emits glossary + ADRs into `factory/specs/<id>/`) when Matt Pocock's collection is installed; otherwise native grilling with the question cap lifted | mattpocock-skills (optional — enhances; native fallback always works) |
@@ -42,7 +46,7 @@ writer of that file. Invocations:
 
 ```json
 {
-  "observability": { "enabled": true, "all_agents": false },
+  "observability": { "enabled": true, "all_agents": false, "stack": { "enabled": false } },
   "minimize":      { "enabled": false, "agent_judgment": false },
   "grill":         { "enabled": false, "deep": false, "agent_judgment": false },
   "guards":        { "enabled": false },

@@ -1,0 +1,11 @@
+{
+  "id": "observability-005-env-override-wins",
+  "target": "obs.sh context — AGENTIC_PHASE/AGENTIC_SPEC_ID env beats the context file",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id file.md; AGENTIC_PHASE=headless AGENTIC_SPEC_ID=env.md \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe '{}'; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".phase == \"headless\" and .spec_id == \"env.md\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

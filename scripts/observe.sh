@@ -11,6 +11,11 @@
 #   e.g. observe.sh emit feature_toggle \
 #          '{"detail":{"feature":"minimize","scope":"task","reason":"mechanical bulk work","decided_by":"agent"}}'
 #
+# Stage-context mode (used by the factory skills at claim/exit — makes every
+# event in the run carry phase/spec_id; see obs_set_context in lib/obs.sh):
+#   observe.sh context set --phase build --spec-id factory/specs/007-x.md
+#   observe.sh context clear
+#
 # Hook payload facts this script relies on (verified against
 # code.claude.com/docs 2026-07-15, with open items flagged in
 # docs/observability.md):
@@ -31,6 +36,29 @@ source "$SCRIPT_DIR/lib/obs.sh" 2>/dev/null || exit 0
 # --- manual emitter -----------------------------------------------------------
 if [[ "${1:-}" == "emit" ]]; then
   obs_event "${2:-custom}" "skill" "${3:-\{\}}"
+  exit 0
+fi
+
+# --- stage context -------------------------------------------------------------
+if [[ "${1:-}" == "context" ]]; then
+  shift
+  case "${1:-}" in
+    set)
+      shift
+      CTX_PHASE="" CTX_SPEC_ID=""
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --phase)   CTX_PHASE="${2:-}";   shift 2 ;;
+          --spec-id) CTX_SPEC_ID="${2:-}"; shift 2 ;;
+          *) shift ;;
+        esac
+      done
+      obs_set_context "$CTX_PHASE" "$CTX_SPEC_ID"
+      ;;
+    clear)
+      obs_clear_context
+      ;;
+  esac
   exit 0
 fi
 

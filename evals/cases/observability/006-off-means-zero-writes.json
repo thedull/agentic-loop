@@ -1,0 +1,11 @@
+{
+  "id": "observability-006-off-means-zero-writes",
+  "target": "obs.sh context — observability off, context set writes nothing at all",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; unset CLAUDE_PROJECT_DIR; AGENTIC_OBSERVE=0 \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id s.md; if [ -e .agentic/observability ]; then echo '{\"wrote\":true}'; else echo '{\"wrote\":false}'; fi",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".wrote == false" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

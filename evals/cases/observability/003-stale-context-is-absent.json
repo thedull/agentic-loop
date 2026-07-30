@@ -1,0 +1,11 @@
+{
+  "id": "observability-003-stale-context-is-absent",
+  "target": "obs.sh context TTL — a stale context tags nothing (fail closed)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id s.md; OBS_CTX_TTL_SECONDS=0 \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe '{}'; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".event == \"probe\" and .phase == null and .spec_id == null" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

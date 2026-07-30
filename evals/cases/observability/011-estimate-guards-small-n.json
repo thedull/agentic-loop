@@ -1,0 +1,12 @@
+{
+  "id": "observability-011-estimate-guards-small-n",
+  "target": "observe_metrics.sh estimate — percentiles per budget bucket, explicit N, insufficient flag",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability factory/specs; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; printf -- '---\\nid: 001\\ntitle: a\\nstatus: done\\n---\\n\\n- effort_budget: medium\\n' > factory/specs/001-a.md; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" estimate --effort-budget medium | jq '.[0]'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".n == 1 and .sufficient == false" },
+    { "type": "jq", "expr": ".tokens.p50 == 5400" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

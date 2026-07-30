@@ -1,0 +1,13 @@
+{
+  "id": "observability-008-cost-splits-metered-from-subscription",
+  "target": "observe_metrics.sh cost — the two honest numbers, never blended",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".metered_usd == 0.02 and .metered.calls == 1" },
+    { "type": "jq", "expr": ".subscription.input_tokens == 4000 and .subscription.output_tokens == 800" },
+    { "type": "jq", "expr": ".by_tier.ollama.calls == 1 and .by_tier.fable.metered_usd == 0.02 and .by_tier.sonnet.input_tokens == 3000" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

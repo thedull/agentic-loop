@@ -17,6 +17,9 @@
 #   - Event schema v1 (docs/observability.md). Nulls are honest — never
 #     fabricate tokens or costs a source did not report. est_cost_usd stays
 #     null for subscription tiers: they are shared capacity, not dollars.
+#   - Correlation keys `phase`/`spec_id` default from a run-scoped context
+#     file (obs_set_context / obs_clear_context below); events from before
+#     the keys existed simply read null. Still v1: consumers use // fallbacks.
 
 # Resolution order for the project root: plugin hooks get CLAUDE_PROJECT_DIR;
 # observe.sh sets OBS_PROJECT_DIR from the hook payload's cwd; shims and
@@ -63,6 +66,72 @@ obs_run_id() {
   fi
 }
 
+# --- stage context (phase / spec_id correlation) ------------------------------
+# The correlation seam: skills run each step as a separate process, so an
+# exported env var set at claim time is gone by the next step. The context
+# lives in a run-id-namespaced state file instead — the same marker-file
+# pattern obs_run_id() already uses — so every process in the run sees it,
+# and two parallel sessions (build + review) can never collide.
+# A TTL bounds the damage of a crash between set and clear: a stale context
+# is treated as absent, never guessed from.
+
+OBS_CTX_TTL_SECONDS="${OBS_CTX_TTL_SECONDS:-1800}"
+
+obs_ctx_file() { printf '%s' "$(obs_state_dir)/ctx-$(obs_run_id).json"; }
+
+# _obs_ctx_lookup — sets OBS_CTX_PHASE / OBS_CTX_SPEC_ID for obs_event.
+# Env override wins (single-script callers like run_headless.sh), then the
+# context file when fresh. Always returns 0 (sourced under callers' set -e).
+_obs_ctx_lookup() {
+  OBS_CTX_PHASE="${AGENTIC_PHASE:-}"
+  OBS_CTX_SPEC_ID="${AGENTIC_SPEC_ID:-}"
+  if [[ -n "$OBS_CTX_PHASE" || -n "$OBS_CTX_SPEC_ID" ]]; then return 0; fi
+  local f set_at age
+  f="$(obs_ctx_file)"
+  if [[ ! -f "$f" ]]; then return 0; fi
+  set_at="$(jq -r '.ctx_set_at // empty' "$f" 2>/dev/null)"
+  if [[ ! "$set_at" =~ ^[0-9]+$ ]]; then return 0; fi
+  age=$(( $(date +%s) - set_at ))
+  if (( age < 0 || age >= OBS_CTX_TTL_SECONDS )); then return 0; fi
+  OBS_CTX_PHASE="$(jq -r '.phase // empty' "$f" 2>/dev/null)"
+  OBS_CTX_SPEC_ID="$(jq -r '.spec_id // empty' "$f" 2>/dev/null)"
+  return 0
+}
+
+# obs_set_context PHASE [SPEC_ID]
+# Marks the current run's stage context; every subsequent event in this run
+# carries phase/spec_id until obs_clear_context or the TTL. Emits a
+# phase_start marker. Skills call this right after a successful claim and
+# obs_clear_context at EVERY exit (advance, blocked, postponed, idle).
+obs_set_context() {
+  obs_enabled || return 0
+  local phase="${1:-}" spec_id="${2:-}" f
+  if [[ -z "$phase" ]]; then return 0; fi
+  f="$(obs_ctx_file)"
+  mkdir -p "$(dirname "$f")" 2>/dev/null || return 0
+  jq -cn --arg p "$phase" --arg s "$spec_id" --argjson t "$(date +%s)" \
+    '{phase: $p, spec_id: (if $s == "" then null else $s end), ctx_set_at: $t}' \
+    > "$f" 2>/dev/null || return 0
+  obs_event phase_start skill '{}'
+  return 0
+}
+
+# obs_clear_context — emits the phase_end marker (with the phase duration,
+# while the context file still applies), then removes the file.
+obs_clear_context() {
+  obs_enabled || return 0
+  local f dur=null set_at
+  f="$(obs_ctx_file)"
+  if [[ ! -f "$f" ]]; then return 0; fi
+  set_at="$(jq -r '.ctx_set_at // empty' "$f" 2>/dev/null)"
+  if [[ "$set_at" =~ ^[0-9]+$ ]]; then
+    dur=$(( ( $(date +%s) - set_at ) * 1000 ))
+  fi
+  obs_event phase_end skill "$(jq -cn --argjson d "$dur" '{duration_ms: $d}')"
+  rm -f "$f" 2>/dev/null
+  return 0
+}
+
 # obs_event EVENT SOURCE [OVERLAY_JSON]
 # Appends one schema-v1 line, deep-merging OVERLAY_JSON over the base
 # skeleton. Invalid overlays lose the event rather than break the caller.
@@ -71,9 +140,14 @@ obs_event() {
   local event="$1" source="$2" overlay="${3:-\{\}}" dir
   dir="$(obs_root)/observability"
   mkdir -p "$dir" 2>/dev/null || return 0
+  _obs_ctx_lookup
   jq -cn --arg ts "$(obs_ts)" --arg event "$event" --arg source "$source" \
-         --arg run_id "$(obs_run_id)" --argjson overlay "$overlay" '
+         --arg run_id "$(obs_run_id)" \
+         --arg phase "${OBS_CTX_PHASE:-}" --arg spec_id "${OBS_CTX_SPEC_ID:-}" \
+         --argjson overlay "$overlay" '
     {v: 1, ts: $ts, event: $event, source: $source, run_id: $run_id,
+     phase: (if $phase == "" then null else $phase end),
+     spec_id: (if $spec_id == "" then null else $spec_id end),
      session_id: null, agent_id: null, agent_type: null, tier: null,
      model: null,
      usage: {input_tokens: null, output_tokens: null,

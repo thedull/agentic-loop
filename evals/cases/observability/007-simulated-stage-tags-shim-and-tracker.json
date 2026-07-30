@@ -1,0 +1,14 @@
+{
+  "id": "observability-007-simulated-stage-tags-shim-and-tracker",
+  "target": "end-to-end: claim -> context set -> shim tap + tracker advance all carry phase/spec_id",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; printf -- '---\\nid: 001\\ntitle: t\\nstatus: specd\\n---\\n' > factory/specs/001-t.md; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim specd building build-loop >/dev/null; \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id factory/specs/001-t.md; printf '%s' '{\"worker\":\"ollama/test\",\"status\":\"ok\",\"summary\":\"s\",\"result\":\"r\",\"artifacts\":[],\"caveats\":[],\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}' | MODEL=test-model OBJECTIVE=obj bash -c 'source \"$PLUGIN_ROOT/scripts/lib/obs.sh\"; obs_shim_tap' >/dev/null; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance factory/specs/001-t.md built branch b1 >/dev/null; cat .agentic/observability/events-*.jsonl | jq -cs '{shim: (map(select(.event==\"shim_call\")) | first), adv: (map(select(.event==\"tracker_transition\" and .detail.to_status==\"built\")) | first), claim: (map(select(.event==\"tracker_transition\" and .detail.to_status==\"building\")) | first)}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".shim.phase == \"build\" and .shim.spec_id == \"factory/specs/001-t.md\"" },
+    { "type": "jq", "expr": ".shim.tier == \"ollama\" and .shim.usage.input_tokens == 10" },
+    { "type": "jq", "expr": ".adv.phase == \"build\" and .adv.spec_id == \"factory/specs/001-t.md\"" },
+    { "type": "jq", "expr": ".claim.phase == null" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

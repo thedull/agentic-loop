@@ -59,13 +59,18 @@ const SCOUT_PROMPT =
    1. Run: scripts/lib/usage_gate.sh check
       - exit 5 (postpone): append "factory postponed until <resets_at as local time>" to .agentic/STATUS.md and return {"gate":"postpone","specs":[]}.
       - exit 0: continue (a fail-open warning on stderr is fine).
-   2. Run: scripts/lib/bench.sh reconcile
+   2. Run: scripts/lib/tracker.sh reconcile-done scout
+      - advances any pr-open spec whose branch/PR is verifiably merged to
+        done (stamping done_at), which is what makes its dependents
+        claimable. Fail-closed: an unverifiable merge changes nothing.
+        Never fails this step either way.
+   3. Run: scripts/lib/bench.sh reconcile
       - no-op unless .bench.enabled is set in .agentic/config.json; otherwise
         ensures every pr-open spec has a fresh review bench and removes
         benches for specs that have left the queue (done, shelved,
         superseded). Never fails this step either way.
-   3. Run: scripts/lib/tracker.sh list specd
-   4. Return the gate verdict and up to ${MAX_IDEAS} spec file paths, oldest first.
+   4. Run: scripts/lib/tracker.sh list specd
+   5. Return the gate verdict and up to ${MAX_IDEAS} spec file paths, oldest first.
       Specs waiting on unmet depends_on are not claimable — tracker.sh skips
       them itself; never work around that gate.`
 const SCOUT_SCHEMA = {

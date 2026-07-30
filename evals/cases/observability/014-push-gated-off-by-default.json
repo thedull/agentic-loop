@@ -1,0 +1,12 @@
+{
+  "id": "observability-014-push-gated-off-by-default",
+  "target": "observe_push.sh — flag off (or creds missing) means a clean no-op, exit 0",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; \"$PLUGIN_ROOT/scripts/observe_push.sh\" 2>/dev/null; EC1=$?; printf '%s' '{\"observability\":{\"enabled\":true,\"stack\":{\"enabled\":true}}}' > .agentic/config.json; unset O2_URL O2_AUTH; \"$PLUGIN_ROOT/scripts/observe_push.sh\" 2>/dev/null; EC2=$?; CUR=false; [ -f .agentic/observability/state/push-cursor.json ] && [ \"$(jq 'length' .agentic/observability/state/push-cursor.json)\" != \"0\" ] && CUR=true; jq -n --argjson e1 \"$EC1\" --argjson e2 \"$EC2\" --argjson cur \"$CUR\" '{flag_off: $e1, no_creds: $e2, cursor_advanced: $cur}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".flag_off == 0 and .no_creds == 0" },
+    { "type": "jq", "expr": ".cursor_advanced == false" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

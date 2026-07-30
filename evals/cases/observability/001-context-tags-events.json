@@ -1,0 +1,13 @@
+{
+  "id": "observability-001-context-tags-events",
+  "target": "obs.sh stage context propagation",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase build --spec-id factory/specs/001-t.md; \"$PLUGIN_ROOT/scripts/observe.sh\" emit probe '{}'; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".event == \"probe\" and .phase == \"build\"" },
+    { "type": "jq", "expr": ".spec_id == \"factory/specs/001-t.md\"" },
+    { "type": "jq", "expr": ".v == 1" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

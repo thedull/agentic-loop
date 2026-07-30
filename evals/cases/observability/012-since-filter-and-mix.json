@@ -1,0 +1,13 @@
+{
+  "id": "observability-012-since-filter-and-mix",
+  "target": "observe_metrics.sh — --since date window + deterministic/stochastic mix",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; M=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" mix)\"; C=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost --since 2026-07-29)\"; jq -n --argjson m \"$M\" --argjson c \"$C\" '{m: $m, c: $c}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".m.events.stochastic == 3 and .m.events.deterministic == 7 and .m.events.stochastic_share == 30" },
+    { "type": "jq", "expr": ".m.first_attempt_ok.ok == 2 and .m.first_attempt_ok.of == 3" },
+    { "type": "jq", "expr": ".c.metered_usd == 0 and .c.subscription.calls == 0" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

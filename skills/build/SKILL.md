@@ -30,6 +30,12 @@ marked `blocked` with questions recorded — never guessed through.
    dep-waiting specs become claimable on their own once you merge their
    dependencies; never build one by hand around the gate.
 
+   On a successful claim, tag the stage:
+   `scripts/observe.sh context set --phase build --spec-id <claimed file>` —
+   every event this run emits now carries the spec (silent no-op when
+   observability is off). **Every stop from here on** — advance, blocked,
+   vacuous check — ends with `scripts/observe.sh context clear`.
+
 3. **Isolate.** From the claimed spec's filename derive `<slug>`; create a
    git worktree on branch `claude/idea-<slug>` (reuse the branch if it exists
    from a prior blocked attempt). All build work happens in that worktree —
@@ -68,9 +74,10 @@ marked `blocked` with questions recorded — never guessed through.
    reaches the remote before blind review.
 
 8. **Advance.** `tracker.sh advance <file> built branch claude/idea-<slug>`,
-   append `built: <id> <title> (<branch>)` to `.agentic/STATUS.md`, remove the
-   worktree if your platform requires, and stop. One spec per invocation —
-   the loop cadence, not this skill, decides throughput.
+   append `built: <id> <title> (<branch>)` to `.agentic/STATUS.md`, run
+   `scripts/observe.sh context clear`, remove the worktree if your platform
+   requires, and stop. One spec per invocation — the loop cadence, not this
+   skill, decides throughput.
 
    If `advance` fails saying the spec is `shelved` or `superseded`, a human
    took it out of the queue while you were building. **Stop and report** —

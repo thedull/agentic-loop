@@ -179,6 +179,33 @@ if [[ "$(jq -r '.observability.enabled // false' ./.agentic/config.json 2>/dev/n
     else
       warn "last line of ${LATEST_EVENTS#./} is not a v1 event — log may be corrupted"
     fi
+    # Propagation health: of the leaf events inside phase_start..phase_end
+    # windows, how many carry phase/spec_id? Low % = a skill is claiming
+    # without `observe.sh context set`, or clearing early.
+    CTX_STATS="$(cat ./.agentic/observability/events-*.jsonl 2>/dev/null | jq -cs '
+      [.[] | select(.event | IN("shim_call","agent_stop","headless_iteration"))]
+      | {leaves: length, tagged: ([.[] | select(.phase != null)] | length)}' 2>/dev/null)"
+    CTX_LEAVES="$(jq -r '.leaves // 0' <<<"$CTX_STATS" 2>/dev/null)"
+    CTX_TAGGED="$(jq -r '.tagged // 0' <<<"$CTX_STATS" 2>/dev/null)"
+    HAS_PHASES="$(cat ./.agentic/observability/events-*.jsonl 2>/dev/null \
+      | jq -s '[.[] | select(.event == "phase_start")] | length > 0' 2>/dev/null)"
+    if [[ "$HAS_PHASES" == "true" && "$CTX_LEAVES" -gt 0 ]]; then
+      if [[ "$CTX_TAGGED" -gt 0 ]]; then
+        ok "stage context propagating ($CTX_TAGGED/$CTX_LEAVES leaf events carry phase/spec_id)"
+      else
+        warn "phase markers exist but no leaf event carries phase/spec_id — a skill may be clearing context before delegating"
+      fi
+    fi
+    # Stale context files (crash between set and clear): harmless past the
+    # TTL, but worth surfacing so the operator knows a stage died mid-run.
+    STALE_CTX="$(find ./.agentic/observability/state -name 'ctx-*.json' -mmin +30 2>/dev/null | wc -l | tr -d ' ')"
+    [[ "${STALE_CTX:-0}" -gt 0 ]] \
+      && warn "$STALE_CTX stale stage-context file(s) in .agentic/observability/state — a stage exited without 'observe.sh context clear' (safe to delete)"
+    # Retention nudge — pruning is manual by design (never during a run).
+    LIVE_DAYS="$(ls ./.agentic/observability/events-*.jsonl 2>/dev/null | wc -l | tr -d ' ')"
+    REPORT_COUNT="$(ls ./.agentic/observability/reports/*.html 2>/dev/null | wc -l | tr -d ' ')"
+    [[ "${LIVE_DAYS:-0}" -gt 30 || "${REPORT_COUNT:-0}" -gt 20 ]] \
+      && warn "log growing ($LIVE_DAYS event day-files, $REPORT_COUNT reports) — run ./scripts/observe_prune.sh (gzips events, caps reports; readers handle .gz)"
   else
     warn "enabled but no events yet — they appear after the first instrumented run"
   fi

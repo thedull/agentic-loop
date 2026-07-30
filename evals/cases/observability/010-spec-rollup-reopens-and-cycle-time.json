@@ -1,0 +1,15 @@
+{
+  "id": "observability-010-spec-rollup-reopens-and-cycle-time",
+  "target": "observe_metrics.sh spec — reopen count + two-segment cycle time from transition history",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability factory/specs; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; printf -- '---\\nid: 001\\ntitle: a\\nstatus: done\\nprofile: standard\\n---\\n\\n## Brief\\n\\n- effort_budget: medium\\n' > factory/specs/001-a.md; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" spec | jq '.[0]'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".spec == \"factory/specs/001-a.md\" and .effort_budget == \"medium\"" },
+    { "type": "jq", "expr": ".reopens == 1 and .blocked_count == 1" },
+    { "type": "jq", "expr": ".cycle_machine_ms == 21600000" },
+    { "type": "jq", "expr": ".cycle_merge_ms == 100800000" },
+    { "type": "jq", "expr": ".input_tokens == 4500 and .llm_errors == 1" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

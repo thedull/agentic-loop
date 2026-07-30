@@ -1,0 +1,12 @@
+{
+  "id": "tracker-073-reconcile-done-advances-only-merged",
+  "target": "tracker.sh reconcile-done — merged branch advances to done, unmerged is untouched",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p factory/specs; git init -q .; git -c user.email=t@test -c user.name=test commit -q --allow-empty -m init; git checkout -qb claude/idea-merged; git -c user.email=t@test -c user.name=test commit -q --allow-empty -m work-a; git checkout -q -; git merge -q --no-edit claude/idea-merged; git checkout -qb claude/idea-open; git -c user.email=t@test -c user.name=test commit -q --allow-empty -m work-b; git checkout -q -; printf -- '---\\nid: 001\\ntitle: merged one\\nstatus: pr-open\\nbranch: claude/idea-merged\\npr: local\\n---\\n' > factory/specs/001-a.md; printf -- '---\\nid: 002\\ntitle: open one\\nstatus: pr-open\\nbranch: claude/idea-open\\npr: local\\n---\\n' > factory/specs/002-b.md; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" reconcile-done tester >/dev/null; source \"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; jq -n --arg s1 \"$(_tracker_field factory/specs/001-a.md status)\" --arg d1 \"$(_tracker_field factory/specs/001-a.md done_at)\" --arg s2 \"$(_tracker_field factory/specs/002-b.md status)\" --arg d2 \"$(_tracker_field factory/specs/002-b.md done_at)\" '{s1: $s1, d1: $d1, s2: $s2, d2: $d2}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".s1 == \"done\" and (.d1 | length) > 0" },
+    { "type": "jq", "expr": ".s2 == \"pr-open\" and .d2 == \"\"" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

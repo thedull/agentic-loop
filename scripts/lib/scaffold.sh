@@ -156,12 +156,16 @@ scripts/call_sol.sh	scripts/call_sol.sh	core
 scripts/doctor.sh	scripts/doctor.sh	core
 scripts/observe.sh	scripts/observe.sh	core
 scripts/observe_render.sh	scripts/observe_render.sh	core
+scripts/observe_metrics.sh	scripts/observe_metrics.sh	core
+scripts/observe_prune.sh	scripts/observe_prune.sh	core
+scripts/observe_push.sh	scripts/observe_push.sh	core
 scripts/run_headless.sh	scripts/run_headless.sh	core
 scripts/statusline-usage.sh	templates/statusline-usage.sh	core
 scripts/lib/bench.sh	scripts/lib/bench.sh	core
 scripts/lib/common.sh	scripts/lib/common.sh	core
 scripts/lib/obs.sh	scripts/lib/obs.sh	core
 scripts/lib/obs_summary.jq	scripts/lib/obs_summary.jq	core
+scripts/lib/obs_metrics.jq	scripts/lib/obs_metrics.jq	core
 scripts/lib/scaffold.sh	scripts/lib/scaffold.sh	core
 scripts/lib/tracker.sh	scripts/lib/tracker.sh	core
 scripts/lib/usage_gate.sh	scripts/lib/usage_gate.sh	core

@@ -32,21 +32,31 @@ while [[ $# -gt 0 ]]; do
 done
 
 command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 3; }
-ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 || {
+# Either live or pruned files count (ls fails when ANY glob is unmatched,
+# so the two patterns must be tested separately).
+if ! ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 \
+   && ! ls "$OBS_DIR"/events-*.jsonl.gz >/dev/null 2>&1; then
   echo "error: no event log under $OBS_DIR — enable observability first" >&2
   echo "  (/agentic-loop:config observability on, then run something)" >&2
   exit 2
+fi
+
+# All events, live plus gzip-rotated (observe_prune.sh): one stream.
+events_cat() {
+  cat "$OBS_DIR"/events-*.jsonl 2>/dev/null || true
+  gzip -dc "$OBS_DIR"/events-*.jsonl.gz 2>/dev/null || true
 }
 
-# Latest run = run_id of the last event in the newest file.
+# Latest run = run_id of the last event in the newest LIVE file (a pruned
+# file is by definition not the latest).
 if [[ -z "$RUN_ID" ]]; then
-  LATEST_FILE="$(ls -t "$OBS_DIR"/events-*.jsonl | head -1)"
+  LATEST_FILE="$(ls -t "$OBS_DIR"/events-*.jsonl 2>/dev/null | head -1)"
+  [[ -n "$LATEST_FILE" ]] || { echo "error: only pruned (.gz) logs remain — pass --run <id>" >&2; exit 2; }
   RUN_ID="$(tail -1 "$LATEST_FILE" | jq -r '.run_id // empty')"
   [[ -n "$RUN_ID" ]] || { echo "error: could not determine latest run id" >&2; exit 2; }
 fi
 
-EVENTS="$(cat "$OBS_DIR"/events-*.jsonl \
-          | jq -c --arg rid "$RUN_ID" 'select(.run_id == $rid)')"
+EVENTS="$(events_cat | jq -c --arg rid "$RUN_ID" 'select(.run_id == $rid)')"
 [[ -n "$EVENTS" ]] || { echo "error: no events for run '$RUN_ID'" >&2; exit 2; }
 
 SUMMARY="$(printf '%s\n' "$EVENTS" | jq -s -f "$SCRIPT_DIR/lib/obs_summary.jq")"

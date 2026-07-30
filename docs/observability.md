@@ -2,7 +2,8 @@
 
 Opt-in event log + run-tree reports for the loop and the factory. Design
 rationale: `docs/observability-evals-analysis.md` §1–2. This page is the
-operating reference.
+operating reference. Architecture, metric catalog, platform comparison and
+the forward roadmap: [`observability-architecture.md`](observability-architecture.md).
 
 ## Enable / disable
 
@@ -26,6 +27,7 @@ zero writes). On = events append to
 | bash shims (`call_*.sh`) | envelope tap in `scripts/lib/common.sh` | `shim_call` — exact model, authoritative tokens + `est_cost_usd`, duration, status, summary, the brief's objective |
 | headless loops | `scripts/run_headless.sh` | `headless_start` / `headless_iteration` (cost, usage, check result) / `headless_end` (ok/postponed/error/exhausted) |
 | factory | `scripts/lib/tracker.sh`, `scripts/lib/usage_gate.sh` | `tracker_transition` (from→to, actor), `gate` (postpone verdicts) |
+| stage context | `scripts/observe.sh context set/clear` (called by the spec/build/review skills at claim + every stop) | `phase_start` / `phase_end` (with the stage duration) — and every event in between carries `phase`/`spec_id` |
 | review benches (opt-in) | `scripts/lib/bench.sh` | `bench` — `detail.action` one of `created`, `refreshed`, `conflict`, `error`, `kept_dirty`, `removed`; `detail.slug`/`detail.path`/`detail.branch` as applicable |
 | orchestrator decisions | `scripts/observe.sh emit …` | `feature_toggle`, `missing_dependency` |
 
@@ -34,10 +36,17 @@ Only `loop-*` subagents are logged by default; set
 
 ## Event schema (v1)
 
-One JSON object per line: `v, ts, event, source, run_id, session_id,
-agent_id, agent_type, tier, model, usage{input_tokens, output_tokens,
-cache_read_input_tokens, cache_creation_input_tokens}, est_cost_usd,
-duration_ms, status, exit_code, summary, detail{}`.
+One JSON object per line: `v, ts, event, source, run_id, phase, spec_id,
+session_id, agent_id, agent_type, tier, model, usage{input_tokens,
+output_tokens, cache_read_input_tokens, cache_creation_input_tokens},
+est_cost_usd, duration_ms, status, exit_code, summary, detail{}`.
+
+`phase` (`spec|scout|build|review`) and `spec_id` (the spec file path) are
+the correlation keys: defaulted from a run-scoped context file written by
+`observe.sh context set` and removed by `context clear` (env
+`AGENTIC_PHASE`/`AGENTIC_SPEC_ID` override; a context older than ~30 min is
+treated as absent — fail closed). Events from before these keys existed
+read null; still v1.
 
 Principles: nulls are honest (nothing is fabricated); `est_cost_usd` stays
 null for subscription tiers — they are shared capacity, not dollars; the
@@ -60,6 +69,25 @@ correlate), `adhoc` for stray shim calls.
 The HTML report is fully self-contained (no CDN, no network). Shim calls are
 attached to the subagent whose start/stop interval contains them — a
 time-overlap heuristic, drawn dashed. Honest over pretty.
+
+## Metrics, retention, export
+
+```bash
+./scripts/observe_metrics.sh cost|phase|spec|estimate|mix   # rollups, pure jq
+                              # (--since/--until, --format tsv; see --help text)
+./scripts/observe_prune.sh    # gzip events >30d, cap reports/ — manual, lossless
+                              # (all readers handle .jsonl.gz transparently)
+./scripts/observe_push.sh     # cursor-based export to a local OpenObserve —
+                              # gated by `observability stack` + O2_URL/O2_AUTH
+```
+
+`observe_metrics.sh` is the derive plane: per-phase spend, per-spec tokens/
+errors/reopens, two-segment cycle time (`specd→pr-open` machine,
+`pr-open→done` merge), the effort_budget estimation table (explicit N,
+`sufficient: false` under 5), and the deterministic/stochastic mix. The
+export stack (dashboards on your phone via Tailscale) is opt-in:
+`templates/observability/README.md` is the recipe. Architecture, metric
+catalog and the platform comparison: [`observability-architecture.md`](observability-architecture.md).
 
 ## Mining the log (the flywheel)
 
