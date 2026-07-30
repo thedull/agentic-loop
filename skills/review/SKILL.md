@@ -32,6 +32,12 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
 3. **Claim.** `scripts/lib/tracker.sh claim built reviewing review-loop`; if
    exit 1, log `review idle` and stop.
 
+   On a successful claim, tag the stage:
+   `scripts/observe.sh context set --phase review --spec-id <claimed file>`
+   (silent no-op when observability is off). **Every stop from here on** —
+   advance, blocked, cap-reached — ends with
+   `scripts/observe.sh context clear`.
+
 4. **Blind review.** Delegate to the `loop-reviewer` subagent (fresh context,
    subscription-covered). Payload: ONLY the spec file and the branch diff
    (`git diff main...claude/idea-<slug>`) — never the build stage's reasoning
@@ -167,7 +173,8 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    ` | run: <run id>` (from `.agentic/observability/state/run`, or
    `$AGENTIC_RUN_ID` under a headless loop) so the digest line links to its
    tree: `/agentic-loop:config render` visualizes the run. This block is what
-   the user reads in the evening. Stop — one item per invocation.
+   the user reads in the evening. Run `scripts/observe.sh context clear`,
+   then stop — one item per invocation.
 
 ## Unattended rules
 
