@@ -342,6 +342,13 @@ harness, and $0 until phase 6. This mirrors the sequencing that shipped the
 original observability layer (capture → renderer → evals → flags → wiring →
 docs).
 
+> **Status (2026-07-30, v0.14.0): phases 1–7 shipped**; phase 8 stays
+> deferred by decision. One deviation from the table as first written:
+> the export stack ships through a **runtime flag**
+> (`observability stack` + env creds, the `bench.sh` precedent), not a
+> scaffold manifest type — gates over distribution. The push script is
+> always scaffolded and inert until both gates open.
+
 | # | Phase | Contents | Eval gate |
 |---|---|---|---|
 | 1 | Context core | `obs.sh` `obs_set_context`/`obs_clear_context` + staleness guard; `observe.sh context` CLI; `phase`/`spec_id` keys; `phase_start`/`phase_end` markers | set/clear/stale/event-with-context cases; full-suite regression proves `obs_summary.jq` + `mine.sh` untouched |

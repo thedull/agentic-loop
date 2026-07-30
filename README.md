@@ -122,9 +122,16 @@ Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
 `/agentic-loop:config render` — a self-contained HTML tree of the whole
 orchestration (per node: tier, model, tokens in/out, est. metered cost,
 duration, status, operation summary; rollups split metered $ from
-subscription tokens). The flat JSONL under `.agentic/observability/` is the
-data-mining substrate: `./evals/mine.sh` turns logged failures into draft
-eval cases, and `./evals/run_eval.sh` runs the suites (free tiers always $0).
+subscription tokens). Every event carries `phase`/`spec_id`, so
+`./scripts/observe_metrics.sh` answers the questions that matter: spend by
+stage, tokens/errors/re-opens per spec, two-segment cycle time, and a
+per-effort-budget estimation table. `observe_prune.sh` keeps the log
+bounded (gzip, lossless), and the opt-in `observability stack` exports to
+a local OpenObserve for phone-reachable dashboards
+([architecture & comparison](docs/observability-architecture.md)). The flat
+JSONL under `.agentic/observability/` is the data-mining substrate:
+`./evals/mine.sh` turns logged failures into draft eval cases, and
+`./evals/run_eval.sh` runs the suites (free tiers always $0).
 Reference: [`docs/observability.md`](docs/observability.md) ·
 [`evals/README.md`](evals/README.md) · design rationale:
 [`docs/observability-evals-analysis.md`](docs/observability-evals-analysis.md) ·

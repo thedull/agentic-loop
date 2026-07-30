@@ -173,7 +173,13 @@ tail -5 .agentic/STATUS.md                 # the digest so far
       Occasionally `--live` (a few subscription calls) to re-baseline agent
       behavior.
 - [ ] Recalibrate the cost table in `CLAUDE.md` from observed usage:
-      `cat .agentic/observability/events-*.jsonl | jq -s '[.[] | select(.event=="shim_call")] | group_by(.tier) | map({tier: .[0].tier, calls: length, cost: (map(.est_cost_usd // 0) | add)})'`
+      `./scripts/observe_metrics.sh cost` (metered $ vs subscription tokens,
+      by tier). Worth a look while you're there:
+      `./scripts/observe_metrics.sh estimate` — once a budget bucket reaches
+      `sufficient: true`, quote its token range when specs are grilled.
+- [ ] `./scripts/observe_prune.sh` — gzip event files older than 30 days and
+      cap the reports folder. Lossless (every reader handles `.jsonl.gz`);
+      run it after `observe_push.sh` if the export stack is on.
 - [ ] Prune `LEARNINGS.md` (two-strikes rule, ~300-line cap).
 - [ ] `claude plugin update agentic-loop`, then `/agentic-loop:update` — pick
       up plugin fixes shipped since this project was scaffolded. Skips when
