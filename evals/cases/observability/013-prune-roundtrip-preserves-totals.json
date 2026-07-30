@@ -1,0 +1,13 @@
+{
+  "id": "observability-013-prune-roundtrip-preserves-totals",
+  "target": "observe_prune.sh — gzip rotation is lossless for every reader",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; cp \"$FIXTURES/obs-events.jsonl\" .agentic/observability/events-20260728.jsonl; BEFORE=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost)\"; \"$PLUGIN_ROOT/scripts/observe_prune.sh\" --days 0 >/dev/null; AFTER=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost)\"; RENDER_OK=false; \"$PLUGIN_ROOT/scripts/observe_render.sh\" --tty --run r1 >/dev/null 2>&1 && RENDER_OK=true; GZ=false; [ -f .agentic/observability/events-20260728.jsonl.gz ] && [ ! -f .agentic/observability/events-20260728.jsonl ] && GZ=true; jq -n --argjson b \"$BEFORE\" --argjson a \"$AFTER\" --argjson gz \"$GZ\" --argjson r \"$RENDER_OK\" '{same: ($b == $a), usd: $a.metered_usd, gz: $gz, render: $r}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".gz == true" },
+    { "type": "jq", "expr": ".same == true and .usd == 0.02" },
+    { "type": "jq", "expr": ".render == true" }
+  ],
+  "provenance": { "source": "hand", "date": "2026-07-30" }
+}

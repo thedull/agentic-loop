@@ -201,6 +201,11 @@ if [[ "$(jq -r '.observability.enabled // false' ./.agentic/config.json 2>/dev/n
     STALE_CTX="$(find ./.agentic/observability/state -name 'ctx-*.json' -mmin +30 2>/dev/null | wc -l | tr -d ' ')"
     [[ "${STALE_CTX:-0}" -gt 0 ]] \
       && warn "$STALE_CTX stale stage-context file(s) in .agentic/observability/state — a stage exited without 'observe.sh context clear' (safe to delete)"
+    # Retention nudge — pruning is manual by design (never during a run).
+    LIVE_DAYS="$(ls ./.agentic/observability/events-*.jsonl 2>/dev/null | wc -l | tr -d ' ')"
+    REPORT_COUNT="$(ls ./.agentic/observability/reports/*.html 2>/dev/null | wc -l | tr -d ' ')"
+    [[ "${LIVE_DAYS:-0}" -gt 30 || "${REPORT_COUNT:-0}" -gt 20 ]] \
+      && warn "log growing ($LIVE_DAYS event day-files, $REPORT_COUNT reports) — run ./scripts/observe_prune.sh (gzips events, caps reports; readers handle .gz)"
   else
     warn "enabled but no events yet — they appear after the first instrumented run"
   fi

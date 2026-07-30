@@ -23,12 +23,22 @@ DRY=0
 [[ "${1:-}" == "--dry-run" ]] && DRY=1
 
 command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 3; }
-ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 || {
+# Either live or pruned files count (ls fails when ANY glob is unmatched,
+# so the two patterns must be tested separately).
+if ! ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 \
+   && ! ls "$OBS_DIR"/events-*.jsonl.gz >/dev/null 2>&1; then
   echo "nothing to mine: no event log under $OBS_DIR (enable observability first)" >&2
   exit 0
+fi
+
+# Live plus gzip-rotated (observe_prune.sh) — failures in an archived week
+# are still worth mining.
+events_cat() {
+  cat "$OBS_DIR"/events-*.jsonl 2>/dev/null || true
+  gzip -dc "$OBS_DIR"/events-*.jsonl.gz 2>/dev/null || true
 }
 
-MINED="$(cat "$OBS_DIR"/events-*.jsonl | jq -c '
+MINED="$(events_cat | jq -c '
   select(
     (.event == "shim_call"
       and ((.status != "ok") or ((.detail.caveats_count // 0) > 0)))
