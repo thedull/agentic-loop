@@ -1,0 +1,145 @@
+# Dashboard queries — the three boards
+
+One panel per query, over the `agentic` stream (SQL tab in OpenObserve's
+panel editor). Field names are the event schema verbatim — see
+`docs/observability.md`. Every board splits metered $ from subscription
+tokens; nothing here blends them.
+
+The leaf-event filter appears in most queries — it is the same
+no-double-counting rule the renderer uses:
+
+```sql
+event IN ('shim_call', 'agent_stop', 'headless_iteration')
+```
+
+## Board 1 — Tonight (the phone board, evening review)
+
+**Today's metered spend ($)** — single stat:
+```sql
+SELECT SUM(est_cost_usd) AS metered_usd FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+```
+
+**Today's subscription tokens** — single stat (in/out):
+```sql
+SELECT SUM(usage_input_tokens) AS tok_in, SUM(usage_output_tokens) AS tok_out
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+  AND est_cost_usd IS NULL
+```
+
+**PRs opened** — table:
+```sql
+SELECT ts, detail_spec_file AS spec FROM agentic
+WHERE event = 'tracker_transition' AND detail_to_status = 'pr-open'
+ORDER BY ts DESC
+```
+
+**LLM-layer errors** — table (API failures, partial/empty output — not
+spec-level blocked):
+```sql
+SELECT ts, agent_type, tier, model, status, summary FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+  AND status IN ('error','partial')
+ORDER BY ts DESC
+```
+
+**Gate postpones** — table:
+```sql
+SELECT ts, detail_resets_at FROM agentic WHERE event = 'gate' ORDER BY ts DESC
+```
+
+Set the board's time range to "Today"; every panel inherits it.
+
+## Board 2 — The Factory (weekly trends)
+
+**Latency: p50/p90 stage duration by phase** — time series:
+```sql
+SELECT histogram(ts) AS t, phase,
+       approx_percentile_cont(duration_ms, 0.5) AS p50,
+       approx_percentile_cont(duration_ms, 0.9) AS p90
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+  AND duration_ms IS NOT NULL
+GROUP BY t, phase ORDER BY t
+```
+
+**Traffic: activity by phase** — stacked bars:
+```sql
+SELECT histogram(ts) AS t, phase, COUNT(*) AS events FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+GROUP BY t, phase ORDER BY t
+```
+
+**Errors: LLM-layer error rate** — time series:
+```sql
+SELECT histogram(ts) AS t,
+       SUM(CASE WHEN status IN ('error','partial') THEN 1 ELSE 0 END) * 100.0
+         / COUNT(*) AS err_pct
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+GROUP BY t ORDER BY t
+```
+
+**Saturation: gate postpones per day** — bars (the moments the loop hit
+the subscription ceiling):
+```sql
+SELECT histogram(ts) AS t, COUNT(*) AS postpones FROM agentic
+WHERE event = 'gate' GROUP BY t ORDER BY t
+```
+
+**Spend by phase** — stacked bars:
+```sql
+SELECT histogram(ts) AS t, phase, SUM(est_cost_usd) AS metered_usd
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+GROUP BY t, phase ORDER BY t
+```
+
+**Deterministic vs stochastic activity** — time series:
+```sql
+SELECT histogram(ts) AS t,
+       SUM(CASE WHEN event IN ('shim_call','agent_start','agent_stop',
+                               'headless_iteration') THEN 1 ELSE 0 END) AS stochastic,
+       SUM(CASE WHEN event NOT IN ('shim_call','agent_start','agent_stop',
+                                   'headless_iteration','run_start','run_end')
+                THEN 1 ELSE 0 END) AS deterministic
+FROM agentic GROUP BY t ORDER BY t
+```
+
+## Board 3 — Spec Economics (the estimation board)
+
+**Tokens per spec** — bars:
+```sql
+SELECT spec_id, SUM(usage_input_tokens + usage_output_tokens) AS tokens
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+  AND spec_id IS NOT NULL
+GROUP BY spec_id ORDER BY tokens DESC
+```
+
+**Errors per spec** — bars:
+```sql
+SELECT spec_id,
+       SUM(CASE WHEN status IN ('error','partial') THEN 1 ELSE 0 END) AS llm_errors
+FROM agentic
+WHERE event IN ('shim_call','agent_stop','headless_iteration')
+  AND spec_id IS NOT NULL
+GROUP BY spec_id ORDER BY llm_errors DESC
+```
+
+**Re-open leaderboard** — table (claims into building beyond the first):
+```sql
+SELECT detail_spec_file AS spec, COUNT(*) - 1 AS reopens FROM agentic
+WHERE event = 'tracker_transition' AND detail_to_status = 'building'
+GROUP BY detail_spec_file HAVING COUNT(*) > 1 ORDER BY reopens DESC
+```
+
+The estimation table itself (p25/p50/p75 per effort_budget with the N
+guard) joins spec-file facts the store does not have — read it from
+`./scripts/observe_metrics.sh estimate`, which is its source of truth.
+
+> Column-name note: OpenObserve flattens nested JSON with underscores
+> (`usage.input_tokens` → `usage_input_tokens`, `detail.to_status` →
+> `detail_to_status`). If your instance is configured differently, adjust
+> the names once here — the event schema itself never moves.
