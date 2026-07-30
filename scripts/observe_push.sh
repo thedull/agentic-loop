@@ -74,9 +74,11 @@ for f in "$OBS_DIR"/events-*.jsonl; do
   fi
   # The store wants one JSON array; the log is JSONL — one slurp away.
   BATCH="$(tail -n +"$((done_n + 1))" "$f" | jq -cs '.')"
+  # < /dev/null: the batch travels as an argument, and anything that reads
+  # a held-open non-tty stdin hangs forever (the RUNBOOK shim gotcha).
   if "$CURL_CMD" -sf -X POST "$ENDPOINT" -u "$O2_AUTH" \
        -H 'Content-Type: application/json' --data-binary "$BATCH" \
-       >/dev/null 2>&1; then
+       >/dev/null 2>&1 < /dev/null; then
     TMP="$(mktemp)"
     jq --arg k "$base" --argjson n "$total" '.[$k] = $n' "$CURSOR" > "$TMP" \
       && mv "$TMP" "$CURSOR"

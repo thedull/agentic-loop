@@ -37,7 +37,15 @@ if [[ ! -d "$OBS_DIR" ]]; then
 fi
 
 TODAY="events-$(date +%Y%m%d).jsonl"
-GZIPPED=0 REMOVED=0
+GZIPPED=0 REMOVED=0 HELD=0
+
+# Offline-batching guard: when the export stack is enabled, never gzip lines
+# the store has not acknowledged — observe_push.sh reads live .jsonl only, so
+# compressing an unpushed file would silently drop its events from the store
+# (a long-offline laptop is exactly when both "old file" and "unpushed" are
+# true at once). Stack off = nothing to hold for; compress freely.
+STACK_ON="$(jq -r '.observability.stack.enabled // false' .agentic/config.json 2>/dev/null || echo false)"
+PUSH_CURSOR="$OBS_DIR/state/push-cursor.json"
 
 # --- events: gzip anything older than the window ------------------------------
 # File age comes from the DATE IN THE NAME, not mtime — a file's mtime is its
@@ -51,6 +59,16 @@ for f in "$OBS_DIR"/events-*.jsonl; do
   stamp="${base#events-}"; stamp="${stamp%.jsonl}"
   [[ "$stamp" =~ ^[0-9]{8}$ ]] || continue
   if [[ "$stamp" -lt "$CUTOFF" ]]; then
+    if [[ "$STACK_ON" == "true" ]]; then
+      total="$(wc -l < "$f" | tr -d ' ')"
+      pushed="$(jq -r --arg k "$base" '.[$k] // 0' "$PUSH_CURSOR" 2>/dev/null || echo 0)"
+      [[ "$pushed" =~ ^[0-9]+$ ]] || pushed=0
+      if (( pushed < total )); then
+        echo "held: $f — $((total - pushed)) line(s) not yet acknowledged by the export stack; run observe_push.sh first" >&2
+        HELD=$((HELD+1))
+        continue
+      fi
+    fi
     if [[ $DRY -eq 1 ]]; then
       echo "would gzip: $f"
     else
@@ -74,4 +92,4 @@ if [[ -d "$OBS_DIR/reports" ]]; then
 fi
 shopt -u nullglob
 
-echo "observe_prune: $GZIPPED event file(s) $([[ $DRY -eq 1 ]] && echo 'would be ')gzipped, $REMOVED report(s) $([[ $DRY -eq 1 ]] && echo 'would be ')removed (window ${DAYS}d, reports cap $KEEP_REPORTS)"
+echo "observe_prune: $GZIPPED event file(s) $([[ $DRY -eq 1 ]] && echo 'would be ')gzipped, $REMOVED report(s) $([[ $DRY -eq 1 ]] && echo 'would be ')removed$([[ $HELD -gt 0 ]] && echo ", $HELD held for unpushed lines") (window ${DAYS}d, reports cap $KEEP_REPORTS)"
