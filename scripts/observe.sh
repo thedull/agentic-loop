@@ -156,10 +156,34 @@ case "$EVT" in
     # in case a stream writes progressive usage); lines with usage but no
     # message id (older transcript shapes) cannot be deduped and are kept
     # as-is, preserving the previous behavior exactly for those shapes.
+    #
+    # ATTRIBUTION GUARD (field evidence, 2026-07-31): SubagentStop's
+    # transcript_path is frequently the PARENT SESSION's transcript, not the
+    # subagent's — 136 distinct agent_stop events in one project all pointed
+    # at a single 8473-line file whose sessionId equalled the event's own
+    # session_id. Extracting from that reports the whole session's usage for
+    # each subagent, which is how a single agent_stop came to claim 2.28M
+    # output tokens. There is no per-agent usage in that file to recover, so
+    # we do not invent one: when the transcript's session matches this event's
+    # session, usage and model stay NULL and detail.usage_source says why.
+    # This is the "nulls are honest" rule (lib/obs.sh) applied to its own
+    # capture path. When the CLI does hand over a genuine child transcript
+    # (different sessionId), extraction proceeds as before — so this
+    # future-proofs rather than disables.
     USAGE='{"input_tokens":null,"output_tokens":null,"cache_read_input_tokens":null,"cache_creation_input_tokens":null}'
     MODEL_JSON=null
+    USAGE_SRC=null
     TP="$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)"
+    TP_SID=""
     if [[ -n "$TP" && -f "$TP" ]]; then
+      TP_SID="$(jq -rs '[ .[] | .sessionId // empty ] | last // empty' "$TP" 2>/dev/null)"
+    fi
+    if [[ -n "$TP" && -f "$TP" && -n "$TP_SID" && "$TP_SID" == "$SID" ]]; then
+      USAGE_SRC='"parent-transcript-not-attributable"'
+      TP=""   # skip extraction entirely; nothing here belongs to this subagent
+    fi
+    if [[ -n "$TP" && -f "$TP" ]]; then
+      USAGE_SRC='"subagent-transcript"'
       EXTRACTED="$(jq -cs '
         [ .[] | {mid: (.message.id // null),
                  u: ((.message.usage // .usage // empty) | objects)} ] as $e |
@@ -181,7 +205,8 @@ case "$EVT" in
     TIER="$(tier_for_agent "$AGENT_TYPE")"
     OVERLAY="$(printf '%s' "$INPUT" | jq -c \
         --arg tier "$TIER" --argjson dur "$DUR" \
-        --argjson usage "$USAGE" --argjson model "$MODEL_JSON" '
+        --argjson usage "$USAGE" --argjson model "$MODEL_JSON" \
+        --argjson usrc "$USAGE_SRC" '
       {session_id: (.session_id // null),
        agent_id: (.agent_id // null),
        agent_type: (.agent_type // null),
@@ -190,7 +215,8 @@ case "$EVT" in
        usage: $usage,
        duration_ms: $dur,
        summary: ((.last_assistant_message // null) | if . == null then null else .[0:1000] end),
-       detail: {transcript_path: (.transcript_path // null)}}' 2>/dev/null)" \
+       detail: {transcript_path: (.transcript_path // null),
+                usage_source: $usrc}}' 2>/dev/null)" \
       && obs_event agent_stop hook "$OVERLAY"
     ;;
 
