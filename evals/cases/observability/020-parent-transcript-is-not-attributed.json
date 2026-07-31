@@ -1,0 +1,14 @@
+{
+  "id": "observability-020-parent-transcript-is-not-attributed",
+  "target": "observe.sh SubagentStop — when transcript_path is the PARENT session's transcript, usage/model stay null instead of reporting the whole session's tokens as one subagent's",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; printf '%s\\n' '{\"sessionId\":\"SESS-A\",\"message\":{\"id\":\"m1\",\"model\":\"parent-model\",\"usage\":{\"input_tokens\":900000,\"output_tokens\":2280000}}}' > parent.jsonl; printf '%s\\n' '{\"sessionId\":\"CHILD-B\",\"message\":{\"id\":\"m9\",\"model\":\"child-model\",\"usage\":{\"input_tokens\":700,\"output_tokens\":90}}}' > child.jsonl; printf '%s' \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"SESS-A\\\",\\\"agent_id\\\":\\\"p1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/parent.jsonl\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; printf '%s' \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"SESS-A\\\",\\\"agent_id\\\":\\\"c1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/child.jsonl\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | jq -cs '{parent: (map(select(.agent_id==\"p1\"))|first), child: (map(select(.agent_id==\"c1\"))|first)}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".parent.usage.input_tokens == null and .parent.usage.output_tokens == null" },
+    { "type": "jq", "expr": ".parent.model == null and .parent.detail.usage_source == \"parent-transcript-not-attributable\"" },
+    { "type": "jq", "expr": ".child.usage.input_tokens == 700 and .child.usage.output_tokens == 90" },
+    { "type": "jq", "expr": ".child.model == \"child-model\" and .child.detail.usage_source == \"subagent-transcript\"" }
+  ],
+  "provenance": { "source": "mined-by-hand", "date": "2026-07-31", "note": "136 agent_stop events in claude-deck all pointed at one 8473-line parent transcript; naive attribution produced 254M output tokens" }
+}

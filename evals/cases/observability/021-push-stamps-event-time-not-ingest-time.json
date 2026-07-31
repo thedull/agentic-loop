@@ -1,0 +1,14 @@
+{
+  "id": "observability-021-push-stamps-event-time-not-ingest-time",
+  "target": "observe_push.sh — the batch carries _timestamp derived from each event's own ts, so a late/offline backfill indexes by when work happened, not when it uploaded",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability bin; printf '%s' '{\"observability\":{\"enabled\":true,\"stack\":{\"enabled\":true}}}' > .agentic/config.json; printf '%s\\n' '{\"v\":1,\"ts\":\"2026-07-28T09:01:00Z\",\"event\":\"shim_call\",\"run_id\":\"r1\"}' '{\"v\":1,\"ts\":\"2026-07-30T14:30:00Z\",\"event\":\"agent_stop\",\"run_id\":\"r1\"}' > .agentic/observability/events-20260728.jsonl; printf '#!/bin/sh\\nwhile [ $# -gt 0 ]; do case \"$1\" in --data-binary) printf \"%%s\" \"$2\" > \"$CAPTURE\"; shift 2 ;; *) shift ;; esac; done\\nexit 0\\n' > bin/curl-cap; chmod +x bin/curl-cap; export O2_URL=http://localhost:5080 O2_AUTH=a:b CAPTURE=\"$PWD/sent.json\"; O2_CURL=\"$PWD/bin/curl-cap\" \"$PLUGIN_ROOT/scripts/observe_push.sh\" >/dev/null; jq -cs '.[0] | {n: length, first: (.[0] | {ts, _timestamp}), second: (.[1] | {ts, _timestamp})}' sent.json",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".n == 2" },
+    { "type": "jq", "expr": ".first._timestamp == 1785229260000000" },
+    { "type": "jq", "expr": ".second._timestamp == 1785421800000000" },
+    { "type": "jq", "expr": ".first._timestamp < .second._timestamp" }
+  ],
+  "provenance": { "source": "mined-by-hand", "date": "2026-07-31", "note": "582 backfilled events all landed at the push instant; every dashboard time filter was answering 'when did I upload this?'" }
+}

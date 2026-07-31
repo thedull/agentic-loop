@@ -73,7 +73,22 @@ for f in "$OBS_DIR"/events-*.jsonl; do
     continue
   fi
   # The store wants one JSON array; the log is JSONL — one slurp away.
-  BATCH="$(tail -n +"$((done_n + 1))" "$f" | jq -cs '.')"
+  #
+  # _timestamp is set from the event's OWN ts (epoch microseconds), never
+  # left to the store: OpenObserve falls back to ingest time, which collapses
+  # every backfilled event onto the moment of the push. Measured on the first
+  # real backfill — 582 events spanning five days all landed at one instant,
+  # making every dashboard time filter answer "when did I upload this?"
+  # instead of "when did this happen?". That defeats the whole offline-batch
+  # design, where uploading late is the expected case. Events whose ts cannot
+  # be parsed are sent without the field (store falls back as before) rather
+  # than dropped.
+  BATCH="$(tail -n +"$((done_n + 1))" "$f" | jq -cs '
+    map(if (.ts | type) == "string"
+        then . + {_timestamp: ((.ts | sub("\\.[0-9]+"; "")
+                               | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) * 1000000)}
+        else . end)' 2>/dev/null)"
+  [[ -n "$BATCH" ]] || BATCH="$(tail -n +"$((done_n + 1))" "$f" | jq -cs '.')"
   # < /dev/null: the batch travels as an argument, and anything that reads
   # a held-open non-tty stdin hangs forever (the RUNBOOK shim gotcha).
   if "$CURL_CMD" -sf -X POST "$ENDPOINT" -u "$O2_AUTH" \
