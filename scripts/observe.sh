@@ -146,13 +146,27 @@ case "$EVT" in
     fi
 
     # Best-effort token/model extraction from the subagent transcript (F1/F3).
+    #
+    # DEDUPE BY MESSAGE ID, never sum per line: one API response spans
+    # several transcript lines (one per content block / tool_use), each
+    # repeating the SAME usage object. A naive per-line sum multiplies every
+    # call by its block count — measured 2.6x on a real transcript, and the
+    # field failure that forced this fix was a single agent_stop claiming
+    # 2.28M output tokens. One usage per message id (max_by output_tokens,
+    # in case a stream writes progressive usage); lines with usage but no
+    # message id (older transcript shapes) cannot be deduped and are kept
+    # as-is, preserving the previous behavior exactly for those shapes.
     USAGE='{"input_tokens":null,"output_tokens":null,"cache_read_input_tokens":null,"cache_creation_input_tokens":null}'
     MODEL_JSON=null
     TP="$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)"
     if [[ -n "$TP" && -f "$TP" ]]; then
       EXTRACTED="$(jq -cs '
-        [ .[] | (.message.usage // .usage // empty) | objects ] as $u |
-        if ($u | length) == 0 then null else
+        [ .[] | {mid: (.message.id // null),
+                 u: ((.message.usage // .usage // empty) | objects)} ] as $e |
+        if ($e | length) == 0 then null else
+          ( ($e | map(select(.mid != null)) | group_by(.mid)
+              | map(max_by(.u.output_tokens // 0) | .u))
+            + ($e | map(select(.mid == null) | .u)) ) as $u |
           {input_tokens: ([$u[].input_tokens // 0] | add),
            output_tokens: ([$u[].output_tokens // 0] | add),
            cache_read_input_tokens: ([$u[].cache_read_input_tokens // 0] | add),
