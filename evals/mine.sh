@@ -17,6 +17,14 @@
 set -uo pipefail
 
 EVALS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# See the note in observe_metrics.sh: soft-source, with a fallback phrasing.
+if [[ -r "$EVALS_DIR/../scripts/lib/obs.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$EVALS_DIR/../scripts/lib/obs.sh"
+fi
+declare -F obs_no_events_hint >/dev/null 2>&1 || obs_no_events_hint() {
+  printf 'no event log under %s — enable observability first (/agentic-loop:config observability on)' "${1:-}"
+}
 OBS_DIR=".agentic/observability"
 INBOX="$EVALS_DIR/cases/_inbox"
 DRY=0
@@ -27,7 +35,7 @@ command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 3; }
 # so the two patterns must be tested separately).
 if ! ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 \
    && ! ls "$OBS_DIR"/events-*.jsonl.gz >/dev/null 2>&1; then
-  echo "nothing to mine: no event log under $OBS_DIR (enable observability first)" >&2
+  echo "nothing to mine: $(obs_no_events_hint "$OBS_DIR")" >&2
   exit 0
 fi
 

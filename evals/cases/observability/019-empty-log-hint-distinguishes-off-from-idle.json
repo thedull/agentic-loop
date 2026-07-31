@@ -1,0 +1,32 @@
+{
+  "id": "observability-019-empty-log-hint-distinguishes-off-from-idle",
+  "target": "obs_no_events_hint — an empty log on an ENABLED producer must not tell the operator to enable the flag they already enabled; a genuinely disabled one still must",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; unset AGENTIC_OBSERVE; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; ON=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost 2>&1 >/dev/null || true)\"; printf '%s' '{\"observability\":{\"enabled\":false}}' > .agentic/config.json; OFF=\"$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost 2>&1 >/dev/null || true)\"; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; HARDOFF=\"$(AGENTIC_OBSERVE=0 \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" cost 2>&1 >/dev/null || true)\"; jq -n --arg on \"$ON\" --arg off \"$OFF\" --arg hardoff \"$HARDOFF\" '{on_says_enable: ($on|test(\"enable observability first\")), on_says_idle: ($on|test(\"no events yet\")), off_says_enable: ($off|test(\"enable observability first\")), hardoff_says_enable: ($hardoff|test(\"enable observability first\"))}'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".on_says_enable == false"
+    },
+    {
+      "type": "jq",
+      "expr": ".on_says_idle == true"
+    },
+    {
+      "type": "jq",
+      "expr": ".off_says_enable == true"
+    },
+    {
+      "type": "jq",
+      "expr": ".hardoff_says_enable == true"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-07-31"
+  }
+}
