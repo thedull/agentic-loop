@@ -1,0 +1,14 @@
+{
+  "id": "observability-022-http-200-with-failures-holds-the-cursor",
+  "target": "observe_push.sh — OpenObserve answers a discarded batch with HTTP 200 and failed>0 in the body; the cursor must NOT advance on that (the silent-loss bug)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability bin; printf '%s' '{\"observability\":{\"enabled\":true,\"stack\":{\"enabled\":true}}}' > .agentic/config.json; printf '%s\\n' '{\"v\":1,\"ts\":\"2026-07-28T09:01:00Z\",\"event\":\"shim_call\",\"run_id\":\"r1\"}' > .agentic/observability/events-20260728.jsonl; printf '#!/bin/sh\\nprintf \"%%s\" \"{\\\\\"code\\\\\":200,\\\\\"status\\\\\":[{\\\\\"name\\\\\":\\\\\"agentic\\\\\",\\\\\"successful\\\\\":0,\\\\\"failed\\\\\":1,\\\\\"error\\\\\":\\\\\"Too old data, only last 5 hours data can be ingested. Data discarded.\\\\\"}]}\"\\nexit 0\\n' > bin/curl-reject; printf '#!/bin/sh\\nprintf \"%%s\" \"{\\\\\"code\\\\\":200,\\\\\"status\\\\\":[{\\\\\"name\\\\\":\\\\\"agentic\\\\\",\\\\\"successful\\\\\":1,\\\\\"failed\\\\\":0}]}\"\\nexit 0\\n' > bin/curl-accept; chmod +x bin/curl-reject bin/curl-accept; export O2_URL=http://localhost:5080 O2_AUTH=a:b; O2_CURL=\"$PWD/bin/curl-reject\" \"$PLUGIN_ROOT/scripts/observe_push.sh\" >/dev/null 2>err.txt; REJ_EC=$?; HELD=\"$(jq -r '.[\"events-20260728.jsonl\"] // 0' .agentic/observability/state/push-cursor.json)\"; O2_CURL=\"$PWD/bin/curl-accept\" \"$PLUGIN_ROOT/scripts/observe_push.sh\" >/dev/null; ADV=\"$(jq -r '.[\"events-20260728.jsonl\"] // 0' .agentic/observability/state/push-cursor.json)\"; jq -n --argjson ec \"$REJ_EC\" --argjson h \"$HELD\" --argjson a \"$ADV\" --arg err \"$(cat err.txt)\" '{ec: $ec, held: $h, advanced: $a, said_too_old: ($err | test(\"Too old data\"))}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".ec == 1" },
+    { "type": "jq", "expr": ".held == 0" },
+    { "type": "jq", "expr": ".advanced == 1" },
+    { "type": "jq", "expr": ".said_too_old == true" }
+  ],
+  "provenance": { "source": "mined-by-hand", "date": "2026-07-31", "note": "582 events were marked pushed while the store discarded every one of them" }
+}

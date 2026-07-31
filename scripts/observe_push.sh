@@ -91,16 +91,41 @@ for f in "$OBS_DIR"/events-*.jsonl; do
   [[ -n "$BATCH" ]] || BATCH="$(tail -n +"$((done_n + 1))" "$f" | jq -cs '.')"
   # < /dev/null: the batch travels as an argument, and anything that reads
   # a held-open non-tty stdin hangs forever (the RUNBOOK shim gotcha).
-  if "$CURL_CMD" -sf -X POST "$ENDPOINT" -u "$O2_AUTH" \
+  #
+  # HTTP 200 IS NOT ACCEPTANCE. OpenObserve answers a partly- or wholly-
+  # rejected batch with 200 and per-stream {successful, failed, error} in the
+  # BODY — e.g. "Too old data, only last 5 hours data can be ingested"
+  # (ZO_INGEST_ALLOWED_UPTO, default 5h). Trusting the status code advanced
+  # the cursor over 582 events the store had discarded: silent loss, and
+  # exactly the guarantee this cursor exists to provide. The body decides.
+  # `|| RC=$?`, not a bare assignment: under `set -e` a failing command
+  # substitution aborts the script outright (the old code was shielded by
+  # sitting inside an `if`). Caught by eval 015 the moment it regressed.
+  RC=0
+  RESP="$("$CURL_CMD" -s -X POST "$ENDPOINT" -u "$O2_AUTH" \
        -H 'Content-Type: application/json' --data-binary "$BATCH" \
-       >/dev/null 2>&1 < /dev/null; then
+       2>/dev/null < /dev/null)" || RC=$?
+  REJECTED=0; REASON=""
+  if [[ $RC -ne 0 ]]; then
+    REJECTED=1; REASON="unreachable (curl exit $RC)"
+  elif [[ -n "$RESP" ]]; then
+    # An unparseable/among-friends body (test doubles emit nothing) is not
+    # evidence of rejection — only an explicit failed>0 is.
+    NFAIL="$(jq -r '[.status[]?.failed // 0] | add // 0' <<<"$RESP" 2>/dev/null || echo 0)"
+    [[ "$NFAIL" =~ ^[0-9]+$ ]] || NFAIL=0
+    if [[ "$NFAIL" -gt 0 ]]; then
+      REJECTED=1
+      REASON="$(jq -r '[.status[]?.error // empty] | first // "store reported failures"' <<<"$RESP" 2>/dev/null)"
+    fi
+  fi
+  if [[ $REJECTED -eq 0 ]]; then
     TMP="$(mktemp)"
     jq --arg k "$base" --argjson n "$total" '.[$k] = $n' "$CURSOR" > "$TMP" \
       && mv "$TMP" "$CURSOR"
     echo "pushed: $base +$new (cursor $total)"
     PUSHED=$((PUSHED + new))
   else
-    echo "observe_push: store rejected/unreachable for $base — cursor kept, will retry" >&2
+    echo "observe_push: $base NOT accepted — cursor kept, will retry. Store said: $REASON" >&2
     FAILED=1
   fi
 done
