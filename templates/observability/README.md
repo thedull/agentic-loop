@@ -40,6 +40,7 @@ docker run -d --name openobserve --restart unless-stopped \
   -p 127.0.0.1:5080:5080 \
   -e ZO_ROOT_USER_EMAIL="you@example.com" \
   -e ZO_ROOT_USER_PASSWORD="ChooseAReal1!" \
+  -e ZO_INGEST_ALLOWED_UPTO=8760 \
   -v "$HOME/openobserve/data:/data" \
   public.ecr.aws/zinclabs/openobserve:latest
 ```
@@ -49,6 +50,19 @@ otherwise, not a friendly error): the email must look like a real address
 — `user@example.com`, not `user@local` — and the password needs 8-128
 chars with at least one uppercase, one lowercase, one digit, and one
 special character.
+
+**`ZO_INGEST_ALLOWED_UPTO` is not optional if you ever backfill.** Events
+are indexed at the time the work actually happened (`observe_push.sh`
+stamps `_timestamp` from each event's `ts`), and OpenObserve **discards**
+anything older than this many hours — default 5. A producer that was
+offline for a day, or a first push over existing history, is entirely
+"too old" and lands nothing. The rejection arrives as HTTP 200 with
+`failed` in the body, so it looks like success unless something reads the
+body (`observe_push.sh` does, and holds its cursor). Set it generously:
+
+```bash
+-e ZO_INGEST_ALLOWED_UPTO=8760      # one year; pick whatever covers your history
+```
 
 Bind to `127.0.0.1` deliberately — the tailnet, not the LAN, is the way in
 (for both the phone AND the producers; see step 3).
