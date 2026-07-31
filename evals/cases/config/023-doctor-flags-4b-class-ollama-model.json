@@ -1,0 +1,12 @@
+{
+  "id": "config-023-doctor-flags-4b-class-ollama-model",
+  "target": "doctor.sh — the model-size gate parses sizes numerically, so 4B-class models warn and larger ones do not (a digit match reads '12b' as '1')",
+  "kind": "bash-unit",
+  "cmd": "check() { S=\"${1##*:}\"; S=\"${S%[bB]}\"; S=\"${S#[eE]}\"; if awk -v s=\"$S\" 'BEGIN{exit !(s+0 > 0 && s+0 <= 4)}'; then echo warn; else echo ok; fi; }; jq -n --arg a \"$(check qwen3.5:4b)\" --arg b \"$(check gemma4:12b)\" --arg c \"$(check gemma4:e4b)\" --arg d \"$(check qwen3.5:0.8b)\" --arg e \"$(check qwen3:8b)\" --arg f \"$(check llama4:70b)\" '{q4:$a, g12:$b, e4:$c, p8:$d, q8:$e, l70:$f}'",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".q4 == \"warn\" and .e4 == \"warn\" and .p8 == \"warn\"" },
+    { "type": "jq", "expr": ".g12 == \"ok\" and .q8 == \"ok\" and .l70 == \"ok\"" }
+  ],
+  "provenance": { "source": "field", "date": "2026-07-31", "note": "captured shim_call events: qwen3.5:4b -> partial (3494 tokens, empty result), gemma4:12b -> ok. All three projects had overridden the shipped default by hand" }
+}

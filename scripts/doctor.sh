@@ -35,6 +35,30 @@ if command -v ollama >/dev/null 2>&1; then
   ok "ollama present"
   if curl -sS --max-time 2 http://localhost:11434/api/tags >/dev/null 2>&1; then
     ok "ollama server responding on :11434"
+    # Which model the worker will ACTUALLY use, resolved the same way
+    # call_ollama.sh resolves it (./.env, else the shim default).
+    OLLAMA_PICK="$(grep -m1 '^OLLAMA_MODEL=' ./.env 2>/dev/null | cut -d= -f2- | tr -d '"'"'"'')"
+    [[ -n "$OLLAMA_PICK" ]] || OLLAMA_PICK="qwen3.5:4b"
+    OLLAMA_HAVE="$(curl -sS --max-time 2 http://localhost:11434/api/tags 2>/dev/null \
+                   | jq -r '.models[]?.name' 2>/dev/null)"
+    if ! grep -qxF "$OLLAMA_PICK" <<<"$OLLAMA_HAVE"; then
+      warn "OLLAMA_MODEL='$OLLAMA_PICK' is not pulled — 'ollama pull $OLLAMA_PICK', or set OLLAMA_MODEL in ./.env to one you have"
+    # Measured, not assumed: a 4B-class model spends its whole budget inside
+    # <think> and returns an empty result the shim correctly reports as
+    # `partial` — a wasted call that looks like a tier failure. Observed on
+    # both boxes; every project here had to override the shipped default by
+    # hand, which is the definition of a trap worth gating rather than
+    # documenting.
+    # Parse the size numerically — a digit-pattern match reads "12b" as
+    # "1" and flags a 12B model as tiny. Handles 4b / 0.8b / e4b ("effective
+    # 4B", which behaves like one).
+    elif OLLAMA_SIZE="${OLLAMA_PICK##*:}"; OLLAMA_SIZE="${OLLAMA_SIZE%[bB]}"; \
+         OLLAMA_SIZE="${OLLAMA_SIZE#[eE]}"; \
+         awk -v s="$OLLAMA_SIZE" 'BEGIN{exit !(s+0 > 0 && s+0 <= 4)}' 2>/dev/null; then
+      warn "OLLAMA_MODEL='$OLLAMA_PICK' is 4B-class — these return status 'partial' with an empty result (budget spent in <think>). Prefer a larger non-thinking model, e.g. gemma4:12b"
+    else
+      ok "ollama worker model '$OLLAMA_PICK' pulled and not 4B-class"
+    fi
   else
     warn "ollama installed but server not responding (run 'ollama serve' or open the app)"
   fi
