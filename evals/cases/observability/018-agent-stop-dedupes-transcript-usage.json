@@ -1,0 +1,14 @@
+{
+  "id": "observability-018-agent-stop-dedupes-transcript-usage",
+  "target": "observe.sh SubagentStop — one API response spans many transcript lines with a repeated usage object; the extraction must sum once per message id (the 2.28M-token field failure)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf '%s' '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; { printf '%s\\n' '{\"message\":{\"id\":\"m1\",\"model\":\"test-model\",\"usage\":{\"input_tokens\":1000,\"output_tokens\":200,\"cache_read_input_tokens\":50,\"cache_creation_input_tokens\":10}}}'; printf '%s\\n' '{\"message\":{\"id\":\"m1\",\"model\":\"test-model\",\"usage\":{\"input_tokens\":1000,\"output_tokens\":200,\"cache_read_input_tokens\":50,\"cache_creation_input_tokens\":10}}}'; printf '%s\\n' '{\"message\":{\"id\":\"m1\",\"model\":\"test-model\",\"usage\":{\"input_tokens\":1000,\"output_tokens\":200,\"cache_read_input_tokens\":50,\"cache_creation_input_tokens\":10}}}'; printf '%s\\n' '{\"message\":{\"id\":\"m2\",\"model\":\"test-model\",\"usage\":{\"input_tokens\":2000,\"output_tokens\":300,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}}'; printf '%s\\n' '{\"type\":\"tool_result\",\"no_usage_here\":true}'; printf '%s\\n' '{\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}'; } > t.jsonl; printf '%s' \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-worker-cheap\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"done\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    { "type": "exit_code", "equals": 0 },
+    { "type": "jq", "expr": ".event == \"agent_stop\" and .agent_id == \"ag1\"" },
+    { "type": "jq", "expr": ".usage.input_tokens == 3010 and .usage.output_tokens == 505" },
+    { "type": "jq", "expr": ".usage.cache_read_input_tokens == 50 and .usage.cache_creation_input_tokens == 10" },
+    { "type": "jq", "expr": ".model == \"test-model\"" }
+  ],
+  "provenance": { "source": "mined-by-hand", "date": "2026-07-31", "note": "from the 254M-output-token anomaly found on the first real dashboard read; naive per-line summing would report 5010/905 here" }
+}
