@@ -169,6 +169,13 @@ for title, body in boards:
     for i, pm in enumerate(panel_re.finditer(body), start=1):
         panels.append(build_panel(i, pm.group("title").strip(),
                                   pm.group("kind").strip(), pm.group("sql")))
+    # A default window is not cosmetic. Events are indexed at the time the
+    # work actually happened, so a factory that last ran yesterday falls
+    # entirely outside OpenObserve's fallback range ("Past 15 Minutes") and
+    # a correct board over correct data opens completely empty — which reads
+    # as broken. Tonight is the evening-review board and wants today; the
+    # trend boards want weeks. Still just a default the viewer can change.
+    window = "1d" if title.startswith("Tonight") else "30d"
     dash = {
         "title": f"Agentic Loop — {title}",
         "dashboardId": "",
@@ -177,6 +184,9 @@ for title, body in boards:
         "owner": "",
         "tabs": [{"tabId": "default", "name": "default", "panels": panels}],
         "variables": {"list": []},
+        "defaultDatetimeDuration": {"startTime": None, "endTime": None,
+                                    "relativeTimePeriod": window,
+                                    "type": "relative"},
     }
     slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
     fname = OUT_DIR / f"{slug}.dashboard.json"

@@ -359,5 +359,11 @@
   ],
   "variables": {
     "list": []
+  },
+  "defaultDatetimeDuration": {
+    "startTime": null,
+    "endTime": null,
+    "relativeTimePeriod": "30d",
+    "type": "relative"
   }
 }
