@@ -19,6 +19,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# obs_no_events_hint() lives in lib/obs.sh, which ships in the same `core`
+# manifest set as this script — but a project can hold a stale or partially
+# updated scaffold, and a hard `source` would abort the whole reader under
+# `set -e` just to phrase one message. Degrade instead.
+if [[ -r "$SCRIPT_DIR/lib/obs.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/lib/obs.sh"
+fi
+declare -F obs_no_events_hint >/dev/null 2>&1 || obs_no_events_hint() {
+  printf 'no event log under %s — enable observability first (/agentic-loop:config observability on)' "${1:-}"
+}
 OBS_DIR="${OBS_DIR:-.agentic/observability}"
 SPECS_DIR="${FACTORY_SPECS_DIR:-factory/specs}"
 
@@ -46,7 +57,7 @@ EVENT_FILES=("$OBS_DIR"/events-*.jsonl)
 GZ_FILES=("$OBS_DIR"/events-*.jsonl.gz)
 shopt -u nullglob
 if [[ ${#EVENT_FILES[@]} -eq 0 && ${#GZ_FILES[@]} -eq 0 ]]; then
-  echo "observe_metrics: no event log under $OBS_DIR — enable observability first (/agentic-loop:config observability on)" >&2
+  echo "observe_metrics: $(obs_no_events_hint "$OBS_DIR")" >&2
   exit 1
 fi
 

@@ -15,6 +15,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# See the note in observe_metrics.sh: soft-source so a stale scaffold degrades
+# to the plain message instead of aborting under `set -e`.
+if [[ -r "$SCRIPT_DIR/lib/obs.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/lib/obs.sh"
+fi
+declare -F obs_no_events_hint >/dev/null 2>&1 || obs_no_events_hint() {
+  printf 'no event log under %s — enable observability first (/agentic-loop:config observability on)' "${1:-}"
+}
 OBS_DIR=".agentic/observability"
 RUN_ID=""
 OUT=""
@@ -36,8 +45,7 @@ command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 3; }
 # so the two patterns must be tested separately).
 if ! ls "$OBS_DIR"/events-*.jsonl >/dev/null 2>&1 \
    && ! ls "$OBS_DIR"/events-*.jsonl.gz >/dev/null 2>&1; then
-  echo "error: no event log under $OBS_DIR — enable observability first" >&2
-  echo "  (/agentic-loop:config observability on, then run something)" >&2
+  echo "error: $(obs_no_events_hint "$OBS_DIR")" >&2
   exit 2
 fi
 

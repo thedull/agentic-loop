@@ -210,3 +210,33 @@ obs_shim_tap() {
   obs_event shim_call shim "$overlay"
   return 0
 }
+
+# Why the readers need this: "there are no events" has two causes that call for
+# opposite responses — the flag is off, or the flag is on and nothing has run
+# yet. A freshly-scaffolded producer sits in the second state until its first
+# instrumented run, and telling someone to enable a flag they already enabled
+# sends them hunting a misconfiguration that does not exist.
+#
+# Takes the directory as an argument rather than consulting obs_root(), so the
+# hint always names the directory the caller actually read. That matters today
+# for observe_metrics.sh, which honours an OBS_DIR override (observe_render.sh
+# and evals/mine.sh currently hardcode theirs), and keeps this correct if the
+# others gain overrides later. Precedence otherwise mirrors obs_enabled().
+obs_no_events_hint() {
+  local obs_dir="${1:-.agentic/observability}"
+  local cfg enabled=0
+  cfg="$(dirname "$obs_dir")/config.json"
+  case "${AGENTIC_OBSERVE:-}" in
+    0) enabled=0 ;;
+    1) enabled=1 ;;
+    *) if [[ -f "$cfg" ]] \
+       && [[ "$(jq -r '.observability.enabled // false' "$cfg" 2>/dev/null)" == "true" ]]; then
+         enabled=1
+       fi ;;
+  esac
+  if [[ $enabled -eq 1 ]]; then
+    printf 'no events yet under %s — observability is on; events appear after the first instrumented run' "$obs_dir"
+  else
+    printf 'no event log under %s — enable observability first (/agentic-loop:config observability on)' "$obs_dir"
+  fi
+}
