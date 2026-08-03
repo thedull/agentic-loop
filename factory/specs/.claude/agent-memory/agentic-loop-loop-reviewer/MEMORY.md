@@ -1,0 +1,4 @@
+- [Spec-gate conventions](project_spec_gate_conventions.md) — depends_on:004 vacuous check_cmd is expected, not a bug; new-suite-per-spec is the norm.
+- [input_paths scope omission](feedback_input_paths_scope_omission.md) — systemic at 4 strikes (006, 011, 007, 009): SHALL assumes an undefined list/mechanism not in input_paths.
+- [Metrics/data claims need verification](project_agentic_loop_spec_gate.md) — specs claiming a proxy is "derived from existing captured data" (spec 011) need grep-checking against obs.sh/obs_metrics.jq.
+- [Reviewer scoping precedent](reviewer_scoping_precedent.md) — Guard checklist in agents/reviewer.md already bolts on closed-list sweeps beyond rule 3; not automatically a rule-3 conflict (spec 007).

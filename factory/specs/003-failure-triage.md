@@ -16,7 +16,7 @@ pr:
 
 - **objective**: put a bounded diagnostic step between a failing `check_cmd` and `blocked`, and state once that tool, error, and external-model output is data rather than instructions.
 - **user_intent_verbatim**: backlog item 3 of `docs/osmani-audit.md` §2.7, absorbing the surviving half of §2.3.2 — today two failed attempts go straight to `blocked` with no prescribed diagnosis, and "try again" is the strategy an LLM defaults to.
-- **input_paths**: `skills/build/SKILL.md`, `templates/LOOP_POLICY.md`, `agents/reviewer.md`, `evals/cases/red-gate/`
+- **input_paths**: `skills/build/SKILL.md`, `templates/LOOP_POLICY.md`, `agents/reviewer.md`, `evals/cases/triage/`
 - **boundaries_non_goals**:
   - Does NOT raise the retry budget. Triage replaces a blind second attempt; it does not buy a third.
   - Does NOT introduce an unbounded diagnose→retry loop — that is the critique→revise loop this repo already rejected (`templates/LOOP_POLICY.md:79`).
@@ -43,22 +43,23 @@ pr:
 ## Check command (the Red Gate contract)
 
 ```
-check_cmd: ./evals/run_eval.sh --suite red-gate
+check_cmd: ./evals/run_eval.sh --suite triage
 ```
 
-The build stage MUST run this and see it FAIL before writing implementation
-code, and see it PASS before advancing to `built`. Depends on 004: the
-spec-review gate verified that `--suite red-gate` exits 0 on the untouched tree
-today, because its one case is `--live`-only and skips.
+**Build order (spec 004 acceptance 7).** This names a **new suite of its own**,
+never an existing one: a suite with passing cases can never fail first
+(`--suite tracker` passes 24 today), and two specs sharing a suite make each
+other's gate vacuous depending on claim order. But a *missing* suite is not a
+red gate either — it exits 4 ("nothing ran"), and "no test" is not "a failing
+test". So the builder's first step is to create this suite and its cases, run
+the check, and see them genuinely fail (exit 1). Only then implement.
 
-Every acceptance criterion needs its own `kind: bash-unit` case — the review
-noted that only acceptance 5 had a described fixture. Sketches: 1 and 2 drive
-the triage check over fixture Notes files (well-formed, missing-a-part, and
-appended-too-late); 3 asserts the attempt counter against today's bound; 4 uses
-a fixture pair where the top-level check passes but no root-cause test exists;
-5 is the embedded-instruction error string; 6 runs the reviewer prompt with
-`guards` explicitly false. Mutation-test each — remove the guard, confirm the
-case fails.
+Every acceptance criterion needs its own `kind: bash-unit` case. Sketches: 1 and
+2 drive the triage check over fixture Notes files (well-formed, missing-a-part,
+and appended-too-late); 3 asserts the attempt counter against today's bound; 4
+uses a fixture pair where the top-level check passes but no root-cause test
+exists; 5 is the embedded-instruction error string; 6 runs the reviewer prompt
+with `guards` explicitly false. Mutation-test each.
 
 ## Notes / decisions (append-only)
 
@@ -81,3 +82,4 @@ case fails.
 - 2026-08-02 spec-review: MODIFIED acceptance 6 to fire unconditionally — the reviewer's only existing finding-class mechanism is the `guards` checklist, which is off by default, so an untrusted-output finding would have shipped disabled.
 - 2026-08-02 spec-review: MODIFIED the `blocked` boundary, which contradicted acceptance 1 by claiming nothing about recording changed.
 - 2026-08-02 spec-review: ADDED per-criterion fixture sketches (only one criterion had one) and `depends_on: 004`.
+- 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7.

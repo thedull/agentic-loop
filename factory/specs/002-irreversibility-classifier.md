@@ -16,12 +16,12 @@ pr:
 
 - **objective**: detect migration-shaped and otherwise irreversible specs during the spec stage, set `profile: hardened`, and require the expand/contract split before the work can be claimed.
 - **user_intent_verbatim**: backlog item 2 of `docs/osmani-audit.md` §2.7 — the highest-ranked real gap, because it is the only one whose current failure mode is "ships green and breaks production".
-- **input_paths**: `skills/spec/SKILL.md`, `scripts/lib/tracker.sh`, `templates/factory-spec.md`, `evals/cases/spec-gate/`
+- **input_paths**: `skills/spec/SKILL.md`, `scripts/lib/tracker.sh`, `templates/factory-spec.md`, `evals/cases/irreversible/`
 - **boundaries_non_goals**:
   - Does NOT write migrations, generate DDL, or inspect a database. It classifies the *spec*, not the schema.
   - Does NOT attempt to be exhaustive. An incomplete classifier that fails closed is the deliverable; a "smart" classifier that guesses reversible is a regression.
   - Does NOT block the human from overriding — an explicit human override is allowed and recorded, but never inferred.
-  - Does NOT implement the dark lane's clause 4; it only provides the classifier that clause will call (spec 011).
+  - Does NOT implement the dark lane's clause 4; it only provides the classifier that clause will call (spec 012).
   - Does NOT read code, diffs, or branches. Classification happens at spec time, when no branch exists — the only inputs are the spec file's own text and paths.
 - **output_spec**: the spec stage refuses to emit a `specd` spec classified irreversible unless it has been split into an expand spec and a contract spec joined by `depends_on`; both specs of the pair carry `profile: hardened`.
 - **effort_budget**: medium
@@ -48,18 +48,21 @@ pr:
 ## Check command (the Red Gate contract)
 
 ```
-check_cmd: ./evals/run_eval.sh --suite spec-gate
+check_cmd: ./evals/run_eval.sh --suite irreversible
 ```
 
-The build stage MUST run this and see it FAIL before writing implementation
-code, and see it PASS before advancing to `built`. Depends on 004 for the same
-reason spec 001 does: today `--suite spec-gate` exits 0 untouched.
+**Build order (spec 004 acceptance 7).** This names a **new suite of its own**,
+never an existing one: a suite with passing cases can never fail first
+(`--suite tracker` passes 24 today), and two specs sharing a suite make each
+other's gate vacuous depending on claim order. But a *missing* suite is not a
+red gate either — it exits 4 ("nothing ran"), and "no test" is not "a failing
+test". So the builder's first step is to create this suite and its cases, run
+the check, and see them genuinely fail (exit 1). Only then implement.
 
-Every acceptance criterion needs a `kind: bash-unit` case, driven by a fixture
-spec file in `evals/fixtures/`. Acceptance 3 in particular needs a fixture the
-classifier genuinely cannot categorize, and acceptance 7 needs two fixtures
-differing only by the presence of the override line. Every guard is
-mutation-tested — remove the guard, confirm the case fails.
+Every acceptance criterion needs a `kind: bash-unit` case driven by a fixture
+spec file in `evals/fixtures/`. Acceptance 3 needs a fixture the classifier
+genuinely cannot categorize; acceptance 7 needs two fixtures differing only by
+the presence of the override line. Mutation-test each guard.
 
 ## Notes / decisions (append-only)
 
@@ -81,3 +84,4 @@ mutation-tested — remove the guard, confirm the case fails.
 - 2026-08-02 spec-review: MODIFIED the override criterion — mechanism was unspecified, and the repo's only existing confirmation pattern is interactive, which cannot apply to an unattended advance. Now a recorded artifact in Notes, with silence explicitly not consent.
 - 2026-08-02 spec-review: MODIFIED output_spec and acceptance 6 to agree — output_spec said only the contract spec carries `hardened`, the acceptance said every irreversible spec did.
 - 2026-08-02 spec-review: ADDED `depends_on: 004` (vacuous check_cmd, same root cause as spec 001).
+- 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7 — write the suite and cases first, see real failures, then implement.
