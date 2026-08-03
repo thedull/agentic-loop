@@ -1,0 +1,3 @@
+- [spec-gate check_cmd is currently vacuous](project_spec_gate_checkcmd.md) — evals/cases/spec-gate/ has 1 unrelated case; suite passes trivially with no impl
+- [Always execute check_cmd, don't just read it](feedback_run_checkcmd.md) — run the eval harness before judging a spec's Red Gate
+- [Factory spec conventions](factory-spec-conventions.md) — spec file structure, tracker.sh depends_on semantics (only `done`/verified `superseded`), and the only existing human-confirmation pattern (interactive SKILL.md Q&A)

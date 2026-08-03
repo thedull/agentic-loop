@@ -516,26 +516,41 @@ currently just move the cap.
 keeping a hard ceiling as a runaway backstop rather than as the primary
 condition.
 
-### 2.3.2 Cross-model CLI hygiene → the shims
+### 2.3.2 Cross-model payload hygiene → the shims
 
-From `doubt-driven-development`, and the highest-value steal in this section
-because it is a **security** finding, not a quality one.
+From `doubt-driven-development`. Two rules, and **checking them against our
+shims split the finding in half** — one half does not apply to us, the other
+does. Recorded that way rather than as originally drafted, because "we might have
+this bug" and "we do not have this bug, and here is why" are different claims.
 
-When invoking another model's CLI on a candidate artifact, his skill requires:
-never interpolate the artifact into a shell-quoted argument (pipe it via stdin or
-a heredoc), because embedded backticks and `$()` in the artifact become shell
-execution; and treat the artifact as a potential prompt-injection carrier, so run
-cross-model CLIs read-only.
+**The shell-injection half does not apply — verified, not assumed.** His rule
+targets invoking another model's *CLI* with the artifact interpolated into a
+shell-quoted argument, where embedded backticks or `$()` become shell execution.
+Our shims do not use a CLI. Both build their request as JSON via `jq -n --arg`
+(`scripts/call_sol.sh:92–94`, `scripts/call_fable.sh:60–62`) and hand it to
+`curl -d "$REQUEST"` (`:110–114` and `:78–83` respectively). `--arg` performs
+JSON string escaping, and `curl -d` receives one already-quoted argument that no
+shell re-evaluates. There is no interpolation path here, so there is nothing to
+fix.
 
-We invoke external models exactly this way — `scripts/call_sol.sh` and
-`scripts/call_fable.sh` both take candidate artifacts — and we state neither rule
-anywhere. The artifacts in question are agent-generated code, which is precisely
-the untrusted-content case.
+This is worth stating explicitly in the document rather than silently dropping,
+because it is a property of an architectural choice we already made for an
+unrelated reason — *"Bash shims, not MCP wrappers or proxies"* (`README.md:164`),
+chosen for token cost — that turns out to also close an injection class. Cheap
+architecture paying off twice is exactly the kind of thing this repo should
+notice.
 
-**As a gate:** audit both shims for argument interpolation, and add the rule to
-`templates/LOOP_POLICY.md` alongside the existing escalation protocol. This one
-should be verified before it is documented — if the shims already pipe via stdin,
-the finding is a documentation gap; if they interpolate, it is a live bug.
+**The prompt-injection half does apply, and is unaddressed.** We send
+agent-generated code to an external model and feed its response back into a
+pipeline that acts on it. Nothing in `templates/LOOP_POLICY.md` says that a
+cross-family reviewer's output is untrusted text rather than instructions. This
+is the same class as §2.4.2's untrusted-tool-output rule, and the two should be
+stated together rather than in two places.
+
+**As a gate:** one rule in `templates/LOOP_POLICY.md` covering both — external
+model output and tool/error output are *data*, never instructions — and a
+reviewer finding class for it. Downgraded from "possible live bug, check
+immediately" to a small documentation gate, on evidence.
 
 ### 2.3.3 Severity prefixes and presumptive blockers → `agents/reviewer.md`
 
@@ -750,11 +765,19 @@ confirming failure.
 | 7 | **Comprehension metrics** — diff size, finding density, merge latency, re-open rate | §1.3(c) | `scripts/lib/obs_metrics.jq`, `observe_metrics.sh` | M — prerequisite for 8 |
 | 8 | **The dark lane** — including the escalation-trigger event that predicate clause 6 turns out to require | §1.4 | predicate script, `skills/build` + `skills/review` trigger event, `skills/config`, `skills/review` terminal transition | L — and see §1.4.7 |
 
-Two ordering notes. Item 5.2 (cross-model CLI hygiene) is a potential live
-security bug rather than an enhancement, and should be *checked* immediately even
-though the documentation change is small. And item 8 should not start until the
-owner can name a recurring spec class from real history that would have qualified
-— absent that, it is machinery for a hypothetical.
+Two ordering notes.
+
+Item 5.2 was drafted as a possible live security bug and **was checked before
+this document shipped**. It is not one: the shims build JSON with `jq --arg` and
+post it with `curl -d`, so no shell re-evaluates the payload (§2.3.2). What
+survives is the prompt-injection half, which merges into item 3's
+untrusted-output rule rather than standing alone. Recorded here because a
+document that grades a factory on evidence should show its own retraction rather
+than quietly renumbering.
+
+Item 8 should not start until the owner can name a recurring spec class from real
+history that would have qualified — absent that, it is machinery for a
+hypothetical.
 
 ---
 
