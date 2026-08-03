@@ -102,8 +102,13 @@ A fifth, cross-cutting constraint: the factory is designed to run **without mete
 - Claude Code official docs (code.claude.com): [`/goal`](https://code.claude.com/docs/en/goal.md), [scheduled tasks](https://code.claude.com/docs/en/scheduled-tasks.md), [routines](https://code.claude.com/docs/en/routines.md), [workflows](https://code.claude.com/docs/en/workflows.md), [statusline](https://code.claude.com/docs/en/statusline.md), [errors](https://code.claude.com/docs/en/errors.md), [costs](https://code.claude.com/docs/en/costs.md), [headless](https://code.claude.com/docs/en/headless.md)
 - Armin Ronacher, "The Coming Loop" (2026-06-23) — https://lucumr.pocoo.org/2026/6/23/the-coming-loop/
 - Addy Osmani, "Loop Engineering" — https://addyosmani.com/blog/loop-engineering/
+- Addy Osmani, "Software Factories: Light and Dark" — https://addyo.substack.com/p/software-factories-light-and-dark (graded against this factory in [`docs/osmani-audit.md`](osmani-audit.md))
+- Addy Osmani et al., `agent-skills` (MIT, 24 skills) — https://github.com/addyosmani/agent-skills (audited in [`docs/osmani-audit.md`](osmani-audit.md) Part 2)
 - Alex Finn, tweet (2026-07-13, id `2076752798532931758`) — https://x.com/AlexFinn
 
 ---
 
-*Companion document: `docs/factory.md` carries the implementation guide and walkthrough.*
+*Companion documents: `docs/factory.md` carries the implementation guide and
+walkthrough. `docs/osmani-audit.md` is the other direction — it grades the
+finished factory against Addy Osmani's light/dark-factories essay and audits his
+24-skill catalog for what is worth promoting into ours.*
