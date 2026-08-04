@@ -1,13 +1,16 @@
 ---
 id: 008
 title: Require a reason before the minimize ladder deletes anything
-status: queued
+status: shelved
 profile: standard
 created: 2026-08-02
 depends_on: 004
 claimed_by:
 branch:
 pr:
+shelved_from: queued
+shelved_reason: Guards the minimize ladder, which the owner does not run (default-off flag). Protects an unused path; restore if minimize is ever enabled. Owner ruling 2026-08-04 during spec grilling.
+shelved_at: 2026-08-04T05:58:29Z
 ---
 
 # Spec 008 — Require a reason before the minimize ladder deletes anything

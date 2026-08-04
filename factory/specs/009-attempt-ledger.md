@@ -4,7 +4,7 @@ title: Record reverted attempts in LEARNINGS.md so later runs stop repeating the
 status: queued
 profile: standard
 created: 2026-08-02
-depends_on: 004
+depends_on: 004 012
 claimed_by:
 branch:
 pr:
@@ -35,8 +35,9 @@ pr:
    - Given a ledgered approach and a later spec touching the same paths, when a stage proposes work, then the ledger entry is surfaced in its reasoning.
 4. Retrying a ledgered approach SHALL be allowed and SHALL be explicit.
    - Given a stage that decides to retry a previously abandoned approach, when it proceeds, then it records why the earlier reason no longer applies — the ledger informs, it does not veto.
-5. The file's existing bounds SHALL hold.
-   - Given ledger growth, when the file approaches its cap, then the existing size discipline applies and the oldest entries are consolidated rather than the cap being raised.
+5. The ledger SHALL be subject to the file's size discipline, not exempt from it and not the owner of it.
+   - Given ledger growth, when the file crosses its cap, then spec 012's consolidation handles ledger entries the same way it handles every other entry — this spec adds entries, it does not manage the file.
+   - Given spec 012 not yet landed, when this spec is claimed, then it waits; `depends_on: 012` makes that mechanical rather than a note.
 
 ## Check command (the Red Gate contract)
 
@@ -52,8 +53,9 @@ red gate either — it exits 4 ("nothing ran"), and "no test" is not "a failing
 test". So the builder's first step is to create this suite and its cases, run
 the check, and see them genuinely fail (exit 1). Only then implement.
 
-Acceptances 1, 2 and 5 are mechanically checkable over fixture LEARNINGS files
-and envelopes. Acceptances 3 and 4 concern stage reasoning and belong on the
+Acceptances 1 and 2 are mechanically checkable over fixture LEARNINGS files and
+envelopes; acceptance 5 is covered by spec 012's own suite, asserted here only
+as the ledger-entry fixture that suite consumes. Acceptances 3 and 4 concern stage reasoning and belong on the
 anchored-rubric or `--live` path.
 
 ## Notes / decisions (append-only)
@@ -70,3 +72,4 @@ anchored-rubric or `--live` path.
 
 - 2026-08-02 spec: ADDED initial spec from `docs/osmani-audit.md` §2.3.5.
 - 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7.
+- 2026-08-04 grill: MODIFIED acceptance 5 — it asserted an automated consolidation mechanism that does not exist (review-gate finding; the only mechanism was a manual checkbox at RUNBOOK.md:183). Owner chose to build the real thing, so consolidation is now spec 012 and this spec depends on it rather than assuming it.
