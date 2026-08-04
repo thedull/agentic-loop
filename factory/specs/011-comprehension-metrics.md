@@ -14,7 +14,7 @@ pr:
 
 ## Brief (the delegation contract)
 
-- **objective**: add a comprehension metric family to `observe_metrics.sh`, derived entirely from data the event log already captures.
+- **objective**: add a comprehension metric family to `observe_metrics.sh`, reading the fields spec 013 captures plus the transitions already recorded.
 - **user_intent_verbatim**: backlog item 7 of `docs/osmani-audit.md` §2.7, closing finding §1.3(c) — the observability plane measures cost, latency, errors, tokens and cycle time, and measures nothing about how much of what ships anyone still understands.
 - **input_paths**: `scripts/lib/obs_metrics.jq`, `scripts/observe_metrics.sh`, `templates/observability/dashboards.md`, `evals/cases/comprehension/`
 - **boundaries_non_goals**:
@@ -22,7 +22,7 @@ pr:
   - Does NOT claim to measure comprehension. These are proxies, and the output must say so — a number labelled "comprehension" would be a fabrication of exactly the kind `lib/obs.sh` refuses.
   - Does NOT add alerting or thresholds. Reporting only.
   - Does NOT regenerate dashboards by hand; the generator derives them from `dashboards.md` as today.
-- **output_spec**: a `comprehension` mode reporting diff size per spec, review-finding density, human merge latency, and re-open rate, each with an explicit null when its source data is absent.
+- **output_spec**: a `comprehension` mode reporting diff size per spec, review-finding density per 100 changed lines, human merge latency, and build churn, each with an explicit null when its source data is absent.
 - **effort_budget**: medium
 
 ## Acceptance (behavioral, testable — no implementation details)
@@ -90,3 +90,4 @@ golden-output comparison.
 - 2026-08-04 grill: MODIFIED — the claim that all four proxies were already captured was disproved by the review gate; diff size and finding count are captured nowhere. Capture split into spec 013 (owner ruling), which this now depends on.
 - 2026-08-04 grill: MODIFIED the re-open proxy to build churn, named for what obs_metrics.jq:88 actually counts (owner ruling). Removed the post-merge framing; recorded that the lagging signal stays unbuilt and why.
 - 2026-08-04 grill: ADDED a fixed unit (per 100 changed lines) for finding density, which the review flagged as undefined.
+- 2026-08-04 grill: MODIFIED the Brief's objective and output_spec, which still carried the disproved "already captures" claim and the old re-open naming after the acceptances had been corrected.
