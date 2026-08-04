@@ -496,25 +496,38 @@ page or ticket, because a third creates fatigue. We have no alerting at all
 today, which is correct for a solo operator reading an evening digest. If
 alerting is ever added, that rule should be adopted at that time, not now.
 
-## 2.3 Steal a mechanism (5)
+## 2.3 Steal a mechanism (5 proposed, 4 adopted)
 
 Small, independent, no ordering between them. Each is a few lines of prompt or
 policy inside a gate we already run.
 
-### 2.3.1 The 95% confidence stop → `skills/spec`
+### 2.3.1 The 95% confidence stop → PROPOSED AND REJECTED (2026-08-04)
 
 From `interview-me`. The stop condition for a requirements interview is not a
 question count; it is a self-test: can I predict the user's reaction to the next
 three questions I would ask? If yes, stop.
 
-Ours is *"capped ~5 questions"* — an arbitrary constant that is simultaneously
-too many for an obvious idea and too few for a genuinely ambiguous one. His is
-testable and adaptive. It also composes with `grill`/`grill deep`, which
-currently just move the cap.
+This section originally recommended adopting it, on the grounds that our
+*"capped ~5 questions"* is an arbitrary constant — simultaneously too many for
+an obvious idea and too few for a genuinely ambiguous one.
 
-**As a gate:** replace the count cap in `skills/spec` with the predictive test,
-keeping a hard ceiling as a runaway backstop rather than as the primary
-condition.
+**It was specced, grilled, and rejected on this repo's own grounds.** The
+predictive test *is* self-reported confidence, and `templates/LOOP_POLICY.md:49`
+is explicit: act on objective conditions, *"never on your own felt
+confidence"*, because a confidently-wrong orchestrator will not flag its own
+need for review. `README.md:172` calls verbalized confidence "the field's most
+consistent negative result." The crude count cap is crude on purpose — it is
+**structural**, and that is the property being traded away.
+
+A structural replacement was considered — stop when no remaining question would
+change a spec field, which is checkable against the emitted spec — and set aside
+as not worth the complexity for a small win. The count cap stays.
+
+Recorded rather than deleted so a future session does not re-import the same
+mechanism, following the precedent of the rejected Audition lane in
+`docs/roadmap.md`. It is also the most useful single result of the whole audit:
+the catalog is good, and adopting from it uncritically will still import
+mechanisms that contradict principles this repo has already paid to learn.
 
 ### 2.3.2 Cross-model payload hygiene → the shims
 
@@ -760,7 +773,7 @@ confirming failure.
 | 2 | **Irreversibility classifier** + expand/contract split | §2.4.1 | `skills/spec`, `tracker.sh` `depends_on` | M |
 | 3 | **Build-stage failure triage** + untrusted-tool-output rule | §2.4.2 | `skills/build`, `templates/LOOP_POLICY.md` | M |
 | 4 | **`hardened` security payload** | §2.4.3 | `agents/reviewer.md`, `skills/review` | M |
-| 5 | **The five stolen mechanisms** | §2.3 | `skills/spec`, shims, `agents/reviewer.md`, `agents/worker-cheap.md`, `LEARNINGS.md` | S each, independent |
+| 5 | **The stolen mechanisms** — 4 of 5; §2.3.1 was rejected under grilling | §2.3 | shims, `agents/reviewer.md`, `agents/worker-cheap.md`, `LEARNINGS.md` | S each, independent |
 | 6 | **Source-citation requirement** | §2.4.4 | build brief in `skills/build` | S |
 | 7 | **Comprehension metrics** — diff size, finding density, merge latency, re-open rate | §1.3(c) | `scripts/lib/obs_metrics.jq`, `observe_metrics.sh` | M — prerequisite for 8 |
 | 8 | **The dark lane** — including the escalation-trigger event that predicate clause 6 turns out to require | §1.4 | predicate script, `skills/build` + `skills/review` trigger event, `skills/config`, `skills/review` terminal transition | L — and see §1.4.7 |

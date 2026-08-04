@@ -19,7 +19,7 @@ pr:
 - **input_paths**: `skills/spec/SKILL.md`, `scripts/lib/tracker.sh`, `templates/factory-spec.md`, `evals/cases/irreversible/`
 - **boundaries_non_goals**:
   - Does NOT write migrations, generate DDL, or inspect a database. It classifies the *spec*, not the schema.
-  - Does NOT attempt to be exhaustive. An incomplete classifier that fails closed is the deliverable; a "smart" classifier that guesses reversible is a regression.
+  - Does NOT attempt to be exhaustive, and does NOT try to be clever about it. A narrow signal-matching classifier is the deliverable; an LLM judging whether a change "feels" irreversible is explicitly out of scope.
   - Does NOT block the human from overriding — an explicit human override is allowed and recorded, but never inferred.
   - Does NOT implement the dark lane's clause 4; it only provides the classifier that clause will call (spec 012).
   - Does NOT read code, diffs, or branches. Classification happens at spec time, when no branch exists — the only inputs are the spec file's own text and paths.
@@ -33,8 +33,10 @@ pr:
 2. The spec stage SHALL classify a spec as irreversible when its own text matches any signal in that list.
    - Given a spec whose `input_paths` include a path matching a migration-directory signal, or whose `objective`/`output_spec` text matches a destructive-change signal (column or table drop, rename, removal of a published interface), when the spec stage completes, then the spec is classified irreversible.
    - Inputs are limited to the spec file's own fields. No branch, diff, or database is consulted, because at classification time none exists.
-3. The classifier SHALL fail closed on uncertainty.
-   - Given a spec the classifier cannot confidently categorize, when it completes, then the result is "irreversible", not "reversible".
+3. The classifier SHALL be a two-state signal match, with no judgment state.
+   - Given a spec matching a declared signal, when it completes, then the result is "irreversible"; and given a spec matching none, then the result is "reversible" — there is no third "uncertain" outcome and no LLM judgment in this decision.
+   - Given an unreadable, missing, or empty signal list, when the classifier runs, then it refuses outright rather than returning "reversible" for everything. This is the only sense in which it fails closed, and it is about the *tool* being broken, not about the *spec* being ambiguous.
+   - Accepted consequence, stated so it is not discovered later: an irreversible change for which nobody wrote a signal passes through as reversible. The signal list is the single tuning knob, and adding to it is the response to any such miss.
 4. An irreversible spec SHALL NOT reach `specd` as a single spec.
    - Given an irreversible spec that has not been split, when the spec stage tries to advance it, then the advance is refused with a message naming the required expand/contract split, and the spec stays `queued`.
 5. The split SHALL use the existing dependency machinery rather than new state.
@@ -60,17 +62,23 @@ test". So the builder's first step is to create this suite and its cases, run
 the check, and see them genuinely fail (exit 1). Only then implement.
 
 Every acceptance criterion needs a `kind: bash-unit` case driven by a fixture
-spec file in `evals/fixtures/`. Acceptance 3 needs a fixture the classifier
-genuinely cannot categorize; acceptance 7 needs two fixtures differing only by
-the presence of the override line. Mutation-test each guard.
+spec file in `evals/fixtures/`. Acceptance 3 needs three: a spec matching a
+signal, a spec matching none, and a run against a missing or empty signal list —
+the third asserts the refusal, and there is deliberately no "ambiguous spec"
+fixture, because no such outcome exists. Acceptance 7 needs two fixtures
+differing only by the presence of the override line. Mutation-test each guard.
 
 ## Notes / decisions (append-only)
 
-- Fail-closed (acceptance 2) is the hard-to-reverse decision here and it has a
-  real cost: false positives will send ordinary specs through the expand/contract
-  ceremony. That is the correct trade because the asymmetry is severe — a false
-  positive costs one extra spec file, a false negative costs a production outage
-  during rollout while every test stays green.
+- Two-state, no judgment (acceptance 3, owner ruling 2026-08-03). The earlier
+  draft said "fails closed on uncertainty", which sounded prudent and was
+  actually undefined — it only bites if an uncertain state exists, and creating
+  one would have put an LLM judgment call inside a gate, which is the thing this
+  repo consistently refuses. The honest trade is now explicit: near-zero false
+  positives, at the price of missing any irreversible class nobody enumerated.
+  On the projects this ships to (claude-deck, xeneon-edge-mac — neither has a
+  database) the signal set will fire rarely, so a judgment-based classifier
+  would have *been* the classifier rather than a backstop to it.
 - Reusing `depends_on` (acceptance 4) rather than adding a new "migration pair"
   state is deliberate: the tracker already refuses to satisfy a dependency with
   unmerged work, which is exactly the property expand/contract needs, and a new
@@ -85,3 +93,4 @@ the presence of the override line. Mutation-test each guard.
 - 2026-08-02 spec-review: MODIFIED output_spec and acceptance 6 to agree — output_spec said only the contract spec carries `hardened`, the acceptance said every irreversible spec did.
 - 2026-08-02 spec-review: ADDED `depends_on: 004` (vacuous check_cmd, same root cause as spec 001).
 - 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7 — write the suite and cases first, see real failures, then implement.
+- 2026-08-03 grill: MODIFIED acceptance 3 from "fails closed on uncertainty" to a two-state signal match with no judgment state (owner ruling). Fail-closed now applies only to a broken signal list, not to an ambiguous spec; the missed-class consequence is stated as accepted.
