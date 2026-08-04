@@ -21,7 +21,7 @@ pr:
   - Does NOT write migrations, generate DDL, or inspect a database. It classifies the *spec*, not the schema.
   - Does NOT attempt to be exhaustive, and does NOT try to be clever about it. A narrow signal-matching classifier is the deliverable; an LLM judging whether a change "feels" irreversible is explicitly out of scope.
   - Does NOT block the human from overriding — an explicit human override is allowed and recorded, but never inferred.
-  - Does NOT implement the dark lane's clause 4; it only provides the classifier that clause will call (spec 013).
+  - Does NOT implement the dark lane's clause 4; it only provides the classifier that clause will call (spec 014).
   - Does NOT read code, diffs, or branches. Classification happens at spec time, when no branch exists — the only inputs are the spec file's own text and paths.
 - **output_spec**: the spec stage refuses to emit a `specd` spec classified irreversible unless it has been split into an expand spec and a contract spec joined by `depends_on`; both specs of the pair carry `profile: hardened`.
 - **effort_budget**: medium

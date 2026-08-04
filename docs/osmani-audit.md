@@ -774,8 +774,8 @@ confirming failure.
 | 3 | **Build-stage failure triage** + untrusted-tool-output rule | §2.4.2 | `skills/build`, `templates/LOOP_POLICY.md` | M |
 | 4 | **`hardened` security payload** | §2.4.3 | `agents/reviewer.md`, `skills/review` | M |
 | 5 | **The stolen mechanisms** — 4 of 5; §2.3.1 was rejected under grilling | §2.3 | shims, `agents/reviewer.md`, `agents/worker-cheap.md`, `LEARNINGS.md` | S each, independent |
-| 6 | **Source-citation requirement** | §2.4.4 | build brief in `skills/build` | S |
-| 7 | **Comprehension metrics** — diff size, finding density, merge latency, re-open rate | §1.3(c) | `scripts/lib/obs_metrics.jq`, `observe_metrics.sh` | M — prerequisite for 8 |
+| 6 | ~~Source-citation requirement~~ — **shelved** under grilling: targets scaffolded projects, but the plugin has no package manager to eval it against | §2.4.4 | — | — |
+| 7 | **Comprehension proxies** — split in two under grilling: spec 013 captures diff size + finding count (they were never captured), spec 011 reports them | §1.3(c) | `scripts/lib/obs.sh`, `obs_metrics.jq`, `observe_metrics.sh` | S + M — prerequisite for 8 |
 | 8 | **The dark lane** — including the escalation-trigger event that predicate clause 6 turns out to require | §1.4 | predicate script, `skills/build` + `skills/review` trigger event, `skills/config`, `skills/review` terminal transition | L — and see §1.4.7 |
 
 Two ordering notes.
@@ -790,7 +790,20 @@ than quietly renumbering.
 
 Item 8 should not start until the owner can name a recurring spec class from real
 history that would have qualified — absent that, it is machinery for a
-hypothetical.
+hypothetical. Grilling also surfaced a dependency gap in it: §1.4.6 specifies the
+lane's auto-close against a *revert rate*, and item 7's split established that no
+post-merge signal exists to compute one. `done` is terminal in the tracker. The
+lane needs that capture before its safety valve is buildable at all.
+
+**Grilling outcomes (2026-08-02 → 04).** Every item above was specced and
+interviewed. Two were rejected or shelved on this repo's own principles rather
+than on effort: §2.3.1's confidence stop (it *is* self-reported confidence,
+which `LOOP_POLICY.md:49` forbids) and item 6 (unevaluable where it would be
+authored). Two split in half once a claim was checked (items 5 and 7). One new
+spec — automated `LEARNINGS.md` consolidation — came out of a review finding
+that spec 009 cited a mechanism nobody had built. The audit's estimates survived
+contact with grilling about half the time, which is roughly what the document's
+own §2.6 predicts of prose that has not yet been made mechanical.
 
 ---
 

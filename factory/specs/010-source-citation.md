@@ -1,13 +1,16 @@
 ---
 id: 010
 title: Require a cited source for API and framework decisions at build time
-status: queued
+status: shelved
 profile: standard
 created: 2026-08-02
 depends_on: 004
 claimed_by:
 branch:
 pr:
+shelved_from: queued
+shelved_reason: Targets scaffolded projects, not the plugin repo, which has no package manager to ground citations against — so the plugin cannot eval the rule it would ship. Review-time detection of hallucinated APIs already works (agents/reviewer.md:42). Restore when a real project hits a hallucinated-API bug worth preventing; that incident should specify the gate. Owner ruling 2026-08-04.
+shelved_at: 2026-08-04T06:02:24Z
 ---
 
 # Spec 010 — Require a cited source for API and framework decisions at build time
