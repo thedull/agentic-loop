@@ -22,7 +22,7 @@ pr:
   - Does NOT implement the `hardened` security review payload — that is spec 005. Here `hardened` routes to a documented placeholder that fails loudly if unimplemented, never silently behaving as `standard`.
   - Does NOT implement any dark-lane behavior. `profile: dark` is REJECTED by this spec, not honored.
   - Does NOT touch `effort_budget`, which keeps meaning size.
-- **output_spec**: `profile:` accepts exactly `standard | hardened | dark`; an unrecognized value blocks the spec rather than defaulting; `standard` behaves exactly as today; `hardened` additionally routes through the deeper review path; `dark` is refused with a message naming spec 014 as its prerequisite.
+- **output_spec**: `profile:` accepts exactly `standard | hardened | dark`; an unrecognized value blocks the spec rather than defaulting; `standard` behaves exactly as today; `hardened` additionally routes through the deeper review path; `dark` is refused with a message naming spec 015 as its prerequisite.
 - **effort_budget**: small
 
 ## Acceptance (behavioral, testable — no implementation details)
@@ -34,7 +34,7 @@ pr:
 3. The review stage SHALL route `hardened` specs through the deeper review path and SHALL NOT silently fall back to the standard path.
    - Given a spec with `profile: hardened`, when the review stage runs and the deep security payload of spec 005 is not yet present, then the stage refuses with an explicit "hardened profile requested but the hardened review payload is not installed (see spec 005)" message rather than reviewing it as `standard`.
 4. The tooling SHALL refuse `profile: dark` until the dark lane exists.
-   - Given a spec with `profile: dark`, when any stage claims it, then the stage refuses with a message naming spec 014, and the spec is left in its current status rather than advanced.
+   - Given a spec with `profile: dark`, when any stage claims it, then the stage refuses with a message naming spec 015, and the spec is left in its current status rather than advanced.
 5. `profile` SHALL be orthogonal to `effort_budget`, and neither SHALL be derived from the other.
    - Given a spec with `effort_budget: trivial` and `profile: hardened`, when the review stage runs, then the hardened path is used — smallness does not downgrade consequence.
 6. Value matching SHALL lowercase and trim the value, and SHALL NOT tolerate anything further.
@@ -68,7 +68,7 @@ Each guard is mutation-tested — remove the guard, confirm the case fails.
   no field at all, because it manufactures false assurance — the exact failure
   class `docs/osmani-audit.md` §1.3(a) names.
 - `dark` is defined in the enum now rather than added later so that the value
-  space is stable from the start and a future spec 014 changes behavior, not
+  space is stable from the start and a future spec 015 changes behavior, not
   vocabulary. Refusing it explicitly also means a hand-written `profile: dark`
   can never be silently honored by a partially-built lane.
 

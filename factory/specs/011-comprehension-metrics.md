@@ -80,7 +80,7 @@ golden-output comparison.
   beats papering it with a differently-shaped number.
 - The dark lane's auto-close (§1.4.6) was specified against revert rate, which
   the point above establishes does not exist. That is a real dependency gap for
-  the dark lane (spec 014, unwritten), not something this spec papers over — recorded here so it is
+  the dark lane (spec 015, unwritten), not something this spec papers over — recorded here so it is
   found before the lane is designed rather than after.
 
 ## Revision log (deltas only — never regenerate this spec)
