@@ -30,6 +30,12 @@ only one section: `openai/gpt-5.6-sol` is on OpenRouter at the same list price
 our shim already hardcodes, which makes scriptable Sol available today without
 either credential under discussion.
 
+**§8 answers a second question that arrived later**: whether a separate
+OpenRouter account is worth opening as overflow capacity when Claude limits are
+hit, and which model to reach for per task class. Its load-bearing finding is a
+constraint rather than a price — such an account cannot back-fill the Claude Code
+session itself, only work that gets delegated to a shim.
+
 **Scope (owner-set): analysis only.** Nothing is installed, no policy is edited,
 no code changes. §6 is a ranked backlog and everything in it is unbuilt.
 
@@ -342,7 +348,7 @@ because §7 found cheaper and more useful work on a resource already paid for.
 
 | # | Item | Target | Size | Eval? |
 |---|---|---|---|---|
-| 1 | Fix the dead `mimo` alias and refresh `kimi`/`minimax` to the current generation (§7.4) | `scripts/call_openrouter.sh` | trivial | yes |
+| 1 | ~~Fix the dead `mimo` alias~~ **done** on `worktree-openrouter-alias` (`c8971c0`, repointed to `xiaomi/mimo-v2.5`); refreshing `kimi`/`minimax` to the 1M-context generation is still open (§7.4) | `scripts/call_openrouter.sh` | trivial | see §7.4 |
 | 2 | The adversary bake-off: 2–3 specs at their pre-fix commits through Sol, GLM 5.2, DeepSeek V4 Pro; score against the findings each Revision log records (§7.5) | none (experiment, ~$0.29) | small | no |
 | 3 | Require a code location on every adversary finding via `structured_outputs` (§2.2, §7.3) | `scripts/call_sol.sh`, `validate_envelope.jq` | small | yes |
 | 4 | Route Sol through OpenRouter — `--via` transport reusing the adversary/reviser prompts, `:batch` for unattended stages (§7.1) | `scripts/call_sol.sh` | medium | yes |
@@ -352,6 +358,7 @@ because §7 found cheaper and more useful work on a resource already paid for.
 | 8 | Name the plugin in the ladder as an attended-only Sol surface, distinct from `call_sol.sh`, carrying the §3.1 distinction | `templates/LOOP_POLICY.md` | small | no |
 | 9 | Evaluate `/codex:adversarial-review` as the `profile: hardened` payload (`osmani-audit.md` §2.4.3) | `skills/review`, spec 005 | medium | yes |
 | 10 | `codex exec` transport | `scripts/call_sol.sh` | large | yes |
+| 11 | Pre-flight cost estimate on shim calls, with a confirmation threshold (§8.3) | `scripts/lib/common.sh`, `scripts/call_openrouter.sh` | small | yes |
 
 **Ordering notes.**
 
@@ -440,8 +447,8 @@ two columns are how many such reviews USD 30 buys.
 | `deepseek/deepseek-v4-pro` | 0.435 | 0.87 | 1.05M | $0.014 | $0.044 | 2089 | 689 |
 | `xiaomi/mimo-v2.5-pro` | 0.435 | 0.87 | 1.05M | $0.014 | $0.044 | 2089 | 689 |
 | `mistralai/mistral-large-2512` | 0.50 | 1.50 | 262k | $0.019 | $0.060 | 1621 | 500 |
-| `z-ai/glm-5.2:batch` | 0.70 | 2.20 | 512k | $0.026 | $0.086 | 1140 | 348 |
-| **`z-ai/glm-5.2`** | 0.76 | 2.42 | 1.05M | $0.029 | $0.094 | **1046** | **319** |
+| `z-ai/glm-5.2:batch` ⚠ | 0.70 | 2.20 | 512k | $0.026 | $0.086 | 1140 | 348 |
+| **`z-ai/glm-5.2`** | 0.5026 | 1.5796 | 1.05M | $0.019 | $0.062 | **1588** | **485** |
 | `x-ai/grok-4.3` | 1.25 | 2.50 | 1.00M | $0.041 | $0.125 | 727 | 240 |
 | `openai/gpt-5.6-terra` | 1.00 | 6.00 | 1.05M | $0.049 | $0.180 | 612 | 166 |
 | **`qwen/qwen3.8-max`** | 2.00 | 6.00 | 1.00M | $0.074 | $0.240 | **405** | **125** |
@@ -450,10 +457,27 @@ two columns are how many such reviews USD 30 buys.
 | `moonshotai/kimi-k3` | 3.00 | 15.00 | 1.05M | $0.135 | $0.480 | 222 | 62 |
 | **`openai/gpt-5.6-sol`** | 5.00 | 30.00 | 1.05M | $0.245 | $0.900 | **122** | **33** |
 
-Read against Sol as the baseline: GLM 5.2 is **8.5×** cheaper, Qwen 3.8 Max
+Read against Sol as the baseline: GLM 5.2 is **13×** cheaper, Qwen 3.8 Max
 **3.3×**, DeepSeek V4 Pro **17×**, DeepSeek V4 Flash **53×**. Grok 4.3 is 6×
 cheaper and adds a fourth model family. Kimi K3 is only 1.8× cheaper and is the
 weakest value on this list.
+
+**These prices move faster than this document does, and that is measured, not
+assumed.** The catalog was fetched twice on 2026-08-07, hours apart. Two of 400
+models repriced in between: `moonshotai/kimi-k2.6` slightly, and **`z-ai/glm-5.2`
+by 34%** — from $0.76/$2.42 to $0.5026/$1.5796. The table above carries the
+second fetch. The first draft of this section carried the first, and every
+derived figure in it was wrong within a day.
+
+Two consequences worth acting on rather than noting:
+
+- **Re-fetch before quoting any of this.** A 34% single-day move on the
+  document's headline recommendation is not a rounding concern.
+- **The `:batch` shortcut is not reliably a discount.** `z-ai/glm-5.2:batch`
+  stayed at $0.70/$2.20 while the standard variant repriced beneath it, so batch
+  is now **more expensive** than the model it is supposed to discount. It
+  remains half price for `openai/gpt-5.6-sol` (§7.1). Anything that reaches for
+  `:batch` automatically should compare, not assume.
 
 The honest caveat, stated before the backlog leans on these numbers: **this table
 measures price, not quality.** Nothing here says GLM 5.2 finds what Sol finds.
@@ -502,7 +526,7 @@ eight times larger.
 |---|---|---|---|
 | ChatGPT Plus | attended reviews, quota-capped, unusable beyond human attention (§3.3) | **No** | diff, no spec |
 | OpenAI API key | ~122 lean Sol reviews | Yes | spec + candidate |
-| **OpenRouter (already owned)** | the same Sol at the same price, or 244 at batch, or 1046 GLM 5.2 | Yes | spec + candidate |
+| **OpenRouter (already owned)** | the same Sol at the same price, or 244 at batch, or 1588 GLM 5.2 | Yes | spec + candidate |
 
 **OpenRouter dominates the API-key option** — same model, same price, one fewer
 credential, honest cost reporting, and model choice on top. There is no case for
@@ -535,10 +559,10 @@ and `deepseek/deepseek-v4-pro`, and score each against the findings that spec's
 Revision log actually records. Ground truth is written down, dated, and was
 produced by a reviewer that had no access to these models' answers.
 
-Cost at lean-profile rates is roughly **$0.29 per spec across all three** — Sol
-$0.245, GLM $0.029, DeepSeek $0.014 — so three specs is under a dollar. The
+Cost at lean-profile rates is roughly **$0.28 per spec across all three** — Sol
+$0.245, GLM $0.019, DeepSeek $0.014 — so three specs is under a dollar. The
 question it answers is the only one that matters and the only one this document
-cannot: does an 8.5×-cheaper model miss what Sol catches?
+cannot: does a 13×-cheaper model miss what Sol catches?
 
 Two cautions on reading the result. The scoring is against what one blind
 reviewer found, not against what was *there* — a model finding something the gate
@@ -547,6 +571,162 @@ single spec is a sample of one; three is a sample of three. This experiment can
 cheaply falsify "the cheap model is adequate"; it cannot establish it.
 
 Until it runs, nothing here recommends demoting Sol. Price is not evidence.
+
+## 7.6 Benchmarks, and what they do not say
+
+§7.2 ranks by price. This ranks by measured capability, and the two orders are
+not the same.
+
+The best cross-model reference covering all these families is the **Artificial
+Analysis Intelligence Index**, snapshot **2026-08-07**. Read it with its own
+disclaimer attached: the index *"aggregates provider-reported and
+benchmark-derived signals into a single model-level score"* — so "independent"
+here means independently *assembled*, not independently *re-run*.
+
+| Model | AA Index | Verified coding signal | $/M in | $/M out |
+|---|---|---|---|---|
+| Claude Opus 5 | 60.7 | — | n/a (subscription) | n/a |
+| Claude Fable 5 | 59.9 | — | n/a | n/a |
+| `openai/gpt-5.6-sol` | 58.9 | — | 5.00 | 30.00 |
+| `moonshotai/kimi-k3` | **57.1** | **#1 Arena Frontend Coding**, 1,679 Elo / 483,895 blind votes | 3.00 | 15.00 |
+| `openai/gpt-5.6-terra` | 55.0 | — | 1.00 | 6.00 |
+| `x-ai/grok-4.5` | 53.8 | — | 2.00 | 6.00 |
+| `openai/gpt-5.6-luna` | 51.2 | — | 0.10 | 0.60 |
+| `z-ai/glm-5.2` | **51.1** | **#1 globally on Code Arena and Design Arena** (arena-style ranking; my sources report no vote count or Elo for it) | 0.5026 | 1.5796 |
+| `deepseek/deepseek-v4-flash` | 49.9 | — | 0.14 | 0.28 |
+| `qwen/qwen3.7-max` | 46.0 | SWE-bench Verified 80.4 (third-party) | — | — |
+| `minimax/minimax-m3` | 44.4 | — | 0.30 | 1.20 |
+| `deepseek/deepseek-v4-pro` | 44.3 | SWE-bench Verified ~80.6 (third-party tracker) | 0.435 | 0.87 |
+| `x-ai/grok-4.3` | 37.6 | — | 1.25 | 2.50 |
+| **`qwen/qwen3.8-max`** | **not scored** | **none** | 2.00 | 6.00 |
+
+**Vendor-reported figures, kept separate because they are marketing until
+someone re-runs them.** Terminal-Bench 2.1: Kimi K3 88.3, Opus 4.8 85.0, DeepSeek
+V4 Flash 82.7, GLM 5.2 81.0. SWE-bench Pro: GLM 5.2 62.1, DeepSeek V4 Pro 55.4
+("unverified scaffold"). Kimi K3 self-reports SWE-bench Verified ~78 and
+HumanEval 88.3. Security: **Cybergym — DeepSeek V4 Flash 76.7 against Opus 4.8
+83.1**, published by DeepSeek, which is a vendor conceding a loss and therefore
+more trustworthy than the reverse.
+
+Three findings from this table that the price table hides:
+
+**The model named in the request has no third-party score at all.** Qwen 3.8 Max
+(released 2026-07-19, 2.4T params / 95B active) is absent from the AA snapshot.
+Everything Alibaba has published is narrative — cash returned in an e-commerce
+simulation, gate counts in a chip-design run, commits and PRs over an autonomous
+fortnight. Those are demonstrations, not benchmarks; nothing in them is
+comparable to another model. At $2.00/$6.00 it is among the more expensive
+options here — dearer than everything except Kimi K3, level with Grok 4.5 — and
+the only one with nothing to check. **It cannot be recommended
+on evidence**, which is a statement about the evidence rather than the model.
+
+**The cheaper DeepSeek is the better DeepSeek.** V4 Flash scores 49.9 against V4
+Pro's 44.3 while costing roughly a third as much. Pro's counter-argument is a
+~80.6 SWE-bench Verified figure from a third-party tracker where Flash's is
+unreported — so the two disagree depending on which benchmark you privilege. On
+everything measured *the same way for both*, Flash wins and is cheaper.
+
+**Nothing here measures adversarial review.** Code Arena and Arena Frontend
+Coding measure human preference between generated outputs. SWE-bench measures
+whether a patch makes a test pass. Neither asks "did it find the defect somebody
+else shipped," which is the entire job in §3.1. This is precisely why §7.5's
+bake-off is item 2 and not item 9: for the review use case specifically, the
+leaderboards are the wrong instrument and there is no substitute for running it.
+
+---
+
+# §8 — A second OpenRouter account for overflow
+
+The stated plan is a separate OpenRouter account for inference when Claude limits
+are hit, with a cost estimate up front. The economics work. One structural
+constraint has to come first, because it determines what the account can cover.
+
+## 8.1 It cannot back-fill the Claude Code session itself
+
+Switching models when Claude limits are hit does not mean Claude Code starts
+running GLM 5.2. Pointing Claude Code at another provider is exactly the
+`ANTHROPIC_BASE_URL` redirection of §1 — the method the owner rejected, and the
+one that violates Anthropic's Consumer Terms.
+
+What a second account genuinely buys is **delegated** capacity:
+
+- The shim tier that already exists — `scripts/call_openrouter.sh`, wired into
+  the ladder at `templates/LOOP_POLICY.md:17` as *"cheap bulk generation/second
+  opinions"*, and reachable from any stage.
+- The factory's unattended workers, where the model is chosen per call anyway.
+- A different client entirely (Codex CLI, or any editor that speaks OpenRouter)
+  if interactive work is what ran out — a separate tool, not a re-skinned
+  Claude Code.
+
+So the honest framing is an **overflow budget for work you delegate**, not a
+failover for the seat you sit in. That distinction decides whether the account is
+worth opening: if the limit being hit is the interactive session, this helps only
+insofar as more work can be pushed down to shims.
+
+## 8.2 Picks by task class
+
+Costs use four payload profiles: **review** 25k in / 4k out, **implementation**
+40k / 12k, **planning** 15k / 8k, **security audit** 60k / 10k.
+
+| Task class | Pick | Cost/task | Per $30 | Confidence |
+|---|---|---|---|---|
+| Implementation | `z-ai/glm-5.2` | $0.039 | 768 | **Medium-high** — #1 Code Arena *and* Design Arena, third-party; no vote count published |
+| Review (adversarial) | `z-ai/glm-5.2` | $0.019 | 1588 | **Low** — no benchmark measures this; run §7.5 |
+| Security hardening | *stay on frontier* | — | — | **Do not substitute** — see below |
+| Planning / architecture | `moonshotai/kimi-k3` | $0.165 | 181 | **Medium** — AA 57.1, the smallest gap to Sol |
+
+**Implementation → GLM 5.2.** It holds the #1 position on both Code Arena and
+Design Arena on blind human votes, which is the single most relevant verified
+signal available, and it does it at 13× less than Sol with a 1.05M context.
+Kimi K3 is the better model (AA 57.1 vs 51.1, #1 Arena Frontend Coding) but costs
+$0.30/task against GLM's $0.039 — nearly eight times more for six index points,
+and only 1.8× below Sol. GLM is the value pick by a wide margin; Kimi is the pick
+only if a specific task keeps failing on GLM.
+
+**Review → GLM 5.2, held loosely.** Same model, and the honest confidence is
+low: §7.6 established that no published benchmark measures defect-finding on
+somebody else's diff. Cost is not the deciding factor at $0.029 a call — the
+bake-off is.
+
+**Security → do not substitute.** This is the one class where the
+recommendation is to keep paying. The only published security number across
+these models is Cybergym, where DeepSeek V4 Flash reaches 76.7 against Opus
+4.8's 83.1 — and GLM 5.2 has no published Cybergym result at all. Security is
+also the class `docs/osmani-audit.md` §2.4.3 already identifies as our *depth*
+gap rather than our coverage gap, so substituting a cheaper model attacks the
+wrong problem. If anything, run DeepSeek V4 Flash **in addition** at $0.011 an
+audit — as a second pair of eyes it is nearly free, and a disagreement between
+it and the frontier model is a signal worth having.
+
+**Planning / architecture → Kimi K3, and this is where not to economise.** The
+AA spread is Opus 5 60.7, Sol 58.9, Kimi K3 57.1, GLM 5.2 51.1. Planning errors
+do not stay local — they propagate into every task downstream, which is the one
+place where saving $0.13 can cost hours. Kimi K3's price is hard to justify
+anywhere else on this list and easy to justify here: half of Sol's cost for 1.8
+index points.
+
+**Qwen 3.8 Max is not picked for anything**, per §7.6 — not on quality grounds
+but on evidentiary ones. Revisit when a third party scores it.
+
+## 8.3 Estimating cost before the call
+
+The shim already reports what a call *actually* cost, straight from OpenRouter
+rather than from a hardcoded constant (`scripts/call_openrouter.sh:79`). What
+does not exist is an estimate *before* it runs.
+
+It is a small, well-defined gap: token-count the assembled prompt, multiply by
+the catalog price for the resolved model, print the figure, and require
+confirmation above a threshold. Every input is already available —
+`build_task_prompt` produces the exact string that will be sent
+(`scripts/lib/common.sh:138-159`), and OpenRouter publishes per-model prices at
+the catalog endpoint. The only genuinely new thing is a token estimate, and a
+character-count heuristic is honest enough for a pre-flight warning provided it
+is labelled as an estimate rather than reported as a cost — the distinction
+`scripts/lib/obs.sh:18-19` already insists on.
+
+That is backlog item 11, and it is a prerequisite for spending on a second
+account with any discipline: without it, "cheap per call" is a claim nobody
+checks until the invoice.
 
 ## Sources
 
@@ -563,8 +743,21 @@ Until it runs, nothing here recommends demoting Sol. Price is not evidence.
   help pages return HTTP 403 to fetches):
   https://simplemetrics.xyz/chatgpt-codex-limits-2026/
 - OpenRouter model catalog and list prices (§7) —
-  https://openrouter.ai/api/v1/models, fetched 2026-08-07. First-party, but a
-  snapshot of a price list that moves; re-fetch before relying on §7.2.
+  https://openrouter.ai/api/v1/models, fetched twice on 2026-08-07. First-party,
+  and demonstrably volatile: `z-ai/glm-5.2` repriced 34% between the two fetches
+  (§7.2). Re-fetch before relying on any figure in §7.2, §7.6 or §8.2.
+- Artificial Analysis Intelligence Index, snapshot 2026-08-07 (§7.6), read via
+  https://benchlm.ai/benchmarks/artificialanalysis — a secondary rendering of AA's
+  leaderboard, cross-checked against a second secondary source below where the
+  two overlap (Kimi K3 57/57.1, GLM 5.2 51/51.1, DeepSeek V4 Flash 50/49.9). The
+  index's own description says it aggregates *provider-reported* alongside
+  benchmark-derived signals.
+- Model comparison and vendor-reported benchmark tables (§7.6) —
+  https://a2aprotocol.ai/insights/qwen-38-max-vs-glm-52-vs-kimi-k3-vs-deepseek-v4-flash
+  and https://www.developersdigest.tech/blog/glm-5-2-vs-deepseek-v4-vs-qwen3-open-weights-coding-showdown
+  Both secondary. Every figure sourced from them is labelled vendor-reported or
+  third-party in §7.6; **none was re-run here**, and no benchmark in this
+  document was executed by us.
 
 Internal: `docs/osmani-audit.md` (§2.4.3 names the `hardened` gap this plugin
 would fill), `docs/factory.md` (the stage contracts §4 would touch),
