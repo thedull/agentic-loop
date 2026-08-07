@@ -343,7 +343,7 @@ because §7 found cheaper and more useful work on a resource already paid for.
 | # | Item | Target | Size | Eval? |
 |---|---|---|---|---|
 | 1 | Fix the dead `mimo` alias and refresh `kimi`/`minimax` to the current generation (§7.4) | `scripts/call_openrouter.sh` | trivial | yes |
-| 2 | The adversary bake-off: one built spec through Sol, GLM 5.2, DeepSeek V4 Pro; compare against the blind review it actually got (§7.5) | none (experiment, ~$0.29) | small | no |
+| 2 | The adversary bake-off: 2–3 specs at their pre-fix commits through Sol, GLM 5.2, DeepSeek V4 Pro; score against the findings each Revision log records (§7.5) | none (experiment, ~$0.29) | small | no |
 | 3 | Require a code location on every adversary finding via `structured_outputs` (§2.2, §7.3) | `scripts/call_sol.sh`, `validate_envelope.jq` | small | yes |
 | 4 | Route Sol through OpenRouter — `--via` transport reusing the adversary/reviser prompts, `:batch` for unattended stages (§7.1) | `scripts/call_sol.sh` | medium | yes |
 | 5 | Re-ground "no metered tiers unattended" on **quota** rather than dollars (§3.2) | 7 policy sites + `skills/line` | medium | yes |
@@ -516,14 +516,37 @@ worth ~USD 30, not on review volume, where it loses to a resource already paid
 for.
 
 **The experiment worth running is now cheap enough to be uninteresting to
-budget.** Take one built spec from the queue, run the identical adversary brief
-through `openai/gpt-5.6-sol`, `z-ai/glm-5.2`, and `deepseek/deepseek-v4-pro`,
-and compare findings against the blind review that spec actually received. Total
-cost at lean-profile rates is roughly **$0.29** — Sol $0.245, GLM $0.029, DeepSeek
-$0.014. The question it answers is the only one that matters and the only one
-this document cannot: does an 8.5×-cheaper model miss what Sol catches?
+budget — but it has to be run against ground truth that exists.** An earlier
+draft of this section proposed scoring against "the blind review a built spec
+received." There are no built specs: all thirteen in `factory/specs/` are
+`queued` or `shelved`, so no diff and no build-stage review exists to score
+against. The proposal was unrunnable and is recorded here rather than quietly
+replaced.
 
-Until that runs, nothing here recommends demoting Sol. Price is not evidence.
+What *does* exist is the **spec-review** gate's output. Specs 001–014 each carry
+a Revision log recording exactly what the blind spec-reviewer found and what
+changed in response — for example `factory/specs/014-spec-internal-consistency.md`
+records five findings, one of which disproved the spec's own primary check. Git
+history holds each spec as it stood before those fixes landed.
+
+So the runnable bake-off is: take two or three specs at their pre-fix commits,
+send the identical adversary brief through `openai/gpt-5.6-sol`, `z-ai/glm-5.2`
+and `deepseek/deepseek-v4-pro`, and score each against the findings that spec's
+Revision log actually records. Ground truth is written down, dated, and was
+produced by a reviewer that had no access to these models' answers.
+
+Cost at lean-profile rates is roughly **$0.29 per spec across all three** — Sol
+$0.245, GLM $0.029, DeepSeek $0.014 — so three specs is under a dollar. The
+question it answers is the only one that matters and the only one this document
+cannot: does an 8.5×-cheaper model miss what Sol catches?
+
+Two cautions on reading the result. The scoring is against what one blind
+reviewer found, not against what was *there* — a model finding something the gate
+missed scores as a false positive under this rubric and may not be one. And a
+single spec is a sample of one; three is a sample of three. This experiment can
+cheaply falsify "the cheap model is adequate"; it cannot establish it.
+
+Until it runs, nothing here recommends demoting Sol. Price is not evidence.
 
 ## Sources
 
