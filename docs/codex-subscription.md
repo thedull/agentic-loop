@@ -598,7 +598,11 @@ here means independently *assembled*, not independently *re-run*.
 | `minimax/minimax-m3` | 44.4 | — | 0.30 | 1.20 |
 | `deepseek/deepseek-v4-pro` | 44.3 | SWE-bench Verified ~80.6 (third-party tracker) | 0.435 | 0.87 |
 | `x-ai/grok-4.3` | 37.6 | — | 1.25 | 2.50 |
-| **`qwen/qwen3.8-max`** | **not scored** | **none** | 2.00 | 6.00 |
+| **`qwen/qwen3.8-max`** | **not scored** | **none independent**; vendor table only (Terminal-Bench 2.1 86.6, SWE-bench Pro 67.7) | 2.00 | 6.00 |
+
+*Context caveat: sources disagree on Kimi K3's window — OpenRouter's catalog
+lists 1.05M, one secondary source says 256K. OpenRouter's figure governs what you
+actually get through OpenRouter, which is the only path this document covers.*
 
 **Vendor-reported figures, kept separate because they are marketing until
 someone re-runs them.** Terminal-Bench 2.1: Kimi K3 88.3, Opus 4.8 85.0, DeepSeek
@@ -610,15 +614,51 @@ more trustworthy than the reverse.
 
 Three findings from this table that the price table hides:
 
-**The model named in the request has no third-party score at all.** Qwen 3.8 Max
-(released 2026-07-19, 2.4T params / 95B active) is absent from the AA snapshot.
-Everything Alibaba has published is narrative — cash returned in an e-commerce
-simulation, gate counts in a chip-design run, commits and PRs over an autonomous
-fortnight. Those are demonstrations, not benchmarks; nothing in them is
-comparable to another model. At $2.00/$6.00 it is among the more expensive
-options here — dearer than everything except Kimi K3, level with Grok 4.5 — and
-the only one with nothing to check. **It cannot be recommended
-on evidence**, which is a statement about the evidence rather than the model.
+**The model named in the request has vendor numbers but no independent
+replication.** *(Revised 2026-08-07 — an earlier draft of this paragraph said
+Alibaba had published "nothing but narrative." That was true of the preview and
+is no longer true of the release. The correction is recorded rather than
+overwritten.)*
+
+Qwen 3.8 Max (2.4T params / ~95B active) shipped a preview around 2026-07-19 and
+went official **2026-08-03**, and Alibaba published a full benchmark table with
+the release: Terminal-Bench 2.1 **86.6**, SWE-bench Pro **67.7**, DeepSWE 1.1
+**56.6**, PaperBench **93.0**, IFBench **82.8**, plus a multimodal set
+(OSWorld-Verified 86.1, MMMU-Pro 82.3, OmniDocBench 1.5 92.1, Video-MME 90.4).
+
+Every one of those is **Alibaba's own evaluation run**. The source reporting them
+says so in terms this document should simply adopt: *"Those scores come from
+Alibaba's own evaluation runs, not independent third-party replication. The
+distinction matters."* It remains absent from the AA snapshot.
+
+Two things that table does *not* license. Its competitor figures — Fable 5 at
+80.0 on SWE-bench Pro, Sol at 88.8 on Terminal-Bench 2.1, Opus 4.8 at 80.3 on
+PaperBench — are a vendor scoring its own rivals, which is the weakest evidence
+class in this document. And cross-vendor SWE-bench Pro comparison is shaky in
+general: Qwen 67.7, Kimi K3 63.2, GLM 5.2 62.1, DeepSeek V4 Pro 55.4
+("unverified scaffold") were each produced by their own vendor on their own
+harness.
+
+**There is now one independent head-to-head, and it is small.** An evaluator ran
+Qwen 3.8 Max preview and Kimi K3 through a production-style software-architecture
+task — 269 files across two real projects, proposing system designs,
+blind-reviewed and fact-checked. **Kimi K3 83/100, Qwen 3.8 Max preview 80/100**,
+with none of Qwen's 44 tool calls failing. Two projects, one workload type, no
+published protocol, and it tested the *preview* rather than the release — so it
+is a data point, not a finding. It is nonetheless the only task-specific
+comparison here that measures architecture work rather than preference, and it
+points the same way §8.2's planning pick already did.
+
+The article's own verdict is worth keeping because it is narrower than a
+leaderboard position: Qwen 3.8 Max is strong on terminal agents, computer use,
+instruction following and document intelligence, and *"not yet the top choice for
+the hardest software engineering benchmarks."*
+
+At $2.00/$6.00 it is dearer than everything here except Kimi K3 and level with
+Grok 4.5. One pricing detail does favour it for a specific shape of work: cached
+input at **$0.25/M**, an 87.5% discount, which matters for pipelines that resend
+the same context repeatedly — not our shims, which assemble a fresh prompt per
+call (`scripts/lib/common.sh:138-159`).
 
 **The cheaper DeepSeek is the better DeepSeek.** V4 Flash scores 49.9 against V4
 Pro's 44.3 while costing roughly a third as much. Pro's counter-argument is a
@@ -699,14 +739,21 @@ audit — as a second pair of eyes it is nearly free, and a disagreement between
 it and the frontier model is a signal worth having.
 
 **Planning / architecture → Kimi K3, and this is where not to economise.** The
-AA spread is Opus 5 60.7, Sol 58.9, Kimi K3 57.1, GLM 5.2 51.1. Planning errors
+AA spread is Opus 5 60.7, Sol 58.9, Kimi K3 57.1, GLM 5.2 51.1. It is also the
+one pick with a task-matched independent data point behind it: the 269-file
+architecture head-to-head in §7.6 scored Kimi K3 83/100 against Qwen 3.8 Max
+preview's 80/100 — a sample of two projects, so corroboration rather than proof. Planning errors
 do not stay local — they propagate into every task downstream, which is the one
 place where saving $0.13 can cost hours. Kimi K3's price is hard to justify
 anywhere else on this list and easy to justify here: half of Sol's cost for 1.8
 index points.
 
-**Qwen 3.8 Max is not picked for anything**, per §7.6 — not on quality grounds
-but on evidentiary ones. Revisit when a third party scores it.
+**Qwen 3.8 Max is not picked for anything**, per §7.6 — still on evidentiary
+grounds, though weaker ones than before: a vendor benchmark table now exists, and
+the one independent architecture head-to-head puts it just below Kimi K3 (80 vs
+83) on exactly the task class it would compete for. At 4× GLM 5.2's
+implementation cost and 2× its own nearest evidence, nothing here argues for it.
+Revisit if a third party replicates the release table.
 
 ## 8.3 Estimating cost before the call
 
@@ -758,6 +805,13 @@ checks until the invoice.
   Both secondary. Every figure sourced from them is labelled vendor-reported or
   third-party in §7.6; **none was re-run here**, and no benchmark in this
   document was executed by us.
+- Qwen 3.8 Max release benchmark table and the 269-file architecture head-to-head
+  (§7.6) — https://www.labellerr.com/blog/qwen-3-8-max-vs-kimi-k3/ (2026-08-05).
+  Secondary, and it labels its own provenance carefully — it is the source of the
+  quoted caution that Alibaba's figures are *"not independent third-party
+  replication."* The architecture comparison it reports (Kimi K3 83, Qwen 3.8 Max
+  preview 80) publishes no protocol and is not reproducible from the article; it
+  is used here as corroboration, never as a result.
 
 Internal: `docs/osmani-audit.md` (§2.4.3 names the `hardened` gap this plugin
 would fill), `docs/factory.md` (the stage contracts §4 would touch),
