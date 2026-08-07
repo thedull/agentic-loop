@@ -23,6 +23,13 @@ describing a CLIProxyAPI setup. The owner has ruled that method out. The subject
 here is the official **[`openai/codex-plugin-cc`](https://github.com/openai/codex-plugin-cc)**
 plugin, examined at a pinned commit.
 
+§1–§6 answer that question on its own terms. **§7 then reopens it**, because the
+comparison those sections make — subscription versus API key — turns out to omit
+a third option the owner already pays for. The short version, for anyone reading
+only one section: `openai/gpt-5.6-sol` is on OpenRouter at the same list price
+our shim already hardcodes, which makes scriptable Sol available today without
+either credential under discussion.
+
 **Scope (owner-set): analysis only.** Nothing is installed, no policy is edited,
 no code changes. §6 is a ranked backlog and everything in it is unbuilt.
 
@@ -244,9 +251,8 @@ transport reusing `build_task_prompt` unchanged.
 **One configuration must stay off.** The optional Stop review gate fires on every
 Claude response. Upstream's own warning: *"The review gate can create a
 long-running Claude/Codex loop and may drain usage limits quickly. Only enable it
-when you plan to actively monitor the session"* (`README.md:237`). On a Plus
-allowance that is a
-quota bonfire. It is disabled by default; it should stay that way, and §6 item 2
+when you plan to actively monitor the session"* (`README.md:237`). On a Plus allowance that is a
+quota bonfire. It is disabled by default; it should stay that way, and §6 item 7
 makes that a check rather than a note.
 
 ---
@@ -328,39 +334,196 @@ not started.
 
 # §6 — Adoption backlog
 
-Ranked. Item 1 is nearly free; item 4 is the one that must not be done casually.
-Nothing here is built.
+Ranked. Item 1 is a live defect; item 2 is the only one that can reorder the
+rest. Nothing here is built.
+
+Re-ranked after §7. The top three no longer involve the subscription at all,
+because §7 found cheaper and more useful work on a resource already paid for.
 
 | # | Item | Target | Size | Eval? |
 |---|---|---|---|---|
-| 1 | Install the plugin; confirm `/codex:adversarial-review` runs on the subscription and which model it resolves to | none (verification) | trivial | no |
-| 2 | `doctor.sh`: `codex` binary present, logged in, **review gate off** | `scripts/doctor.sh` | small | yes |
-| 3 | Name the plugin in the ladder as an attended-only Sol surface, distinct from `call_sol.sh`, carrying the §3.1 distinction | `templates/LOOP_POLICY.md` | small | no |
-| 4 | Re-ground "no metered tiers unattended" on **quota** rather than dollars | 7 policy sites + `skills/line` | medium | yes |
-| 5 | Evaluate `/codex:adversarial-review` as the `profile: hardened` payload (`osmani-audit.md` §2.4.3) | `skills/review`, spec 005 | medium | yes |
-| 6 | Require a code location on every adversary finding (§2.2), independent of adoption | `scripts/call_sol.sh`, `validate_envelope.jq` | small | yes |
-| 7 | `codex exec` transport | `scripts/call_sol.sh` | large | yes |
+| 1 | Fix the dead `mimo` alias and refresh `kimi`/`minimax` to the current generation (§7.4) | `scripts/call_openrouter.sh` | trivial | yes |
+| 2 | The adversary bake-off: one built spec through Sol, GLM 5.2, DeepSeek V4 Pro; compare against the blind review it actually got (§7.5) | none (experiment, ~$0.29) | small | no |
+| 3 | Require a code location on every adversary finding via `structured_outputs` (§2.2, §7.3) | `scripts/call_sol.sh`, `validate_envelope.jq` | small | yes |
+| 4 | Route Sol through OpenRouter — `--via` transport reusing the adversary/reviser prompts, `:batch` for unattended stages (§7.1) | `scripts/call_sol.sh` | medium | yes |
+| 5 | Re-ground "no metered tiers unattended" on **quota** rather than dollars (§3.2) | 7 policy sites + `skills/line` | medium | yes |
+| 6 | Install the plugin; confirm `/codex:adversarial-review` runs and which model it resolves to | none (verification) | trivial | no |
+| 7 | `doctor.sh`: `codex` binary present, logged in, **review gate off** | `scripts/doctor.sh` | small | yes |
+| 8 | Name the plugin in the ladder as an attended-only Sol surface, distinct from `call_sol.sh`, carrying the §3.1 distinction | `templates/LOOP_POLICY.md` | small | no |
+| 9 | Evaluate `/codex:adversarial-review` as the `profile: hardened` payload (`osmani-audit.md` §2.4.3) | `skills/review`, spec 005 | medium | yes |
+| 10 | `codex exec` transport | `scripts/call_sol.sh` | large | yes |
 
 **Ordering notes.**
 
-Item 1 is deliberately first and deliberately dumb. Every number in §3.3 is a
-third-party estimate; one afternoon of actual use produces better data than any
-amount of further reading, and it costs a subscription the owner is already
-considering.
+Item 1 is first because it is a live defect, not an improvement. `--model mimo`
+resolves to a model OpenRouter does not list, in a scaffolded file, in every
+project this plugin has stamped.
 
-Item 4 blocks item 7 and nothing else. It is also the only item here that is
-purely a decision — no code is required to notice that a rule phrased in dollars
-stops binding when the dollars stop.
+Item 2 is the only item that can change the ranking of everything below it, and
+it costs about thirty cents. Every "cheaper" claim in §7.2 is a price claim; none
+of them is a quality claim. Running it converts the whole of §7 from arithmetic
+into evidence.
 
-Item 6 is the one item worth doing **even if the subscription is never bought**.
-It is a mechanism, not a dependency: the plugin's schema demonstrated that
-requiring `file` / `line_start` / `line_end` turns "cite your evidence" from a
-request into a refusal, and our adversary asks for evidence in prose today.
+Item 3 is worth doing **whatever the outcome of item 2**, and whether or not the
+subscription is ever bought. It is a mechanism, not a dependency: the plugin's
+schema demonstrated that requiring `file` / `line_start` / `line_end` turns "cite
+your evidence" from a request into a refusal, and every candidate model supports
+the parameter that would enforce it (§7.3).
 
-Items 5 and 7 both depend on spec 001 (`profile` as a real switch), which is
-itself queued behind spec 004. Nothing in this document jumps that queue.
+Item 5 blocks item 10 and nothing else. It is the only item here that is purely a
+decision — no code is required to notice that a rule phrased in dollars stops
+binding when the dollars stop.
+
+Items 6–9 are the subscription's own track and are now below the free work
+deliberately. Item 9 additionally depends on spec 001 (`profile` as a real
+switch), itself queued behind spec 004. Nothing in this document jumps that
+queue.
 
 ---
+
+# §7 — The option we already own: OpenRouter
+
+§4 compared a ChatGPT subscription against an OpenAI API key and found the
+subscription buys attended capability rather than autonomy. That comparison was
+incomplete. There is a third option already paid for, and it changes the answer.
+
+All figures below were pulled from `https://openrouter.ai/api/v1/models` on
+**2026-08-07** and are list prices per 1M tokens at that moment. They are
+first-party (OpenRouter's own catalog endpoint), unlike the quota estimates in
+§3.3 — but they are a snapshot of a price list that moves.
+
+## 7.1 Sol itself is on OpenRouter, at list price
+
+The finding that reframes everything:
+
+| Model id | $/M in | $/M out | Context |
+|---|---|---|---|
+| `openai/gpt-5.6-sol` | 5.00 | 30.00 | 1.05M |
+| `openai/gpt-5.6-sol:batch` | 2.50 | 15.00 | 1.05M |
+| `openai/gpt-5.6-terra` | 1.00 | 6.00 | 1.05M |
+| `openai/gpt-5.6-luna` | 0.10 | 0.60 | 1.05M |
+
+`openai/gpt-5.6-sol` is priced identically to the direct API path our shim
+already hardcodes (`scripts/call_sol.sh:33-34`), which is consistent with the
+OpenRouter shim's own billing note — *"list price + top-up fee, no per-token
+markup"* (`scripts/call_openrouter.sh:4`). The `:batch` variant is exactly half.
+
+Three consequences:
+
+1. **Scriptable Sol is available today**, on a balance the owner already holds,
+   with no ChatGPT subscription and no `OPENAI_API_KEY`. It reaches the factory
+   where §4 established the plugin cannot go.
+2. **Batch halves the price for exactly our use case.** The factory's build and
+   review stages are unattended and latency-tolerant by construction — *"Terminal
+   state is an open PR, never a merge"* (`templates/LOOP_POLICY.md:202`), so the
+   work stops and waits for a human regardless. Latency is the thing we have
+   most of.
+3. **Cost reporting gets more honest, not less.** `call_sol.sh` computes cost
+   from two hardcoded constants carrying a *"recalibrate from the OpenAI usage
+   dashboard"* comment (`scripts/call_sol.sh:32`) — a number that silently drifts
+   when prices change. The OpenRouter shim reads OpenRouter's own reported figure
+   (`scripts/call_openrouter.sh:79`). One is an estimate that rots; the other is
+   what was actually charged.
+
+## 7.2 What a cross-family adversary costs
+
+Two payload profiles, because reasoning tokens are the live uncertainty and
+every candidate below bills them as output. **Lean** = 25k in / 4k out. **Heavy**
+= 60k in / 20k out, modelling a reasoning-heavy pass over a large diff. The last
+two columns are how many such reviews USD 30 buys.
+
+| Model | $/M in | $/M out | Context | Lean | Heavy | Lean/$30 | Heavy/$30 |
+|---|---|---|---|---|---|---|---|
+| `deepseek/deepseek-v4-flash` | 0.14 | 0.28 | 1.05M | $0.005 | $0.014 | 6493 | 2142 |
+| `openai/gpt-5.6-luna` | 0.10 | 0.60 | 1.05M | $0.005 | $0.018 | 6122 | 1666 |
+| `minimax/minimax-m3` | 0.30 | 1.20 | 1.05M | $0.012 | $0.042 | 2439 | 714 |
+| `deepseek/deepseek-v4-pro` | 0.435 | 0.87 | 1.05M | $0.014 | $0.044 | 2089 | 689 |
+| `xiaomi/mimo-v2.5-pro` | 0.435 | 0.87 | 1.05M | $0.014 | $0.044 | 2089 | 689 |
+| `mistralai/mistral-large-2512` | 0.50 | 1.50 | 262k | $0.019 | $0.060 | 1621 | 500 |
+| `z-ai/glm-5.2:batch` | 0.70 | 2.20 | 512k | $0.026 | $0.086 | 1140 | 348 |
+| **`z-ai/glm-5.2`** | 0.76 | 2.42 | 1.05M | $0.029 | $0.094 | **1046** | **319** |
+| `x-ai/grok-4.3` | 1.25 | 2.50 | 1.00M | $0.041 | $0.125 | 727 | 240 |
+| `openai/gpt-5.6-terra` | 1.00 | 6.00 | 1.05M | $0.049 | $0.180 | 612 | 166 |
+| **`qwen/qwen3.8-max`** | 2.00 | 6.00 | 1.00M | $0.074 | $0.240 | **405** | **125** |
+| `x-ai/grok-4.5` | 2.00 | 6.00 | 500k | $0.074 | $0.240 | 405 | 125 |
+| `openai/gpt-5.6-sol:batch` | 2.50 | 15.00 | 1.05M | $0.123 | $0.450 | 244 | 66 |
+| `moonshotai/kimi-k3` | 3.00 | 15.00 | 1.05M | $0.135 | $0.480 | 222 | 62 |
+| **`openai/gpt-5.6-sol`** | 5.00 | 30.00 | 1.05M | $0.245 | $0.900 | **122** | **33** |
+
+Read against Sol as the baseline: GLM 5.2 is **8.5×** cheaper, Qwen 3.8 Max
+**3.3×**, DeepSeek V4 Pro **17×**, DeepSeek V4 Flash **53×**. Grok 4.3 is 6×
+cheaper and adds a fourth model family. Kimi K3 is only 1.8× cheaper and is the
+weakest value on this list.
+
+The honest caveat, stated before the backlog leans on these numbers: **this table
+measures price, not quality.** Nothing here says GLM 5.2 finds what Sol finds.
+That is the experiment, and §7.5 is how to run it.
+
+## 7.3 Every candidate can enforce an evidence contract; Sol currently does not
+
+§2.2 found that the Codex plugin's schema is stricter than ours — it *requires*
+`file`, `line_start`, `line_end` on every finding, so a claim without a code
+location cannot be emitted. Ours asks for evidence in prose
+(`scripts/call_sol.sh:61-62`), which a model can decline.
+
+Every model in §7.2 advertises both `structured_outputs` and `response_format`
+in its OpenRouter `supported_parameters`. Our current Sol path uses neither: the
+request at `scripts/call_sol.sh:92-99` sends `model` / `instructions` / `input` /
+`reasoning` and no schema, then recovers JSON by best-effort text slicing
+(`scripts/lib/common.sh:186-199`).
+
+So a $0.03 GLM 5.2 review could carry a **stricter** evidence contract than our
+$0.25 Sol review does today. That is an argument for backlog item 3 independent
+of which model wins — the gap is in our request construction, not in the model.
+
+## 7.4 Our OpenRouter aliases have rotted, and one is dead
+
+Checked against the catalog rather than assumed:
+
+| Alias | Configured id | Status |
+|---|---|---|
+| `mimo` | `xiaomi/mimo-v2` | **not in the catalog** — the call fails |
+| `kimi` | `moonshotai/kimi-k2` | alive, 131k context; `kimi-k3` is 1.05M |
+| `minimax` | `minimax/minimax-m2` | alive, 205k context; `minimax-m3` is 1.05M |
+
+The `mimo` default at `scripts/call_openrouter.sh:41` resolves to a model
+OpenRouter no longer lists, so `--model mimo` is broken until overridden via
+`OPENROUTER_MODEL_MIMO`. This is a scaffolded file, so it is broken in every
+project the plugin has stamped.
+
+The context figures matter more than the version numbers. `build_task_prompt`
+inlines every `--input-path` wholesale (`scripts/lib/common.sh:147-157`); a 131k
+window is a real ceiling on whole-diff review, and the current generation is
+eight times larger.
+
+## 7.5 The decision, restated with three options
+
+| Option | ~USD 30 buys | Scriptable? | Scope |
+|---|---|---|---|
+| ChatGPT Plus | attended reviews, quota-capped, unusable beyond human attention (§3.3) | **No** | diff, no spec |
+| OpenAI API key | ~122 lean Sol reviews | Yes | spec + candidate |
+| **OpenRouter (already owned)** | the same Sol at the same price, or 244 at batch, or 1046 GLM 5.2 | Yes | spec + candidate |
+
+**OpenRouter dominates the API-key option** — same model, same price, one fewer
+credential, honest cost reporting, and model choice on top. There is no case for
+adding `OPENAI_API_KEY` when `OPENROUTER_API_KEY` reaches the same model.
+
+**Against the subscription the comparison is not about price at all.** The
+subscription buys a *different* review — attack-surface, diff-scoped, attended
+(§3.1) — which is why §6 item 9 proposes it as the `hardened` payload rather
+than as a Sol replacement. It should be judged on whether that second opinion is
+worth ~USD 30, not on review volume, where it loses to a resource already paid
+for.
+
+**The experiment worth running is now cheap enough to be uninteresting to
+budget.** Take one built spec from the queue, run the identical adversary brief
+through `openai/gpt-5.6-sol`, `z-ai/glm-5.2`, and `deepseek/deepseek-v4-pro`,
+and compare findings against the blind review that spec actually received. Total
+cost at lean-profile rates is roughly **$0.29** — Sol $0.245, GLM $0.029, DeepSeek
+$0.014. The question it answers is the only one that matters and the only one
+this document cannot: does an 8.5×-cheaper model miss what Sol catches?
+
+Until that runs, nothing here recommends demoting Sol. Price is not evidence.
 
 ## Sources
 
@@ -376,6 +539,9 @@ itself queued behind spec 004. Nothing in this document jumps that queue.
 - Third-party quota estimates (§3.3, **unconfirmed at source** — OpenAI's own
   help pages return HTTP 403 to fetches):
   https://simplemetrics.xyz/chatgpt-codex-limits-2026/
+- OpenRouter model catalog and list prices (§7) —
+  https://openrouter.ai/api/v1/models, fetched 2026-08-07. First-party, but a
+  snapshot of a price list that moves; re-fetch before relying on §7.2.
 
 Internal: `docs/osmani-audit.md` (§2.4.3 names the `hardened` gap this plugin
 would fill), `docs/factory.md` (the stage contracts §4 would touch),
@@ -387,3 +553,10 @@ would fill), `docs/factory.md` (the stage contracts §4 would touch),
 in the factory. Everything in §6 is unbuilt. The scripted transport of §5 is
 specified precisely so that it can be declined on the record rather than drifted
 into.*
+
+*§7 was added after the rest and inverted the backlog. That is worth recording as
+a process note rather than editing away: the first six sections compared the two
+options the question named, and the better answer was a third option nobody had
+named, already paid for. The cost tables in §7.2 are still only prices — the only
+item that turns them into a recommendation is the bake-off, and it has not been
+run.*
