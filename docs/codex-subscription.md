@@ -1,0 +1,389 @@
+# Codex on a Subscription: Can GPT-5.6 Sol Be Our Adversary Without the Meter?
+
+Sol is the top rung of our tier ladder and the only cross-family voice in the
+system — *"best-of-best adversary/reviser — structural triggers only"*
+(`templates/LOOP_POLICY.md:20`). It is also the only rung gated behind a human
+confirmation on **every single call**, and the reason is money: `$5/$30` per 1M
+tokens (`scripts/call_sol.sh:33-34`), with the shim's own header warning that
+*"hidden reasoning tokens bill as output"* (`scripts/call_sol.sh:6`).
+
+That cost is load-bearing. Seven places in this repo carry the same sentence —
+never call metered tiers unattended, record `needs_escalation` instead
+(`templates/LOOP_POLICY.md:198-201`, `skills/build/SKILL.md:93-95`,
+`skills/review/SKILL.md:66-70`, `docs/factory.md:172-175` and `:210-211`,
+`templates/workflows/factory.js:136`, `templates/RUNBOOK.md:105-106`), and
+`skills/line/SKILL.md:35-40` declares it non-customizable so a project cannot
+fork it away.
+
+The question this document answers: **if a ~COP 100k/month ChatGPT subscription
+funds Sol instead of an API key, does any of that change?**
+
+The prompt was a [Valletta Software post](https://vallettasoftware.com/blog/post/run-gpt-5-6-in-claude-code)
+describing a CLIProxyAPI setup. The owner has ruled that method out. The subject
+here is the official **[`openai/codex-plugin-cc`](https://github.com/openai/codex-plugin-cc)**
+plugin, examined at a pinned commit.
+
+**Scope (owner-set): analysis only.** Nothing is installed, no policy is edited,
+no code changes. §6 is a ranked backlog and everything in it is unbuilt.
+
+Three ground rules, inherited from `docs/osmani-audit.md`:
+
+- **Every claim about our system carries a `file:line`**, opened and confirmed
+  rather than recalled.
+- **Every claim about the plugin is cited to its own source at a pinned commit**,
+  read via `gh api` rather than through a summarizer. It is an actively developed
+  repository and every fact in §2 has a shelf life.
+- **Third-party quota numbers are attributed as third-party.** OpenAI's own help
+  pages refuse programmatic fetches (HTTP 403), so the figures in §3.3 come from
+  independent trackers and are labelled as estimates, not facts. This is the
+  honest-nulls rule (`scripts/lib/obs.sh:18-19`) applied to research.
+
+---
+
+# §1 — The proxy method, and why it is closed
+
+The owner closed this before the analysis started, so this section is short. The
+*reasons* are worth recording because two of them generalize.
+
+**It inverts our own health check.** The method's step 3 writes
+`ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` into `~/.claude/settings.json`.
+`scripts/doctor.sh:23-25` already fails a project outright for the adjacent
+case — an `ANTHROPIC_API_KEY` in `./.env` — because it flips the interactive
+session off subscription billing. The proxy does the same class of thing one
+level up.
+
+**The article argues against itself on terms of service.** It states plainly
+that routing a Claude subscription OAuth token through a third-party proxy
+violates Anthropic's Consumer Terms, that consumer OAuth tokens have been
+blocked outside Claude Code and Claude.ai since early 2026, and that the proxy
+holds both vendors' credentials in a single place. (Paraphrased with
+attribution rather than quoted — the article was read through a summarizing
+fetch and verbatim wording could not be confirmed.)
+
+**The structural objection is ours, not theirs, and it is the decisive one.**
+The method makes Claude Code *be* Sol. Cross-family independence is the entire
+purchase: an adversary drawn from the author's own model family is the
+worker-grades-its-own-homework failure that the blind-review protocol exists to
+prevent (`templates/LOOP_POLICY.md:69-74`). A proxy that swaps the orchestrator's
+model deletes the property it claims to deliver. Even if the ToS problem
+vanished tomorrow, this objection would stand.
+
+---
+
+# §2 — What the plugin actually is
+
+Pinned at commit **`db52e28f4d9ded852ab3942cea316258ae4ef346`** (2026-07-08),
+plugin version **1.0.6**. Every row below was read from that tree.
+
+Paths below are relative to the plugin repository root; the plugin itself lives
+under `plugins/codex/`.
+
+| Property | Finding | Source |
+|---|---|---|
+| Transport | Codex **app-server** (JSON-RPC through a broker daemon), **not** `codex exec` | `plugins/codex/scripts/app-server-broker.mjs`, `.../lib/app-server.mjs`, probe at `.../lib/codex.mjs:892` |
+| Auth | ChatGPT subscription (incl. Free) **or** OpenAI API key; *"`codex login` supports both ChatGPT and API key sign-in"* | `README.md:18`, `README.md:300` |
+| Codex home | `$CODEX_HOME`, defaulting to `~/.codex` | `plugins/codex/scripts/lib/codex.mjs:654` |
+| Runtime dep | the global `codex` binary, plus Node.js 18.18+ | `README.md:20` |
+| Sandbox default | `sandbox: "read-only"`, `approvalPolicy: "never"` | `plugins/codex/scripts/lib/codex.mjs:67-68` |
+| Review sandbox | hard-coded `"read-only"` | `plugins/codex/scripts/codex-companion.mjs:414` |
+| Rescue sandbox | `request.write ? "workspace-write" : "read-only"` | `plugins/codex/scripts/codex-companion.mjs:491` |
+| Autonomy | review commands carry `disable-model-invocation: true` — Claude **cannot** fire them | `plugins/codex/commands/adversarial-review.md` frontmatter |
+| Surface | 8 slash commands, 1 subagent (`codex:codex-rescue`), 3 skills, hooks on SessionStart/SessionEnd/Stop | repo tree at the pinned SHA |
+| Scriptable | **No.** Slash commands only. Nothing a `call_*.sh` shim can invoke | — |
+| Output | structured JSON; verdict `approve` \| `needs-attention` | `plugins/codex/schemas/review-output.schema.json` |
+
+## 2.1 Two corrections to a first reading
+
+Both were wrong on my first pass and the corrections matter more than the
+original guesses.
+
+**Blindness holds.** I flagged the `SessionStart` hook — which supplies the
+current transcript path — as a probable breach of the blind-review protocol. It
+is not. `/codex:adversarial-review` reviews a **git diff**: working-tree, branch,
+or `--base <ref>`, per its own `argument-hint`. Its review-target selection is
+shared with `/codex:review` and it never receives Claude's conversation. The
+transcript path feeds `/codex:transfer`, the session-import path, which is a
+different command doing a different job.
+
+**Attended-only is enforced upstream, not by us.** `disable-model-invocation: true`
+means Claude Code cannot invoke the review commands on its own initiative — the
+human types them. That is a *mechanical* guarantee of the property our seven
+policy statements pursue with prose. It is worth noting plainly that upstream's
+default is stronger here than our own enforcement, and equally worth noting that
+it is upstream's to change.
+
+## 2.2 The finding schema is stricter than ours
+
+Worth its own subsection because it is a mechanism we could steal regardless of
+whether the plugin is ever adopted.
+
+Our adversary emits `findings: [{claim, evidence, severity}]`
+(`scripts/call_sol.sh:66-67`), where `evidence` is free text. The plugin's schema
+**requires** every finding to carry `file`, `line_start`, `line_end`, plus
+`severity` (`critical|high|medium|low`), `title`, `body`, `recommendation`, and
+`confidence`. A finding that cannot name a code location cannot be emitted at
+all.
+
+That is a structural anti-hallucination gate of exactly the shape this repo
+prefers — a refusal rather than an instruction. Our own equivalent is a *prompt
+line* asking for evidence before verdict (`scripts/call_sol.sh:61-62`), which is
+a suggestion a model can decline.
+
+One part of their schema we should **not** copy: `confidence` as a number in
+`[0,1]`. Our policy distrusts exactly this — escalation fires *"NEVER on a
+worker's self-reported confidence (self-reported confidence is unreliable by
+construction)"* (`templates/LOOP_POLICY.md:51-52`) — and we deliberately use
+`confidence_ordinal` (`high|medium|low`) instead. A model reporting `0.82`
+communicates false precision about a quantity it has no access to.
+
+---
+
+# §3 — Three findings
+
+## 3.1 (a) Their adversary answers a different question than ours
+
+This is the finding that decides §4, and it is easy to miss because both things
+are called "adversarial review."
+
+**Ours asks: does this meet the spec?** The system prompt scopes hard —
+*"Report ONLY correctness and requirement gaps. Do not report style, taste, or
+hypothetical improvements — chasing those causes over-engineering"*
+(`scripts/call_sol.sh:59-60`). The payload is the task spec plus the candidate
+artifact, with the orchestrator's reasoning deliberately withheld
+(`templates/LOOP_POLICY.md:71-73`).
+
+**Theirs asks: how can this break?** `plugins/codex/prompts/adversarial-review.md`
+opens with
+*"Your job is to break confidence in the change, not to validate it"* and directs
+attention at an enumerated attack surface: auth and trust boundaries, data loss
+and irreversible state, rollback and idempotency, races and ordering, empty-state
+and timeout behavior, version skew and migration hazards, observability gaps.
+
+The payload difference is the crux: **their review contains no spec.** It is
+handed a diff and the repository. It therefore *cannot* report a requirement gap,
+because it is never told the requirement. Conversely ours cannot report a race
+condition it has no repository access to observe.
+
+These are complementary, not substitutable — and the complement lands precisely
+on a gap we have already documented. `docs/osmani-audit.md` §2.4.3 records that
+our entire security posture for shipped code is one bullet in the blind review
+(`skills/review/SKILL.md:47`), and that the missing depth is what `profile:
+hardened` should route to. The plugin's attack-surface list is close to a
+ready-made version of that payload.
+
+So the honest verdict is not "a cheaper Sol." It is: **a different reviewer that
+happens to fill a hole we already named.**
+
+## 3.2 (b) A subscription-funded Sol is unmetered, and our rule is written in dollars
+
+Read the policy literally: *"No metered tiers unattended... The human confirms
+ALL metered calls — no exceptions for autonomy"* (`templates/LOOP_POLICY.md:198-201`).
+`skills/build/SKILL.md:95` closes with *"The human confirms all metered spend."*
+
+A subscription-funded Sol is not metered. The rule stops applying **by its own
+wording** while every reason behind it — bounded consumption, a human circuit
+breaker on the most expensive rung — holds exactly as before.
+
+The observability plane then goes quiet, and it goes quiet *correctly*, which is
+what makes this dangerous. `scripts/lib/obs.sh:18-19` states the rule: *"est_cost_usd
+stays null for subscription tiers: they are shared capacity, not dollars."* A
+subscription Sol emitting `null` cost is behaving exactly as designed — and Sol's
+only back-pressure signal disappears with it.
+
+**Nothing else covers the gap.** Verified rather than assumed:
+
+- `scripts/lib/usage_gate.sh` reads only `.agentic/usage.json`, mirrored from the
+  **Anthropic** statusline payload's `rate_limits`. Its own header names the
+  source: *"the only authoritative programmatic %-of-cap source Anthropic
+  exposes."* It knows nothing about a ChatGPT quota.
+- It also fails **open** in all three degraded cases — file missing (`:41`), no
+  `mirrored_at` (`:49`), stale beyond threshold (`:54`) — deliberately, so a
+  broken statusline cannot deadlock the factory.
+- A grep across `scripts/`, `templates/` and `skills/` finds no mechanism of any
+  kind that reads an OpenAI or ChatGPT quota. There is no second gate to lean on.
+
+**Today the hole is closed by accident.** The only thing preventing an unattended
+subscription-funded Sol call is that the plugin refuses model invocation (§2.1) —
+upstream's design choice, in a file we do not own, reversible in a release we do
+not control. Relying on it is not a safety property; it is a coincidence that
+currently points our way.
+
+The conclusion is a policy debt with a trigger, not an action item for today:
+**if a scripted subscription transport is ever added, the rule must be
+re-grounded on quota before the transport ships, not after.** §5 and §6 both
+depend on this ordering.
+
+## 3.3 (c) Plus is the binding constraint, and our payload is the one in the bug report
+
+~COP 100k/month is ChatGPT Plus.
+
+Independent trackers estimate the Plus allowance at roughly **15–90 GPT-5.6 Sol
+messages per 5-hour window**, with a separate weekly cap, and report that the
+5-hour cap was temporarily lifted for Plus/Pro/Business on 2026-07-12 with the
+weekly limit still in force. These are third-party estimates. OpenAI's own rate
+card and plan pages return HTTP 403 to programmatic fetches, so **none of these
+numbers are confirmed at the source** and they should be treated as an order of
+magnitude, not a budget.
+
+What *is* confirmed is the shape of the complaint.
+[`openai/codex#32606`](https://github.com/openai/codex/issues/32606) — *"GPT-5.6
+Terra and Sol exhaust the 5-hour Codex usage limit within minutes"* — is open. A
+Plus user reports Terra consuming almost the entire 5-hour window in a few
+minutes on a repository audit, Sol behaving similarly, and roughly €40 of
+additional purchased credits exhausted the same day. Their workaround was
+rolling back to GPT-5.4 xhigh. No maintainer response is recorded on the issue.
+
+**Our payload is the shape being complained about.** `build_task_prompt` inlines
+the full contents of every `--input-path` into the request
+(`scripts/lib/common.sh:147-157`). A Sol call in this factory is not a question;
+it is a question plus every file the brief names. The plugin's diff-scoped review
+is materially cheaper per call than our own Sol invocation would be on the same
+change — which cuts *in favor* of the plugin and *against* any future scripted
+transport reusing `build_task_prompt` unchanged.
+
+**One configuration must stay off.** The optional Stop review gate fires on every
+Claude response. Upstream's own warning: *"The review gate can create a
+long-running Claude/Codex loop and may drain usage limits quickly. Only enable it
+when you plan to actively monitor the session"* (`README.md:237`). On a Plus
+allowance that is a
+quota bonfire. It is disabled by default; it should stay that way, and §6 item 2
+makes that a check rather than a note.
+
+---
+
+# §4 — Can it be Sol? Split by role
+
+A single verdict would be dishonest — the answer differs sharply by role.
+
+| Role | Verdict | Why |
+|---|---|---|
+| **Attended adversarial review** | **Yes, and it is additive** | Read-only, human-invoked, diff-scoped; asks a question ours cannot (§3.1) |
+| **Unattended review inside the factory loop** | **No** | Not scriptable at all. `evals/judge.sh:56` and every stage reach `call_sol.sh`; there is no entry point |
+| **Implementer / delegated builder** | **Attended only, and it inverts the ladder** | `/codex:rescue` writes (`plugins/codex/scripts/codex-companion.mjs:491`). A non-Claude agent in the tree means the blind reviewer must become a Claude model — a role inversion touching `LOOP_POLICY`, `skills/build`, and the plugin-owned region at `templates/workflows/factory.js:136` |
+| **Replacement for `call_sol.sh`** | **No** | Different transport, different payload, different output schema, no shim entry point |
+
+Three consequences worth stating flatly:
+
+**Adopting the plugin does not retire `OPENAI_API_KEY`.** The scripted Sol path
+stays metered and stays gated. `doctor.sh:76-77` keeps reporting the key, and
+`evals/judge.sh --tier sol` keeps costing money. This is a *second* Sol surface,
+not a migration. Anyone reading §6 as a cost-saving plan has misread it.
+
+**The implementer role is the expensive question, not the cheap one.** It is not
+"can Codex write code" — obviously it can. It is that our build stage's entire
+safety argument is Red Gate plus a blind reviewer from a different family. Put
+Sol in the builder's seat and the reviewer must swap families to preserve the
+property, which means the ladder is not extended but re-ordered. That is a
+design change, not a configuration change, and nothing in this document
+recommends it.
+
+**The subscription buys attended capability, not autonomy.** Everything the
+plugin unlocks requires a human at the keyboard, by upstream's own construction.
+If the goal is more unattended Sol, this purchase does not deliver it — and §3.2
+explains why the version that *would* deliver it is blocked on a policy decision
+rather than on money.
+
+---
+
+# §5 — The scripted alternative, recorded not recommended
+
+The plugin does not use `codex exec`, but it exists, and the option should be on
+record rather than rediscovered later.
+
+`codex exec` is the CLI's headless mode: prompt positional or via `-`, `--model`
+to select the model, `--json` for a JSONL event stream in which `TurnCompleted`
+carries token counts, and `--output-schema` / `--output-last-message` for
+structured results.
+
+That last pair is genuinely attractive here. Our shim currently coaxes JSON out
+of free text with `extract_json_object` (`scripts/lib/common.sh:186-199`), a
+best-effort parse that strips fences and then falls back to slicing between the
+first `{` and last `}`. `--output-schema` would let us hand Codex
+`scripts/lib/validate_envelope.jq`'s shape directly and delete the guessing.
+Only lines 92–138 of `scripts/call_sol.sh` are provider-specific; everything
+above them is transport-agnostic already.
+
+It is nevertheless **not** recommended in this pass, for three reasons in
+descending order of seriousness:
+
+1. **It is blocked on §3.2.** A scripted subscription Sol is precisely the thing
+   that opens the unmetered-autonomy hole. The rule gets re-grounded on quota
+   first, or the transport does not ship.
+2. **`codex exec` is an agent, not a completion.** It runs in a working
+   directory with a sandbox. Our adversary contract is task-plus-candidate and
+   nothing else; a reviewer that can read the repository can read the spec, the
+   git log and `LEARNINGS.md`, and the blind-review protocol degrades without
+   anything failing. Any such transport must pin the sandbox and hand the payload
+   over in an isolated directory — a new requirement this repo has never had.
+3. **Quota exhaustion is a failure mode we have never handled.** Today Sol fails
+   on an HTTP error and exits 5. A quota-exhausted subscription is a different
+   condition that deserves a distinct exit code and a distinct tracker response,
+   or it will present as a transport failure and get retried.
+
+This is the same treatment `docs/osmani-audit.md` §1.4.7 gave the dark lane:
+specified enough that the next person does not start from zero, and explicitly
+not started.
+
+---
+
+# §6 — Adoption backlog
+
+Ranked. Item 1 is nearly free; item 4 is the one that must not be done casually.
+Nothing here is built.
+
+| # | Item | Target | Size | Eval? |
+|---|---|---|---|---|
+| 1 | Install the plugin; confirm `/codex:adversarial-review` runs on the subscription and which model it resolves to | none (verification) | trivial | no |
+| 2 | `doctor.sh`: `codex` binary present, logged in, **review gate off** | `scripts/doctor.sh` | small | yes |
+| 3 | Name the plugin in the ladder as an attended-only Sol surface, distinct from `call_sol.sh`, carrying the §3.1 distinction | `templates/LOOP_POLICY.md` | small | no |
+| 4 | Re-ground "no metered tiers unattended" on **quota** rather than dollars | 7 policy sites + `skills/line` | medium | yes |
+| 5 | Evaluate `/codex:adversarial-review` as the `profile: hardened` payload (`osmani-audit.md` §2.4.3) | `skills/review`, spec 005 | medium | yes |
+| 6 | Require a code location on every adversary finding (§2.2), independent of adoption | `scripts/call_sol.sh`, `validate_envelope.jq` | small | yes |
+| 7 | `codex exec` transport | `scripts/call_sol.sh` | large | yes |
+
+**Ordering notes.**
+
+Item 1 is deliberately first and deliberately dumb. Every number in §3.3 is a
+third-party estimate; one afternoon of actual use produces better data than any
+amount of further reading, and it costs a subscription the owner is already
+considering.
+
+Item 4 blocks item 7 and nothing else. It is also the only item here that is
+purely a decision — no code is required to notice that a rule phrased in dollars
+stops binding when the dollars stop.
+
+Item 6 is the one item worth doing **even if the subscription is never bought**.
+It is a mechanism, not a dependency: the plugin's schema demonstrated that
+requiring `file` / `line_start` / `line_end` turns "cite your evidence" from a
+request into a refusal, and our adversary asks for evidence in prose today.
+
+Items 5 and 7 both depend on spec 001 (`profile` as a real switch), which is
+itself queued behind spec 004. Nothing in this document jumps that queue.
+
+---
+
+## Sources
+
+- Valletta Software, "Run GPT-5.6 in Claude Code" —
+  https://vallettasoftware.com/blog/post/run-gpt-5-6-in-claude-code
+  (the prompt for this analysis; method rejected in §1)
+- OpenAI, `codex-plugin-cc` — https://github.com/openai/codex-plugin-cc
+  pinned at `db52e28f4d9ded852ab3942cea316258ae4ef346` (2026-07-08), plugin v1.0.6
+- `openai/codex` issue #32606, "GPT-5.6 Terra and Sol exhaust the 5-hour Codex
+  usage limit within minutes" — https://github.com/openai/codex/issues/32606
+  (open at time of writing)
+- Codex CLI documentation — https://learn.chatgpt.com/docs/codex/cli
+- Third-party quota estimates (§3.3, **unconfirmed at source** — OpenAI's own
+  help pages return HTTP 403 to fetches):
+  https://simplemetrics.xyz/chatgpt-codex-limits-2026/
+
+Internal: `docs/osmani-audit.md` (§2.4.3 names the `hardened` gap this plugin
+would fill), `docs/factory.md` (the stage contracts §4 would touch),
+`docs/observability-architecture.md` (the cost plane §3.2 argues goes blind).
+
+---
+
+*This document assesses a purchase; it does not make one, and it changes nothing
+in the factory. Everything in §6 is unbuilt. The scripted transport of §5 is
+specified precisely so that it can be declined on the record rather than drifted
+into.*
