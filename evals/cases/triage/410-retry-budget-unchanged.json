@@ -1,0 +1,21 @@
+{
+  "id": "triage-410-retry-budget-unchanged",
+  "target": "acceptance 4 \u2014 triage must not buy extra attempts. The bound stays at two.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/build/SKILL.md\"; n=$(grep -A6 -i \"triage\" \"$f\" | tr \"\\n\" \" \" | grep -ci \"does not.*extra attempt\\|no additional attempt\\|within.*existing bound\\|not increase\"); two=$(grep -c \"two escalated attempts\" \"$f\"); printf '{\"stated\":%s,\"boundIntact\":%s}' \"$n\" \"$two\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".stated >= 1 and .boundIntact >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

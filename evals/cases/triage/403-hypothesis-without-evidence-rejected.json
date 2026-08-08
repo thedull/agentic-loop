@@ -1,0 +1,21 @@
+{
+  "id": "triage-403-hypothesis-without-evidence-rejected",
+  "target": "acceptance 3 \u2014 a hypothesis with no cited evidence is an opinion, not a root cause",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/no_evidence.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -ci evidence); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}
