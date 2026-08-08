@@ -1,0 +1,21 @@
+{
+  "id": "profile-203-invalid-refuses-and-names-the-three",
+  "target": "acceptance 1 \u2014 an unknown value refuses with exit 2, naming BOTH the offending value and the valid set. Naming the offender is what stops a canned message passing.",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/banana.md\" 2>&1 >/dev/null); c=$?; off=$(printf \"%s\" \"$e\" | grep -c \"banana\"); set=$(printf \"%s\" \"$e\" | grep -c \"standard, hardened, dark\"); printf '{\"c\":%s,\"namesOffender\":%s,\"namesSet\":%s}' \"$c\" \"$off\" \"$set\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .namesOffender >= 1 and .namesSet >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 001 revision 1"
+  }
+}

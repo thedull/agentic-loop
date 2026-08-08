@@ -1,0 +1,21 @@
+{
+  "id": "profile-204-case-and-whitespace-normalize",
+  "target": "acceptance 6 \u2014 casing and padding resolve rather than refuse. Proven two ways: standard variants resolve positively, and hardened variants reach the payload gate (not the invalid-value branch), which is the only way normalization is observable for a value whose payload is absent.",
+  "kind": "bash-unit",
+  "cmd": "a=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/upper_std.md\" 2>/dev/null); b=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/mixed_std.md\" 2>/dev/null); c=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/padded_std.md\" 2>/dev/null); h1=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/upper.md\" 2>&1 >/dev/null); h2=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/mixed.md\" 2>&1 >/dev/null); h3=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/padded.md\" 2>&1 >/dev/null); pay=$(printf \"%s\\n%s\\n%s\" \"$h1\" \"$h2\" \"$h3\" | grep -c \"payload is not installed\"); inv=$(printf \"%s\\n%s\\n%s\" \"$h1\" \"$h2\" \"$h3\" | grep -c \"invalid profile\"); printf '{\"a\":\"%s\",\"b\":\"%s\",\"c\":\"%s\",\"payload\":%s,\"invalid\":%s}' \"$a\" \"$b\" \"$c\" \"$pay\" \"$inv\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".a == \"standard\" and .b == \"standard\" and .c == \"standard\" and .payload == 3 and .invalid == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

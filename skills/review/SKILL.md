@@ -38,6 +38,24 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    advance, blocked, cap-reached — ends with
    `scripts/observe.sh context clear`.
 
+3b. **Profile routing.** `scripts/lib/tracker.sh profile <claimed file>` and
+   branch on the exit code — `profile:` is the consequence switch and this is
+   where it routes:
+   - **0** → it printed `standard` or `hardened`. `standard` reviews exactly as
+     below. `hardened` additionally runs the deep security payload.
+   - **6** → `hardened` was requested but its payload is not installed. **Refuse
+     the review.** Mark the spec `blocked` with the tool's own message
+     ("hardened profile requested but the hardened review payload is not
+     installed (see spec 005)") and stop. Do NOT review it as `standard`: a
+     hardened spec quietly given a standard review manufactures false
+     assurance, which is worse than having no field at all.
+   - **5** → `profile: dark`. Refuse and stop; the dark merge lane is unbuilt
+     (spec 015).
+   - **2** → an invalid value. The spec is already `blocked` by the claim; stop.
+
+   `profile` is orthogonal to `effort_budget` — a `trivial` hardened spec still
+   gets the hardened path. Smallness does not downgrade consequence.
+
 4. **Blind review.** Delegate to the `loop-reviewer` subagent (fresh context,
    subscription-covered). Payload: ONLY the spec file and the branch diff
    (`git diff main...claude/idea-<slug>`) — never the build stage's reasoning

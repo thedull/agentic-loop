@@ -1,0 +1,21 @@
+{
+  "id": "profile-207-hardened-refuses-without-payload",
+  "target": "acceptances 3+7 \u2014 hardened must fail loudly when the payload marker is absent, never fall back to standard",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/hardened.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\" | grep -ci \"hardened review payload is not installed\"); s=$(printf \"%s\" \"$o\" | grep -c \"005\"); f=$(printf \"%s\" \"$o\" | grep -cx \"standard\"); printf '{\"c\":%s,\"msg\":%s,\"names005\":%s,\"fellback\":%s}' \"$c\" \"$n\" \"$s\" \"$f\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .msg >= 1 and .names005 >= 1 and .fellback == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

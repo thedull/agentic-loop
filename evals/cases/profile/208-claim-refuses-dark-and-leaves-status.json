@@ -1,0 +1,21 @@
+{
+  "id": "profile-208-claim-refuses-dark-and-leaves-status",
+  "target": "acceptance 4 \u2014 claim refuses a dark spec specifically. A valid spec in the same queue is still claimed, which is what distinguishes 'dark is refused' from 'claim is broken for everything'.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; cp \"$FIXTURES/profile/dark.md\" s/901-dark.md; cp \"$FIXTURES/profile/standard.md\" s/902-ok.md; out=$(FACTORY_SPECS_DIR=\"$PWD/s\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim specd building t 2>/dev/null); c=$?; dk=$(grep -m1 \"^status:\" s/901-dark.md | sed \"s/status: //\"); ok=$(grep -m1 \"^status:\" s/902-ok.md | sed \"s/status: //\"); printf '{\"c\":%s,\"claimed\":\"%s\",\"dark\":\"%s\",\"valid\":\"%s\"}' \"$c\" \"$(basename \"$out\")\" \"$dk\" \"$ok\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .claimed == \"902-ok.md\" and .dark == \"specd\" and .valid == \"building\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 001 revision 1"
+  }
+}

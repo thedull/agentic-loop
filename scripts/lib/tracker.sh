@@ -52,6 +52,10 @@
 #                                         (dep-waiting items gain "waits: <ids>",
 #                                          dead chains also "stalled: <ids>")
 #   tracker.sh field <file> <key>         print one frontmatter value
+#   tracker.sh profile <file>             resolve `profile:` (standard|hardened
+#                                         |dark). Exit 2 = refused: unknown
+#                                         value, `dark` (spec 015 unbuilt), or
+#                                         `hardened` with no payload installed.
 #   tracker.sh shelve <file> <actor> [reason]        deprioritize (reversible)
 #   tracker.sh restore <file> <actor>                undo a shelve
 #   tracker.sh supersede <file> <actor> <ref> [reason]  outcome landed elsewhere
@@ -62,6 +66,8 @@
 #                                         is verifiably merged (stamps done_at)
 #
 # Exit codes: 0 ok · 1 `claim` found nothing claimable · 2 usage/hard error
+#             5 `profile` refused: `dark` (spec 015 unbuilt).
+#             6 `profile` refused: `hardened` without its payload (spec 005).
 #             3 `shelve`/`supersede` refused — the spec is mid-stage
 #               (building/reviewing); re-run with TRACKER_FORCE_LIVE=1 to
 #               override deliberately.
@@ -123,7 +129,11 @@ _tracker_field() {
   awk -v key="$2" '
     NR==1 && $0=="---" { infm=1; next }
     infm && $0=="---"  { exit }
-    infm && index($0, key ": ")==1 { print substr($0, length(key)+3); exit }
+    infm && index($0, key ":")==1 {
+      v = substr($0, length(key)+2)
+      sub(/^[[:space:]]+/, "", v)     # any whitespace after the colon, not just one space
+      print v; exit
+    }
   ' "$1"
 }
 
@@ -262,9 +272,53 @@ _tracker_dep_dead() {
 # depends_on are all done to TO, recording the actor. Dep-waiting items are
 # passed over (and logged as a tracker_skip event), not blocked. Prints the
 # claimed path; exits 1 if nothing is claimable (empty queue or all waiting).
+# --- profile ---------------------------------------------------------------
+# `profile:` is a consequence switch, not a size dial (effort_budget is size).
+# Three positions and no fourth. Resolution lowercases and trims — a capital
+# letter is keystroke noise and blocking a night's work over one buys nothing —
+# but anything past the value is refused, because a trailing comment is a syntax
+# the template never documents and tolerating it means carrying that variant
+# forever.
+TRACKER_HARDENED_MARKER="profile-hardened-payload:"
+
+# tracker_profile FILE — print the resolved profile, or refuse with a reason.
+# Exit codes are distinct per reason, because the caller must act differently:
+#   0  resolved (prints standard|hardened)
+#   2  invalid value        -> the spec is BLOCKED (acceptance 1)
+#   5  dark                 -> refused, status left alone (acceptance 4)
+#   6  hardened, no payload -> refused by the review stage (acceptance 3)
+tracker_profile() {
+  local file="${1:-}" raw lower root
+  [[ -n "$file" && -f "$file" ]] || _tracker_die "usage: tracker.sh profile <spec file>"
+  raw="$(_tracker_field "$file" profile)"
+  raw="${raw#"${raw%%[![:space:]]*}"}"; raw="${raw%"${raw##*[![:space:]]}"}"
+  [[ -z "$raw" ]] && { echo standard; return 0; }
+  lower="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+  case "$lower" in
+    standard) echo standard; return 0 ;;
+    hardened)
+      root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+      # Test seam: point the marker search elsewhere so the positive path is
+      # reachable before spec 005 exists. Unset in every normal run.
+      if grep -rqs "$TRACKER_HARDENED_MARKER" "${TRACKER_AGENTS_DIR:-$root/agents}" 2>/dev/null; then
+        echo hardened; return 0
+      fi
+      # Fail loud, never fall back. A hardened spec quietly given a standard
+      # review is worse than no field at all: it manufactures false assurance.
+      echo "tracker: hardened profile requested but the hardened review payload is not installed (see spec 005)" >&2
+      return 6 ;;
+    dark)
+      echo "tracker: profile 'dark' is refused — the dark merge lane is unbuilt (see spec 015). Valid values are standard, hardened, dark." >&2
+      return 5 ;;
+    *)
+      echo "tracker: invalid profile '$raw' — valid values are standard, hardened, dark" >&2
+      return 2 ;;
+  esac
+}
+
 tracker_claim() {
   local from="$1" to="$2" actor="$3" target="" f
-  local -a skipped=()
+  local -a skipped=() profile_skipped=()
   _tracker_valid_status "$from" || _tracker_die "unknown status '$from'"
   _tracker_valid_status "$to"   || _tracker_die "unknown status '$to'"
   _tracker_gated_status "$to" && _tracker_die \
@@ -274,8 +328,24 @@ tracker_claim() {
   while IFS= read -r f; do
     [[ -n "$f" ]] || continue
     if [[ -z "$(_tracker_unmet "$f")" ]]; then
-      target="$f"
-      break
+      # A spec whose profile does not resolve is not claimable. `dark` is
+      # refused until spec 015 exists, and an invalid value blocks rather than
+      # defaulting — either way the spec keeps its current status.
+      local prc=0
+      tracker_profile "$f" >/dev/null 2>&1 || prc=$?
+      if [[ $prc -eq 0 ]]; then
+        target="$f"
+        break
+      fi
+      if [[ $prc -eq 2 ]]; then
+        # An unknown value is an authoring mistake, not a wait: block it so a
+        # human sees it, rather than skipping it silently every night forever.
+        _tracker_set_field "$f" status blocked
+        _tracker_obs_transition "$f" "$from" blocked "$actor"
+        echo "tracker: $(basename "$f") blocked — invalid profile value" >&2
+      fi
+      profile_skipped+=("$(basename "$f")")
+      continue
     fi
     skipped+=("$(basename "$f")")
   done < <(tracker_list "$from")
@@ -284,6 +354,11 @@ tracker_claim() {
     if [[ ${#skipped[@]} -gt 0 ]]; then
       _tracker_obs_skip "$from" "$actor" "${skipped[@]}"
       echo "tracker: nothing claimable — ${#skipped[@]} $from item(s) waiting on depends_on" >&2
+    fi
+    if [[ ${#profile_skipped[@]} -gt 0 ]]; then
+      # Distinct from a depends_on wait: these do NOT become claimable on their
+      # own. Someone has to fix the profile value or build spec 005/015.
+      echo "tracker: ${#profile_skipped[@]} $from item(s) refused on profile — ${profile_skipped[*]}" >&2
     fi
     return 1
   fi
@@ -645,6 +720,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     next-id)     tracker_next_id ;;
     report)      tracker_report ;;
     field)       _tracker_field "$@" ;;
+    profile)     tracker_profile "$@" ;;
     shelve)      tracker_shelve "$@" ;;
     restore)     tracker_restore "$@" ;;
     supersede)   tracker_supersede "$@" ;;
@@ -652,6 +728,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     dep-drop)    tracker_dep_drop "$@" ;;
     dep-replace) tracker_dep_replace "$@" ;;
     reconcile-done) tracker_reconcile_done "$@" ;;
-    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
+    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|profile|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
   esac
 fi

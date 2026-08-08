@@ -1,0 +1,21 @@
+{
+  "id": "profile-213-invalid-profile-blocks-the-spec",
+  "target": "acceptance 1 \u2014 an invalid value must mark the spec `blocked`, not merely skip it. A skipped spec is retried silently every night forever; a blocked one is seen.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; cp \"$FIXTURES/profile/banana.md\" s/903-bad.md; cp \"$FIXTURES/profile/standard.md\" s/904-ok.md; out=$(FACTORY_SPECS_DIR=\"$PWD/s\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim specd building t 2>/dev/null); bad=$(grep -m1 \"^status:\" s/903-bad.md | sed \"s/status: //\"); ok=$(grep -m1 \"^status:\" s/904-ok.md | sed \"s/status: //\"); printf '{\"bad\":\"%s\",\"ok\":\"%s\",\"claimed\":\"%s\"}' \"$bad\" \"$ok\" \"$(basename \"$out\")\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".bad == \"blocked\" and .ok == \"building\" and .claimed == \"904-ok.md\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 001 revision 1 \u2014 acceptance 1's blocked transition had no coverage"
+  }
+}
