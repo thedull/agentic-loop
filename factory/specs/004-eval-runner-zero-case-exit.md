@@ -1,7 +1,7 @@
 ---
 id: 004
 title: Make the eval runner fail when it ran nothing
-status: pr-open
+status: done
 profile: standard
 created: 2026-08-02
 depends_on:
