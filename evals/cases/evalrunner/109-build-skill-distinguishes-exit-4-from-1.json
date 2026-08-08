@@ -1,8 +1,8 @@
 {
   "id": "evalrunner-109-build-skill-distinguishes-exit-4-from-1",
-  "target": "acceptance 7 \u2014 the build skill's Red Gate step must tell 'nothing ran' from 'a case failed'",
+  "target": "acceptance 7 \u2014 the build skill's Red Gate step must say exit 4 is NOT a valid red and exit 1 IS, in separate bullets. Substring co-occurrence is not enough: blind review demonstrated the prior version passing on text asserting the opposite.",
   "kind": "bash-unit",
-  "cmd": "f=\"$PLUGIN_ROOT/skills/build/SKILL.md\"; g=$(grep -c \"exit 4\" \"$f\"); h=$(grep -c \"exit 1\" \"$f\"); printf '{\"four\":%s,\"one\":%s}' \"$g\" \"$h\"",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/build/SKILL.md\"; four=$(grep -A4 -- \"\\*\\*exit 4\\*\\*\" \"$f\" | tr \"\\n\" \" \"); one=$(grep -A2 -- \"\\*\\*exit 1\\*\\*\" \"$f\" | tr \"\\n\" \" \"); four_neg=$(printf \"%s\" \"$four\" | grep -ci \"not .\\{0,40\\}\\(valid\\|red gate\\|red\\)\"); one_pos=$(printf \"%s\" \"$one\" | grep -ci \"red you want\\|proceed\"); four_bad=$(printf \"%s\" \"$four\" | grep -ci \"proceed\"); bullets=$(grep -c -- \"\\*\\*exit [014]\\*\\*\" \"$f\"); printf '{\"four_neg\":%s,\"one_pos\":%s,\"four_bad\":%s,\"bullets\":%s}' \"$four_neg\" \"$one_pos\" \"$four_bad\" \"$bullets\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,12 +10,12 @@
     },
     {
       "type": "jq",
-      "expr": ".four >= 1 and .one >= 1"
+      "expr": ".four_neg >= 1 and .one_pos >= 1 and .four_bad == 0 and .bullets >= 3"
     }
   ],
   "provenance": {
-    "source": "hand",
+    "source": "review",
     "date": "2026-08-08",
-    "note": "spec 004 Red Gate"
+    "note": "spec 004 revision 1"
   }
 }
