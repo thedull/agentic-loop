@@ -692,6 +692,14 @@ human-reviewed — and in our factory it already does, because everything does. 
 gap is depth, not presence, so the failure mode is "reviewed shallowly" rather
 than "shipped unreviewed."
 
+**A candidate payload exists off the shelf.** `docs/codex-subscription.md` §3.1
+finds that OpenAI's `codex-plugin-cc` adversarial review is scoped to exactly
+this attack surface — auth and trust boundaries, data loss and irreversible
+state, rollback and idempotency, races, version skew — and that it asks a
+different question from our own blind reviewer rather than a stricter version of
+the same one. It is assessed there as a candidate for this payload, subject to
+spec 001 landing first.
+
 ### 2.4.4 `source-driven-development` → prevention, not just detection
 
 **The gap.** Our reviewer guard checklist catches hallucinated APIs *at review
@@ -818,10 +826,15 @@ own §2.6 predicts of prose that has not yet been made mechanical.
 - Matt Pocock, `skills` (`grilling`, `to-spec`) —
   https://github.com/mattpocock/skills
 
+- OpenAI, `codex-plugin-cc` — https://github.com/openai/codex-plugin-cc
+  (assessed in `docs/codex-subscription.md` as a candidate payload for §2.4.3)
+
 Internal: `docs/factory.md` (implementation guide),
 `docs/software-factory-analysis.md` (research companion),
 `docs/observability-architecture.md` (the measurement plane §1.3(c) and §1.4.4
-build on), `docs/roadmap.md` (domain-pack precedent cited in §2.5).
+build on), `docs/roadmap.md` (domain-pack precedent cited in §2.5),
+`docs/codex-subscription.md` (whether a ChatGPT subscription can fund Sol, and
+what breaks in the metered-tier policy if it does).
 
 ---
 

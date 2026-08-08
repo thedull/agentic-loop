@@ -118,7 +118,10 @@ Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
 graded against an outside rubric:
 [`docs/osmani-audit.md`](docs/osmani-audit.md) — Addy Osmani's light/dark
 factories essay and his 24-skill catalog, versus what we actually built (four
-gaps, a ranked adoption backlog, and a specified-but-unbuilt dark merge lane)
+gaps, a ranked adoption backlog, and a specified-but-unbuilt dark merge lane) ·
+tier economics: [`docs/codex-subscription.md`](docs/codex-subscription.md) —
+whether a ChatGPT subscription can fund Sol via OpenAI's Codex plugin, and why
+an unmetered Sol quietly voids a safety rule this repo states in seven places
 
 ## Observability & evals (opt-in)
 

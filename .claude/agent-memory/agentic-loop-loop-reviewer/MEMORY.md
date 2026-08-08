@@ -2,3 +2,4 @@
 - [Always execute check_cmd, don't just read it](feedback_run_checkcmd.md) — run the eval harness before judging a spec's Red Gate
 - [Factory spec conventions](factory-spec-conventions.md) — spec file structure, tracker.sh depends_on semantics (only `done`/verified `superseded`), and the only existing human-confirmation pattern (interactive SKILL.md Q&A)
 - [Apply a meta-spec's acceptances to itself](feedback_apply_spec_acceptances_to_itself.md) — technique confirmed on spec 014: caught a real input_paths gap in its own fixture reference
+- [docs/codex-subscription.md prose/data drifts from its own tables/citations](project_codex_subscription_doc_citation_drift.md) — 3 reviews now found drift (item-number/ratio/citation, and now a stale GLM-5.2 price vs live catalog); always re-fetch live prices, don't trust the table
