@@ -1,0 +1,21 @@
+{
+  "id": "profile-210-shipped-template-resolves-cleanly",
+  "target": "the shipped spec template must itself produce a resolvable profile. Adding an explanatory comment inline to `profile:` breaks acceptance 6's trailing-content rule and would make every newly scaffolded spec unclaimable \u2014 this was actually done and caught during the build.",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$PLUGIN_ROOT/templates/factory-spec.md\" 2>&1); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .v == \"standard\""
+    }
+  ],
+  "provenance": {
+    "source": "field",
+    "date": "2026-08-08",
+    "note": "spec 001 \u2014 caught during the build when the template gained an inline comment"
+  }
+}

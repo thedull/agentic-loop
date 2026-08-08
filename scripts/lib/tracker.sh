@@ -52,6 +52,10 @@
 #                                         (dep-waiting items gain "waits: <ids>",
 #                                          dead chains also "stalled: <ids>")
 #   tracker.sh field <file> <key>         print one frontmatter value
+#   tracker.sh profile <file>             resolve `profile:` (standard|hardened
+#                                         |dark). Exit 2 = refused: unknown
+#                                         value, `dark` (spec 015 unbuilt), or
+#                                         `hardened` with no payload installed.
 #   tracker.sh shelve <file> <actor> [reason]        deprioritize (reversible)
 #   tracker.sh restore <file> <actor>                undo a shelve
 #   tracker.sh supersede <file> <actor> <ref> [reason]  outcome landed elsewhere
@@ -262,6 +266,45 @@ _tracker_dep_dead() {
 # depends_on are all done to TO, recording the actor. Dep-waiting items are
 # passed over (and logged as a tracker_skip event), not blocked. Prints the
 # claimed path; exits 1 if nothing is claimable (empty queue or all waiting).
+# --- profile ---------------------------------------------------------------
+# `profile:` is a consequence switch, not a size dial (effort_budget is size).
+# Three positions and no fourth. Resolution lowercases and trims — a capital
+# letter is keystroke noise and blocking a night's work over one buys nothing —
+# but anything past the value is refused, because a trailing comment is a syntax
+# the template never documents and tolerating it means carrying that variant
+# forever.
+TRACKER_HARDENED_MARKER="profile-hardened-payload:"
+
+# tracker_profile FILE — print the resolved profile, or refuse with a reason.
+#   0  resolved (prints standard|hardened)
+#   2  refused  (invalid value, dark, or hardened without its payload)
+tracker_profile() {
+  local file="${1:-}" raw lower root
+  [[ -n "$file" && -f "$file" ]] || _tracker_die "usage: tracker.sh profile <spec file>"
+  raw="$(_tracker_field "$file" profile)"
+  raw="${raw#"${raw%%[![:space:]]*}"}"; raw="${raw%"${raw##*[![:space:]]}"}"
+  [[ -z "$raw" ]] && { echo standard; return 0; }
+  lower="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+  case "$lower" in
+    standard) echo standard; return 0 ;;
+    hardened)
+      root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+      if grep -rqs "$TRACKER_HARDENED_MARKER" "$root/agents" 2>/dev/null; then
+        echo hardened; return 0
+      fi
+      # Fail loud, never fall back. A hardened spec quietly given a standard
+      # review is worse than no field at all: it manufactures false assurance.
+      echo "tracker: hardened profile requested but the hardened review payload is not installed (see spec 005)" >&2
+      return 2 ;;
+    dark)
+      echo "tracker: profile 'dark' is refused — the dark merge lane is unbuilt (see spec 015). Valid values are standard, hardened, dark." >&2
+      return 2 ;;
+    *)
+      echo "tracker: invalid profile '$raw' — valid values are standard, hardened, dark" >&2
+      return 2 ;;
+  esac
+}
+
 tracker_claim() {
   local from="$1" to="$2" actor="$3" target="" f
   local -a skipped=()
@@ -274,8 +317,15 @@ tracker_claim() {
   while IFS= read -r f; do
     [[ -n "$f" ]] || continue
     if [[ -z "$(_tracker_unmet "$f")" ]]; then
-      target="$f"
-      break
+      # A spec whose profile does not resolve is not claimable. `dark` is
+      # refused until spec 015 exists, and an invalid value blocks rather than
+      # defaulting — either way the spec keeps its current status.
+      if tracker_profile "$f" >/dev/null 2>&1; then
+        target="$f"
+        break
+      fi
+      skipped+=("$(basename "$f") [profile]")
+      continue
     fi
     skipped+=("$(basename "$f")")
   done < <(tracker_list "$from")
@@ -645,6 +695,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     next-id)     tracker_next_id ;;
     report)      tracker_report ;;
     field)       _tracker_field "$@" ;;
+    profile)     tracker_profile "$@" ;;
     shelve)      tracker_shelve "$@" ;;
     restore)     tracker_restore "$@" ;;
     supersede)   tracker_supersede "$@" ;;
@@ -652,6 +703,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     dep-drop)    tracker_dep_drop "$@" ;;
     dep-replace) tracker_dep_replace "$@" ;;
     reconcile-done) tracker_reconcile_done "$@" ;;
-    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
+    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|profile|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
   esac
 fi

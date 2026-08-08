@@ -1,0 +1,21 @@
+{
+  "id": "profile-203-invalid-refuses-and-names-the-three",
+  "target": "acceptance 1 \u2014 an unknown value refuses, naming the valid set",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/banana.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\" | grep -c \"standard\"); h=$(printf \"%s\" \"$e\" | grep -c \"hardened\"); d=$(printf \"%s\" \"$e\" | grep -c \"dark\"); printf '{\"c\":%s,\"s\":%s,\"h\":%s,\"d\":%s}' \"$c\" \"$n\" \"$h\" \"$d\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .s >= 1 and .h >= 1 and .d >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

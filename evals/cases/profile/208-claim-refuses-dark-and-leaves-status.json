@@ -1,0 +1,21 @@
+{
+  "id": "profile-208-claim-refuses-dark-and-leaves-status",
+  "target": "acceptance 4 \u2014 a dark spec is not advanced by claim",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; sed \"s/^status: specd/status: specd/\" \"$FIXTURES/profile/dark.md\" > s/901-dark.md; FACTORY_SPECS_DIR=\"$PWD/s\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim specd building t >/dev/null 2>&1; c=$?; st=$(grep -m1 \"^status:\" s/901-dark.md | sed \"s/status: //\"); printf '{\"c\":%s,\"status\":\"%s\"}' \"$c\" \"$st\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .status == \"specd\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

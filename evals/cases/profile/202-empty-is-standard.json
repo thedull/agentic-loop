@@ -1,0 +1,21 @@
+{
+  "id": "profile-202-empty-is-standard",
+  "target": "acceptance 2 \u2014 an empty profile value is standard",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/empty.md\" 2>/dev/null); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".v == \"standard\" and .c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

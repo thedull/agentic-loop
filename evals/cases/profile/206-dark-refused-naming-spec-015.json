@@ -1,0 +1,21 @@
+{
+  "id": "profile-206-dark-refused-naming-spec-015",
+  "target": "acceptance 4 \u2014 dark is refused until the lane exists",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/dark.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\" | grep -c \"015\"); printf '{\"c\":%s,\"names015\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .names015 >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 001 Red Gate"
+  }
+}

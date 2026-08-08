@@ -49,6 +49,18 @@ and see it PASS before advancing to `built`.
 
 ## Notes / decisions (append-only)
 
+<!-- `profile:` is the CONSEQUENCE switch; `effort_budget` is size. The two are
+     orthogonal and neither derives the other. Values: standard | hardened |
+     dark. Resolve with `scripts/lib/tracker.sh profile <file>`.
+     - unknown value  -> the spec is refused rather than defaulting
+     - dark           -> refused until the dark lane exists (spec 015)
+     - hardened       -> refused unless spec 005's payload marker
+                         `profile-hardened-payload:` is present under agents/,
+                         so a hardened spec can never be quietly given a
+                         standard review
+     Casing and surrounding whitespace are normalised; anything trailing the
+     value (including a comment) is refused — keep this field bare. -->
+
 - <ADR-style note ONLY when a decision is hard to reverse, surprising without
   context, AND the result of a real trade-off — 1–3 sentences>
 
