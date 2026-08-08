@@ -1,0 +1,3 @@
+--- a/scripts/x.sh
++++ b/scripts/x.sh
++echo hi

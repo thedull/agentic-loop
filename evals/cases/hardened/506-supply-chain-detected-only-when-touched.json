@@ -1,0 +1,21 @@
+{
+  "id": "hardened-506-supply-chain-detected-only-when-touched",
+  "target": "acceptance 5 \u2014 the supply-chain check fires when the diff touches a lockfile, manifest or install script, and not otherwise",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" supply-chain \"$FIXTURES/hardened/lockfile.diff\" >/dev/null 2>&1; a=$?; \"$PLUGIN_ROOT/scripts/lib/hardened.sh\" supply-chain \"$FIXTURES/hardened/plain.diff\" >/dev/null 2>&1; b=$?; printf '{\"lockfile\":%s,\"plain\":%s}' \"$a\" \"$b\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".lockfile == 7 and .plain == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "hardened-508-hardened-still-terminates-at-a-pr",
+  "target": "acceptance 7 \u2014 a clean hardened review is the strongest signal this pipeline produces and is still not a merge signal. The hardened branch must not introduce any merge command.",
+  "kind": "bash-unit",
+  "cmd": "s=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; sec=$(awk \"/[Hh]ardened/{on=1} on{print} on&&/^[0-9]+\\\\. \\\\*\\\\*/{n++; if(n>2) exit}\" \"$s\" | tr \"\\n\" \" \" | tr -s \" \"); merge=$(printf \"%s\" \"$sec\" | grep -ci \"gh pr merge\\|git merge\"); pr=$(grep -ci \"terminal state is an OPEN PR\\|Nothing merges here\" \"$s\"); printf '{\"mergeCmds\":%s,\"prTerminal\":%s}' \"$merge\" \"$pr\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".mergeCmds == 0 and .prTerminal >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

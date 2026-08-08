@@ -1,0 +1,23 @@
+# hardened-classes.txt — the sweep a `profile: hardened` review must complete.
+#
+# One class per line; blanks and #-comments ignored. Every class here needs an
+# EXPLICIT verdict in a hardened review: `checked` with what was looked at, or
+# `n/a` WITH A REASON. A class silently omitted is a failure, because silence is
+# indistinguishable from "did not look".
+#
+# This list is the single editable knob, for the same reason spec 002's signal
+# list is: a sweep scattered through prose cannot be verified, and a class that
+# quietly disappears from prose fails nothing.
+
+injection
+broken-access-control
+cryptographic-failures
+ssrf
+insecure-deserialization
+security-misconfiguration
+vulnerable-dependencies
+identification-and-auth-failures
+software-and-data-integrity-failures
+logging-and-monitoring-failures
+prompt-injection
+excessive-agency

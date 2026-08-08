@@ -1,0 +1,21 @@
+{
+  "id": "hardened-505-boundary-without-abuse-case-fails",
+  "target": "acceptance 3 \u2014 every boundary crossed needs a concrete abuse case, not a reminder that boundaries exist",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" boundaries \"$FIXTURES/hardened/boundary_no_abuse.md\" >/dev/null 2>&1; c1=$?; \"$PLUGIN_ROOT/scripts/lib/hardened.sh\" boundaries \"$FIXTURES/hardened/verdicts_full.md\" >/dev/null 2>&1; c2=$?; printf '{\"noAbuse\":%s,\"withAbuse\":%s}' \"$c1\" \"$c2\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".noAbuse != 0 and .withAbuse == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

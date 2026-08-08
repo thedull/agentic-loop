@@ -1,0 +1,21 @@
+{
+  "id": "hardened-507-payload-installed-and-routed",
+  "target": "acceptances 2+3+5 \u2014 the payload must exist in agents/reviewer.md AND the review stage must route hardened specs to it. Checked structurally: the marker resolves and the hardened branch names the payload's own sections.",
+  "kind": "bash-unit",
+  "cmd": "r=\"$PLUGIN_ROOT/agents/reviewer.md\"; s=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; mark=$(grep -c \"profile-hardened-payload:\" \"$r\"); fmt=$(grep -c -- \"- boundary: <from> -> <to>\" \"$r\"); abuse=$(grep -c -- \"- abuse:\" \"$r\"); tool=$(grep -c \"hardened.sh\" \"$r\"); lst=$(grep -c \"templates/hardened-classes.txt\" \"$r\"); route=$(grep -c \"hardened.sh\" \"$s\"); printf '{\"marker\":%s,\"format\":%s,\"abuse\":%s,\"tool\":%s,\"classList\":%s,\"routed\":%s}' \"$mark\" \"$fmt\" \"$abuse\" \"$tool\" \"$lst\" \"$route\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".marker >= 1 and .format >= 1 and .abuse >= 1 and .tool >= 1 and .classList >= 1 and .routed >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

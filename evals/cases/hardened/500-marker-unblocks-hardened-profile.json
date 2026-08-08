@@ -1,0 +1,21 @@
+{
+  "id": "hardened-500-marker-unblocks-hardened-profile",
+  "target": "acceptance 2 \u2014 the payload's marker is what makes spec 001's hardened profile resolve. Until this lands, every hardened spec and every split pair from spec 002 is unclaimable.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 9\\ntitle: t\\nstatus: specd\\nprofile: hardened\\ndepends_on:\\n---\\n\" > h.md; v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile h.md 2>/dev/null); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".v == \"hardened\" and .c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

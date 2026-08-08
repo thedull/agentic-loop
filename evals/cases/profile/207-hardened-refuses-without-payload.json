@@ -1,8 +1,8 @@
 {
   "id": "profile-207-hardened-refuses-without-payload",
-  "target": "acceptances 3+7 \u2014 hardened must fail loudly when the payload marker is absent, never fall back to standard",
+  "target": "acceptances 3+7 \u2014 hardened must fail loudly when the payload marker is ABSENT, never fall back to standard. Pinned against an empty marker dir rather than against the repo's current state: the original version encoded 'spec 005 is unbuilt' as a permanent truth and broke the moment it landed.",
   "kind": "bash-unit",
-  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/hardened.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\" | grep -ci \"hardened review payload is not installed\"); s=$(printf \"%s\" \"$o\" | grep -c \"005\"); f=$(printf \"%s\" \"$o\" | grep -cx \"standard\"); printf '{\"c\":%s,\"msg\":%s,\"names005\":%s,\"fellback\":%s}' \"$c\" \"$n\" \"$s\" \"$f\"",
+  "cmd": "o=$(TRACKER_AGENTS_DIR=\"$PWD/no_such_agents\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/hardened.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\" | grep -ci \"hardened review payload is not installed\"); s=$(printf \"%s\" \"$o\" | grep -c \"005\"); f=$(printf \"%s\" \"$o\" | grep -cx \"standard\"); printf '{\"c\":%s,\"msg\":%s,\"names005\":%s,\"fellback\":%s}' \"$c\" \"$n\" \"$s\" \"$f\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".c != 0 and .msg >= 1 and .names005 >= 1 and .fellback == 0"
+      "expr": ".c == 6 and .msg >= 1 and .names005 >= 1 and .fellback == 0"
     }
   ],
   "provenance": {
