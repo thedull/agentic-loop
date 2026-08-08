@@ -1,0 +1,21 @@
+{
+  "id": "triage-411-missing-hypothesis-rejected",
+  "target": "acceptance 3 \u2014 a record with reproduce, localize and evidence but NO root-cause hypothesis is not a triage. This check had zero coverage: neutering it left all 11 cases passing.",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/no_hypothesis.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -ci hypothesis); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 003 revision 1"
+  }
+}

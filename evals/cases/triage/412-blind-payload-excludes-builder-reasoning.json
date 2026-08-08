@@ -1,0 +1,21 @@
+{
+  "id": "triage-412-blind-payload-excludes-builder-reasoning",
+  "target": "acceptance 1 \u2014 the triage payload is the spec, the failure output and the diff, and nothing else. Constructing it in one place is what makes 'never sees the builder's reasoning' checkable rather than prose.",
+  "kind": "bash-unit",
+  "cmd": "printf \"SPEC BODY\\n\" > s.md; printf \"FAIL: boom\\n\" > f.txt; printf \"+++ b/x\\n\" > d.txt; printf \"MY PLAN: I think it is the regex. Attempt 1 tried widening it.\\n\" > notes.txt; out=$(\"$PLUGIN_ROOT/scripts/lib/triage.sh\" payload s.md f.txt d.txt 2>/dev/null); c=$?; has_spec=$(printf \"%s\" \"$out\"|grep -c \"SPEC BODY\"); has_fail=$(printf \"%s\" \"$out\"|grep -c \"FAIL: boom\"); has_diff=$(printf \"%s\" \"$out\"|grep -c \"+++ b/x\"); leaked=$(printf \"%s\" \"$out\"|grep -ci \"MY PLAN\\|Attempt 1 tried\"); printf '{\"c\":%s,\"spec\":%s,\"fail\":%s,\"diff\":%s,\"leaked\":%s}' \"$c\" \"$has_spec\" \"$has_fail\" \"$has_diff\" \"$leaked\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .spec == 1 and .fail == 1 and .diff == 1 and .leaked == 0"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 003 revision 1 \u2014 implements the spec's own build-order sketch for acceptance 1"
+  }
+}

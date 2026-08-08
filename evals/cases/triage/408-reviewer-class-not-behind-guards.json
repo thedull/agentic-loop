@@ -1,8 +1,8 @@
 {
   "id": "triage-408-reviewer-class-not-behind-guards",
-  "target": "acceptance 7 \u2014 acting on untrusted output is a SECURITY class and must fire with guards disabled. The guards flag gates the quality checklist.",
+  "target": "acceptance 7 \u2014 the untrusted-output class is a SECURITY class and must fire with guards disabled. Checked structurally by line position, not by keywords: the blind review moved the whole paragraph inside the guards-gated section and a keyword-proximity assertion did not notice.",
   "kind": "bash-unit",
-  "cmd": "f=\"$PLUGIN_ROOT/agents/reviewer.md\"; has=$(grep -ci \"untrusted\" \"$f\"); uncond=$(grep -A4 -i \"untrusted\" \"$f\" | tr \"\\n\" \" \" | grep -ci \"regardless of\\|unconditional\\|even when guards\\|not gated\"); printf '{\"has\":%s,\"unconditional\":%s}' \"$has\" \"$uncond\"",
+  "cmd": "f=\"$PLUGIN_ROOT/agents/reviewer.md\"; u=$(grep -n -m1 \"Acted-upon untrusted output\" \"$f\" | cut -d: -f1); g=$(grep -n -m1 \"guards.enabled\" \"$f\" | cut -d: -f1); say=$(grep -A5 -m1 \"Acted-upon untrusted output\" \"$f\" | tr \"\\n\" \" \" | tr -s \" \" | grep -ci \"regardless of the .guards. flag\\|NOT gated by .guards.\"); printf '{\"untrustedLine\":%s,\"guardsLine\":%s,\"saysUnconditional\":%s}' \"${u:-0}\" \"${g:-0}\" \"$say\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".has >= 1 and .unconditional >= 1"
+      "expr": ".untrustedLine > 0 and .guardsLine > 0 and .untrustedLine < .guardsLine and .saysUnconditional >= 1"
     }
   ],
   "provenance": {

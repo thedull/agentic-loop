@@ -43,3 +43,27 @@ causality) but here the trigger is a case testing *any* input through a
 generic error path, not a doc-mutation. See also
 [[project_status_unchanged_test_too_weak]] for the sibling failure mode on
 state-machine (not stderr-text) assertions.
+
+3rd strike: spec 003 (`failure-triage`), `evals/cases/triage/`. Two distinct
+instances in the same suite:
+- `408-reviewer-class-not-behind-guards.json` checks only that "regardless
+  of/unconditional/even when guards/not gated" appears within 4 lines of
+  "untrusted" in `agents/reviewer.md` — it never checks *structural*
+  placement. Moving the whole "Acted-upon untrusted output" paragraph to be
+  a bullet INSIDE the flag-gated Guard checklist (so it only fires when
+  `guards.enabled` is true — the exact bug acceptance 7 exists to forbid)
+  still passes all 11 triage cases, confirmed live by editing
+  `agents/reviewer.md` and rerunning `./evals/run_eval.sh --suite triage`.
+- `409-...json` is the only case touching acceptances 1 and 5, and it's a
+  pure grep-count over `skills/build/SKILL.md` prose (counts phrases like
+  "not your reasoning" and "regression test"). The spec's own Build-order
+  sketch called for a fixture *payload* test (acceptance 1: a payload
+  containing builder reasoning must fail) and a fixture *pair* test
+  (acceptance 5: check_cmd passes but no root-cause test exists) — neither
+  was built. As written, acceptances 1 and 5 are unenforceable beyond "does
+  the instructional prose contain the right words."
+Also found in the same suite (separate class, not vocabulary-co-occurrence):
+`triage_validate`'s `hypothesis:` check (`scripts/lib/triage.sh:42-43`) has
+*zero* fixture coverage — no `no_hypothesis.md` fixture exists (only
+no_reproduce/no_localize/no_evidence/none/late/good). Neutering that one
+check (`true || _t_die ...`) still passes all 11 triage cases.
