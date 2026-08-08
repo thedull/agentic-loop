@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-300-reversible-passes",
+  "target": "acceptance 3 \u2014 a spec matching no signal is reversible, exit 0",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/plain.md\" 2>/dev/null); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".v == \"reversible\" and .c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

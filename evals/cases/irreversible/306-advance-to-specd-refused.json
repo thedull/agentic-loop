@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-306-advance-to-specd-refused",
+  "target": "acceptance 4 \u2014 an unsplit irreversible spec cannot reach specd; it stays queued and the message names the split",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/irreversible/drop_column.md\" t.md; e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance t.md specd 2>&1 >/dev/null); c=$?; st=$(grep -m1 \"^status:\" t.md | sed \"s/status: //\"); n=$(printf \"%s\" \"$e\" | grep -ci \"expand/contract\\|expand and contract\"); printf '{\"c\":%s,\"status\":\"%s\",\"namesSplit\":%s}' \"$c\" \"$st\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .status == \"queued\" and .namesSplit >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

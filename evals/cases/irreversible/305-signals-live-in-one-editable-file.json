@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-305-signals-live-in-one-editable-file",
+  "target": "acceptance 1 \u2014 adding a signal is editing one list file and no code",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; printf \"%s\\n\" \"# comment\" \"widgetronic\" > s/sig.txt; v=$(IRREVERSIBLE_SIGNALS=\"$PWD/s/sig.txt\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/plain.md\" 2>/dev/null); printf -- \"---\\nid: 801\\ntitle: t\\nstatus: queued\\nprofile: standard\\ndepends_on:\\n---\\n\\n\" > w.md; printf -- \"- **objective**: apply the widgetronic transform\\n\" >> w.md; printf -- \"- **input_paths**: a.sh\\n\" >> w.md; v2=$(IRREVERSIBLE_SIGNALS=\"$PWD/s/sig.txt\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible w.md 2>/dev/null); printf '{\"unmatched\":\"%s\",\"matched\":\"%s\"}' \"$v\" \"$v2\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".unmatched == \"reversible\" and .matched == \"irreversible\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

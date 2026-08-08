@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-301-migration-path-signal",
+  "target": "acceptance 2 \u2014 a migration-directory path in input_paths classifies irreversible",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/migration_path.md\" 2>/dev/null); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".v == \"irreversible\" and .c == 7"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

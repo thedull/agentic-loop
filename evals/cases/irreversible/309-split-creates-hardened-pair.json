@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-309-split-creates-hardened-pair",
+  "target": "acceptances 5+6 \u2014 split produces an expand and a contract spec, both profile: hardened, joined by depends_on so the contract is unclaimable until the expand is done",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; cp \"$FIXTURES/irreversible/drop_column.md\" s/810-thing.md; FACTORY_SPECS_DIR=\"$PWD/s\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" split s/810-thing.md >/dev/null 2>&1; c=$?; exp=$(ls s | grep -c \"expand\"); con=$(ls s | grep -c \"contract\"); ph=$(grep -h \"^profile:\" s/*expand*.md s/*contract*.md 2>/dev/null | grep -c hardened); dep=$(grep -h \"^depends_on:\" s/*contract*.md 2>/dev/null | grep -c \"[0-9]\"); printf '{\"c\":%s,\"expand\":%s,\"contract\":%s,\"hardened\":%s,\"linked\":%s}' \"$c\" \"$exp\" \"$con\" \"$ph\" \"$dep\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .expand == 1 and .contract == 1 and .hardened == 2 and .linked == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}
