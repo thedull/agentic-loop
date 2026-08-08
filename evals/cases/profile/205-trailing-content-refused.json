@@ -1,8 +1,8 @@
 {
   "id": "profile-205-trailing-content-refused",
-  "target": "acceptance 6 \u2014 trailing content is a real misunderstanding, not noise",
+  "target": "acceptance 6 \u2014 trailing content is refused as an invalid value (exit 2), and the message echoes the whole offending string so the author sees what they wrote.",
   "kind": "bash-unit",
-  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/trailing.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\" | grep -c \"standard\"); printf '{\"c\":%s,\"namesValidSet\":%s}' \"$c\" \"$n\"",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/trailing.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\" | grep -c \"per security review\"); printf '{\"c\":%s,\"echoesOffender\":%s}' \"$c\" \"$n\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,12 +10,12 @@
     },
     {
       "type": "jq",
-      "expr": ".c != 0 and .namesValidSet >= 1"
+      "expr": ".c == 2 and .echoesOffender >= 1"
     }
   ],
   "provenance": {
-    "source": "hand",
+    "source": "review",
     "date": "2026-08-08",
-    "note": "spec 001 Red Gate"
+    "note": "spec 001 revision 1"
   }
 }

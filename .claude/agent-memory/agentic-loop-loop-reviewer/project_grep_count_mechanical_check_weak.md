@@ -28,3 +28,18 @@ reversed or garbled, then re-run the case (through the harness, not just the
 raw cmd) to see if it still passes. This is the general shape of "test
 asserts vocabulary, not semantics" — watch for it whenever a doc-edit
 acceptance is checked mechanically via grep.
+
+2nd strike: spec 001 (`profile-switch`), `evals/cases/profile/`. Confirmed by
+stubbing the CLI's `profile)` dispatch branch to unconditionally
+`echo "standard hardened dark" >&2; exit 2` regardless of the fixture passed
+(i.e. the real `tracker_profile` logic never runs for CLI-path cases) and
+re-running `./evals/run_eval.sh --suite profile`: cases 203
+(invalid-refuses), 205 (trailing-content-refused) and 209
+(orthogonal-to-effort) still pass, because each only greps stderr for
+word-presence ("standard"/"hardened"/"dark") plus a nonzero exit — never
+tying the message to the specific fixture that was actually passed. Same
+root cause as the 1st strike (vocabulary co-occurrence stands in for
+causality) but here the trigger is a case testing *any* input through a
+generic error path, not a doc-mutation. See also
+[[project_status_unchanged_test_too_weak]] for the sibling failure mode on
+state-machine (not stderr-text) assertions.

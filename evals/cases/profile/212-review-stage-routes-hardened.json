@@ -1,0 +1,21 @@
+{
+  "id": "profile-212-review-stage-routes-hardened",
+  "target": "acceptance 3 \u2014 the REVIEW STAGE must route hardened and refuse when the payload is absent. Wiring the resolver without wiring the stage leaves the acceptance unimplemented.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; calls=$(grep -c \"tracker.sh profile\" \"$f\"); refuse=$(grep -A12 \"tracker.sh profile\" \"$f\" | tr \"\\n\" \" \" | grep -ci \"payload is not installed\"); nofall=$(grep -A20 \"tracker.sh profile\" \"$f\" | tr \"\\n\" \" \" | grep -ci \"not review it as .standard\\|never.*fall back\\|Do NOT review\"); printf '{\"calls\":%s,\"refuses\":%s,\"noFallback\":%s}' \"$calls\" \"$refuse\" \"$nofall\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".calls >= 1 and .refuses >= 1 and .noFallback >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 001 revision 1"
+  }
+}

@@ -80,3 +80,20 @@ unmodified — never that the review skill actually calls it. **Pattern
 refinement: when a spec bundles two "new fields," check whether they share a
 capture mechanism — a hook-backed field and a prose-only field can look
 symmetric in the Brief while having very different Red Gate enforceability.**
+
+5th strike: spec 001 (`profile-switch`). Acceptance 1 requires that an
+invalid `profile:` value "marks the spec `blocked`". Acceptance 3 requires
+"the review stage SHALL route `hardened` specs through the deeper review
+path". Neither is implemented: the diff only adds a `tracker.sh profile`
+library primitive plus a skip-not-block branch inside `tracker_claim`
+(scripts/lib/tracker.sh:319-328) — nothing ever calls `_tracker_set_field
+... status blocked` for a bad profile (confirmed live: claiming a
+`profile: banana` spec leaves `status: specd` unchanged, never `blocked`).
+And `skills/review/SKILL.md` / `skills/build/SKILL.md` — both named in the
+spec's own `input_paths` — have zero mentions of "profile" (`grep -c
+profile` = 0 in both), so there is no "review stage" that actually routes
+hardened through anything; the primitive is only ever called from the claim
+gate. `check_cmd` (`--suite profile`) only exercises the primitive directly
+against fixtures, so it cannot catch either gap — same shape as strike 4:
+a Brief-level acceptance with no hook into any real stage, invisible to a
+suite built purely around the primitive's own fixtures.

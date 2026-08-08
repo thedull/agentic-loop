@@ -1,0 +1,21 @@
+{
+  "id": "profile-211-hardened-resolves-when-payload-present",
+  "target": "acceptance 7 \u2014 the payload check is a positive test for a marker, so installing the marker must make hardened resolve. Without this the whole suite passes with the check hardcoded to refuse.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p a; printf \"%s\\n\" \"<!-- profile-hardened-payload: v1 -->\" > a/reviewer.md; v=$(TRACKER_AGENTS_DIR=\"$PWD/a\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/hardened.md\" 2>/dev/null); c=$?; v2=$(TRACKER_AGENTS_DIR=\"$PWD/empty_dir_xyz\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/hardened.md\" 2>/dev/null); c2=$?; printf '{\"withMarker\":\"%s\",\"c\":%s,\"withoutMarker\":\"%s\",\"c2\":%s}' \"$v\" \"$c\" \"$v2\" \"$c2\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".withMarker == \"hardened\" and .c == 0 and .withoutMarker == \"\" and .c2 == 6"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 001 revision 1"
+  }
+}

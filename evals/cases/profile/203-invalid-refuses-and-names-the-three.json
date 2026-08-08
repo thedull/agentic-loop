@@ -1,8 +1,8 @@
 {
   "id": "profile-203-invalid-refuses-and-names-the-three",
-  "target": "acceptance 1 \u2014 an unknown value refuses, naming the valid set",
+  "target": "acceptance 1 \u2014 an unknown value refuses with exit 2, naming BOTH the offending value and the valid set. Naming the offender is what stops a canned message passing.",
   "kind": "bash-unit",
-  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/banana.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\" | grep -c \"standard\"); h=$(printf \"%s\" \"$e\" | grep -c \"hardened\"); d=$(printf \"%s\" \"$e\" | grep -c \"dark\"); printf '{\"c\":%s,\"s\":%s,\"h\":%s,\"d\":%s}' \"$c\" \"$n\" \"$h\" \"$d\"",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile \"$FIXTURES/profile/banana.md\" 2>&1 >/dev/null); c=$?; off=$(printf \"%s\" \"$e\" | grep -c \"banana\"); set=$(printf \"%s\" \"$e\" | grep -c \"standard, hardened, dark\"); printf '{\"c\":%s,\"namesOffender\":%s,\"namesSet\":%s}' \"$c\" \"$off\" \"$set\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,12 +10,12 @@
     },
     {
       "type": "jq",
-      "expr": ".c != 0 and .s >= 1 and .h >= 1 and .d >= 1"
+      "expr": ".c == 2 and .namesOffender >= 1 and .namesSet >= 1"
     }
   ],
   "provenance": {
-    "source": "hand",
+    "source": "review",
     "date": "2026-08-08",
-    "note": "spec 001 Red Gate"
+    "note": "spec 001 revision 1"
   }
 }
