@@ -1,13 +1,14 @@
 ---
 id: 002
 title: Classify irreversible changes at spec time and force expand/contract
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on: 001 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/4
+claimed_at: 2026-08-08T08:55:53Z
 ---
 
 # Spec 002 — Classify irreversible changes at spec time and force expand/contract
@@ -84,6 +85,14 @@ differing only by the presence of the override line. Mutation-test each guard.
   unmerged work, which is exactly the property expand/contract needs, and a new
   state would be a second thing to keep correct.
 
+- **Sequencing gap, recorded rather than resolved.** `split` emits both halves
+  as `profile: hardened`, and spec 001 makes `hardened` refuse until spec 005
+  installs its payload marker. So a freshly split pair is unclaimable today.
+  That is arguably correct — an irreversible change SHOULD wait for the deep
+  security review — but it means 002 and 005 want landing together. Not made a
+  `depends_on` because the classifier and the split are useful before 005
+  exists, and a hard dependency would block them on it.
+
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-02 spec: ADDED initial spec from `docs/osmani-audit.md` §2.7 backlog item 2.
@@ -94,3 +103,8 @@ differing only by the presence of the override line. Mutation-test each guard.
 - 2026-08-02 spec-review: ADDED `depends_on: 004` (vacuous check_cmd, same root cause as spec 001).
 - 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7 — write the suite and cases first, see real failures, then implement.
 - 2026-08-03 grill: MODIFIED acceptance 3 from "fails closed on uncertainty" to a two-state signal match with no judgment state (owner ruling). Fail-closed now applies only to a broken signal list, not to an ambiguous spec; the missed-class consequence is stated as accepted.
+- 2026-08-08 build: BUILT on `claude/idea-002-irreversibility-classifier`. Red Gate honoured: 10 cases first, 9 genuine failures, then implemented.
+- 2026-08-08 review: FIXED a fail-open at the only integration point that mattered — `advance ... specd` checked exit 7 but let exit 2 (broken signal list) fall straight through, so a spec could reach specd unclassified. That is the exact outcome acceptance 3's fail-closed rule exists to prevent.
+- 2026-08-08 review: FIXED unanchored substring matching. `drop the` fired inside "backdrop theme" and "eavesdrop the logs", contradicting the Notes' own near-zero-false-positive claim. Text signals now match on word boundaries; path signals (containing `/`) stay substrings.
+- 2026-08-08 review: WIRED `skills/spec/SKILL.md` and `templates/factory-spec.md`. Both were in input_paths and untouched — the authoring workflow had no idea the gate existed, the same defect class spec 001 shipped with.
+- 2026-08-08 review: ADDED cases 310-314. Case-insensitivity and override-key strictness were documented as load-bearing and had no coverage; mutating either left all ten cases passing.
