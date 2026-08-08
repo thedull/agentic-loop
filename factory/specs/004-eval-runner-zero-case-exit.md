@@ -1,14 +1,14 @@
 ---
 id: 004
 title: Make the eval runner fail when it ran nothing
-status: built
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on:
-claimed_by: build-loop
+claimed_by: review-loop
 branch: claude/idea-004-eval-runner-zero-case-exit
-pr:
-claimed_at: 2026-08-08T08:05:44Z
+pr: https://github.com/thedull/agentic-loop/pull/2
+claimed_at: 2026-08-08T08:12:31Z
 ---
 
 # Spec 004 — Make the eval runner fail when it ran nothing
