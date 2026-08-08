@@ -43,11 +43,25 @@ marked `blocked` with questions recorded — never guessed through.
 
 4. **Red Gate.** Write the tests (or fixture/assertion) that `check_cmd`
    runs, translated from the spec's Given/When/Then acceptance — BEFORE any
-   implementation. Run `check_cmd`; it MUST fail. If it passes on the
-   untouched codebase, the check is vacuous: record that in the spec's
-   Revision log, mark the spec `blocked` (`tracker.sh advance <file> blocked`),
-   note it in `.agentic/STATUS.md`, and stop — a vacuous check would let an
-   empty implementation ship.
+   implementation. Run `check_cmd`; it MUST fail — and **read the exit code,
+   because not every failure is a valid red**:
+
+   - **exit 1** — cases ran and failed. This is the red you want: the gate
+     exists and it caught the missing implementation. Proceed to build.
+   - **exit 4** — *nothing ran*. The suite is missing, empty, or matched only
+     skipped cases. "No test" is not "a failing test": an absent gate would
+     let an empty implementation ship exactly like a vacuous one. Do NOT
+     treat this as satisfying the Red Gate. Write the suite and its cases
+     first, then re-run until you get exit 1.
+   - **exit 0** — the check passes on the untouched codebase, so it is
+     vacuous: record that in the spec's Revision log, mark the spec `blocked`
+     (`tracker.sh advance <file> blocked`), note it in `.agentic/STATUS.md`,
+     and stop.
+
+   A `check_cmd` naming a suite of only `--live` cases exits 4 without
+   `--live`. If the spec's objective genuinely needs a live agent, its
+   `check_cmd` must carry the flag — otherwise its gate can never fail on the
+   thing it exists to protect.
 
 5. **Build, tier-routed.** Delegate per the project `CLAUDE.md` routing brain:
    construct the 6-field brief VERBATIM from the spec's Brief section (the

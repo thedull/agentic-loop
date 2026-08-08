@@ -19,12 +19,18 @@
 # Check types: envelope_valid, jq, exit_code, artifact_exists, must_find,
 # tier_expect, judge.
 #
-# Results: evals/results/results-<ts>.jsonl (gitignored). Exit 1 if any case
-# fails; skipped cases do not fail the run.
+# Results: evals/results/results-<ts>.jsonl (gitignored).
+# Exit: 0 all good · 1 a case ran and failed · 4 nothing ran (see below).
+# Skipped cases do not fail a run, but they do not count as having run either:
+# a selection matching only skipped cases exits 4, not 0.
 
 set -uo pipefail
 
 EVALS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Test seam (same spirit as MOCK_RESPONSE_FILE): point the runner at a synthetic
+# cases tree. Lets the evalrunner suite drive the runner as a subprocess without
+# recursing into itself. Unset in every normal run.
+CASES_DIR="${EVAL_CASES_DIR:-$EVALS_DIR/cases}"
 PLUGIN_ROOT="$(cd "$EVALS_DIR/.." && pwd)"
 VALIDATOR="$PLUGIN_ROOT/scripts/lib/validate_envelope.jq"
 
@@ -200,7 +206,7 @@ run_case() {
 
 echo "agentic-loop evals — $(date '+%Y-%m-%d %H:%M') (live: $LIVE)"
 shopt -s nullglob
-for dir in "$EVALS_DIR/cases"/*/; do
+for dir in "$CASES_DIR"/*/; do
   name="$(basename "$dir")"
   [[ "$name" == "_inbox" ]] && continue
   [[ -n "$SUITE" && "$name" != "$SUITE" ]] && continue
@@ -212,4 +218,27 @@ done
 
 echo
 echo "summary: $PASS pass, $FAIL fail, $SKIP skipped — results: ${RESULTS#"$PLUGIN_ROOT"/}"
+
+# Nothing-ran is not success. A run that executed zero cases tells you nothing
+# about the code, and returning 0 for it makes any suite-scoped check_cmd a
+# vacuous oracle — a typo'd suite name would read as a green gate. Exit 4 is
+# deliberately distinct from 1: 1 means a real case failed (your gate caught
+# something), 4 means the gate is not wired up. Skips do not count as ran, so a
+# suite of only --live cases is "nothing ran" without --live.
+RAN=$((PASS + FAIL))
+if [[ $RAN -eq 0 ]]; then
+  if [[ -n "$SUITE" && -n "$ONLY_CASE" ]]; then
+    echo "error: nothing ran — --suite $SUITE --case $ONLY_CASE matched no runnable case" >&2
+  elif [[ -n "$SUITE" ]]; then
+    echo "error: nothing ran — --suite $SUITE matched no runnable case" >&2
+  elif [[ -n "$ONLY_CASE" ]]; then
+    echo "error: nothing ran — --case $ONLY_CASE matched no runnable case" >&2
+  else
+    echo "error: nothing ran — no runnable case found in $CASES_DIR" >&2
+  fi
+  [[ $SKIP -gt 0 ]] && echo "       ($SKIP case(s) skipped; skipped is not run — try --live)" >&2
+  echo "       exit 4 means the gate is not wired up, not that it passed." >&2
+  exit 4
+fi
+
 [[ $FAIL -eq 0 ]] || exit 1

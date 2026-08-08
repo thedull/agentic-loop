@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-103-suite-plus-case-no-match-exits-4",
+  "target": "acceptance 3 \u2014 a real suite combined with a case id that is not in it",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c\nmkdir -p c/alpha\ncat > c/alpha/a-1.json <<'CASEEOF'\n{\"id\": \"a-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"echo '{}'\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nmkdir -p c/beta\ncat > c/beta/b-1.json <<'CASEEOF'\n{\"id\": \"b-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"echo '{}'\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite alpha --case b-1 >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 4"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

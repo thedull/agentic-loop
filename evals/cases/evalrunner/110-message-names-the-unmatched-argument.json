@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-110-message-names-the-unmatched-argument",
+  "target": "acceptances 1-3 \u2014 the runner must print a message distinguishing 'nothing ran' from a pass, and name the argument that matched nothing. Exit codes alone were asserted; the message was not.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/real; cat > c/real/r-1.json <<'CASEEOF'\n{\"id\": \"r-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"echo '{}'\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\na=$(EVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite ghostsuite 2>&1 >/dev/null | grep -c \"ghostsuite\"); b=$(EVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --case ghostcase 2>&1 >/dev/null | grep -c \"ghostcase\"); n=$(EVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite ghostsuite 2>&1 >/dev/null | grep -ci \"nothing ran\"); printf '{\"names_suite\":%s,\"names_case\":%s,\"says_nothing_ran\":%s}' \"$a\" \"$b\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".names_suite >= 1 and .names_case >= 1 and .says_nothing_ran >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 004 revision 1 \u2014 message content had no coverage"
+  }
+}
