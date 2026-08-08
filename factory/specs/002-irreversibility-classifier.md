@@ -1,7 +1,7 @@
 ---
 id: 002
 title: Classify irreversible changes at spec time and force expand/contract
-status: pr-open
+status: done
 profile: standard
 created: 2026-08-02
 depends_on: 001 004
