@@ -1,0 +1,21 @@
+{
+  "id": "triage-409-build-stage-triages-before-second-attempt",
+  "target": "acceptances 1+2+5 \u2014 the build stage must delegate triage blind, place it before the second attempt, and require a root-cause regression test. Scoped to the triage STEP rather than a fixed line window, so the assertion does not depend on how long the step happens to be.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/build/SKILL.md\"; sec=$(awk \"/^5b\\\\. \\\\*\\\\*Triage/{on=1} on{print} on&&/^6\\\\. \\\\*\\\\*/{exit}\" \"$f\" | tr \"\\n\" \" \" | tr -s \" \"); blind=$(printf \"%s\" \"$sec\" | grep -ci \"not your reasoning\\|NOT your reasoning\\|blind protocol\"); order=$(printf \"%s\" \"$sec\" | grep -ci \"before the second attempt\\|before any further change\"); reg=$(printf \"%s\" \"$sec\" | grep -ci \"regression test\"); nobudget=$(printf \"%s\" \"$sec\" | grep -ci \"no extra attempts\\|does not increase the retry budget\"); printf '{\"len\":%s,\"blind\":%s,\"order\":%s,\"regression\":%s,\"noBudget\":%s}' \"${#sec}\" \"$blind\" \"$order\" \"$reg\" \"$nobudget\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".len > 200 and .blind >= 1 and .order >= 1 and .regression >= 1 and .noBudget >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

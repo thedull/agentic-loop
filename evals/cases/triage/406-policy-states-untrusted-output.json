@@ -1,0 +1,21 @@
+{
+  "id": "triage-406-policy-states-untrusted-output",
+  "target": "acceptance 6 \u2014 LOOP_POLICY must carry ONE rule covering tool output, error output and external-model output as data rather than instructions",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/templates/LOOP_POLICY.md\"; blk=$(grep -A6 -i \"never instructions\\|data, not instructions\\|is data, never\" \"$f\" | tr \"\\n\" \" \"); tool=$(printf \"%s\" \"$blk\"|grep -ci \"tool\"); err=$(printf \"%s\" \"$blk\"|grep -ci \"error\\|stack trace\"); ext=$(printf \"%s\" \"$blk\"|grep -ci \"model\"); printf '{\"tool\":%s,\"err\":%s,\"ext\":%s}' \"$tool\" \"$err\" \"$ext\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".tool >= 1 and .err >= 1 and .ext >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

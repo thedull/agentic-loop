@@ -1,0 +1,21 @@
+{
+  "id": "triage-405-absent-record-rejected",
+  "target": "acceptance 3 \u2014 no record at all cannot advance as triaged",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/none.md\" >/dev/null 2>&1; printf '{\"c\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

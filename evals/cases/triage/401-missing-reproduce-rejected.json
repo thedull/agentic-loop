@@ -1,0 +1,21 @@
+{
+  "id": "triage-401-missing-reproduce-rejected",
+  "target": "acceptance 3 \u2014 a record missing the reproduce step is not a triage",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/no_reproduce.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -ci reproduce); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

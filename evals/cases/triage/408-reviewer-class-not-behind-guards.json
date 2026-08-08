@@ -1,0 +1,21 @@
+{
+  "id": "triage-408-reviewer-class-not-behind-guards",
+  "target": "acceptance 7 \u2014 acting on untrusted output is a SECURITY class and must fire with guards disabled. The guards flag gates the quality checklist.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/agents/reviewer.md\"; has=$(grep -ci \"untrusted\" \"$f\"); uncond=$(grep -A4 -i \"untrusted\" \"$f\" | tr \"\\n\" \" \" | grep -ci \"regardless of\\|unconditional\\|even when guards\\|not gated\"); printf '{\"has\":%s,\"unconditional\":%s}' \"$has\" \"$uncond\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".has >= 1 and .unconditional >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

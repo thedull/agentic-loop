@@ -1,0 +1,21 @@
+{
+  "id": "triage-400-wellformed-record-validates",
+  "target": "acceptance 3 \u2014 a record with reproduce, localize and a hypothesis carrying evidence validates",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/good.md\" >/dev/null 2>&1; printf '{\"c\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}

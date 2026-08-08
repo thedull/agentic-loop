@@ -1,0 +1,21 @@
+{
+  "id": "triage-404-triage-after-attempts-rejected",
+  "target": "acceptance 2 \u2014 a triage appended after two blind attempts, just before blocked, does NOT satisfy the requirement. It must precede the second attempt.",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/triage.sh\" validate \"$FIXTURES/triage/late.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -ci \"before\\|precede\\|too late\"); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 003 Red Gate"
+  }
+}
