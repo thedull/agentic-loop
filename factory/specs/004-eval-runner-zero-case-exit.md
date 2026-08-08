@@ -1,13 +1,14 @@
 ---
 id: 004
 title: Make the eval runner fail when it ran nothing
-status: specd
+status: built
 profile: standard
 created: 2026-08-02
 depends_on:
-claimed_by:
-branch:
+claimed_by: build-loop
+branch: claude/idea-004-eval-runner-zero-case-exit
 pr:
+claimed_at: 2026-08-08T08:05:44Z
 ---
 
 # Spec 004 — Make the eval runner fail when it ran nothing
@@ -115,6 +116,16 @@ fails.
   overload does. Recorded because a future reader grepping for `exit 4` will find
   three meanings and should know that was noticed rather than missed.
 
+- **`EVAL_CASES_DIR` was added as a test seam, and it was not optional.** The
+  evalrunner suite drives the runner as a subprocess; without a way to point it
+  at a synthetic cases tree, the first Red Gate run recursed into itself and
+  hung. The seam mirrors `MOCK_RESPONSE_FILE` — unset in every normal run, and
+  the only thing that makes this suite writable at all.
+- **One rule covered every path.** `PASS + FAIL == 0` turned out to subsume
+  missing suite, empty suite directory, unmatched `--case`, `--suite` plus a
+  `--case` not in it, a suite of only `--live` cases, and a degenerate bare
+  sweep. Six acceptance paths, one condition.
+
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-02 spec: ADDED after the spec-review gate on 001/002/003 found all three check_cmds vacuous and traced it to the runner rather than to the specs.
@@ -124,3 +135,4 @@ fails.
 - 2026-08-08 spec-review: ADDED the combined `--suite X --case Y` zero-match path and the empty-but-present suite directory to acceptance 3; both exit 0 today and neither was covered.
 - 2026-08-08 spec-review: ADDED the fully-degenerate bare sweep to acceptance 1. The carve-out covered *some* suites skipping, not a run that executed nothing.
 - 2026-08-08 spec-review: ADDED a Notes entry acknowledging that exit 4 already carries two other meanings in the repo, and why keeping it is the cheaper choice.
+- 2026-08-08 build: BUILT on `claude/idea-004-eval-runner-zero-case-exit`. Red Gate honoured: 10 cases written first, 7 failed genuinely (exit 1), then implemented to 10/10. Both guards mutation-tested — deleting the zero-case guard fails 6 cases, reverting the build-skill edit fails the 7th. Full sweep 98 pass / 0 fail / 6 skipped, exit 0 (was 88). Consequence confirmed in passing: `--suite reviewer` now exits 4, which is exactly why specs 007 and 009 carry `--live`.
