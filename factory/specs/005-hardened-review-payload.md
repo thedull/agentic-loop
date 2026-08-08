@@ -1,13 +1,14 @@
 ---
 id: 005
 title: Give profile hardened a real security review payload
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on: 001 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/6
+claimed_at: 2026-08-08T09:33:09Z
 ---
 
 # Spec 005 — Give profile hardened a real security review payload
@@ -80,6 +81,15 @@ list and confirm the case fails rather than passing quietly.
   which this repo has reasons to avoid. The hardened pass reasons about the diff
   in front of it.
 
+- **The payload being installed is not evidence it was applied.** Spec 001's
+  marker check answers "does this codebase have a hardened payload" — a
+  permanent fact the moment this spec merges, and no evidence at all about any
+  particular review. The blind review found that acceptances 3, 5 and 6 were
+  therefore advisory prose: nothing stopped a hardened spec reaching `pr-open`
+  with the payload never run. `advance ... pr-open` now requires the report
+  artifact and runs the payload's own verifiers over it. Prose telling a stage
+  to run a checker is not a gate; this is.
+
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-02 spec: ADDED initial spec from `docs/osmani-audit.md` §2.7 backlog item 4.
@@ -87,3 +97,9 @@ list and confirm the case fails rather than passing quietly.
 - 2026-08-04 grill: ADDED acceptance 1 — the spec said what hardened DOES and never what earns it. Two setters only: a human, and spec 002. Renumbered the rest (old 1->2, 2->3, 3->4, 4->5, 5->6, 6->7).
 - 2026-08-04 spec-review: ADDED the one-declared-list requirement to the OWASP class list, matching spec 002 acceptance 1 — the mutation test in the check_cmd section presupposed it.
 - 2026-08-04 spec-review: REMOVED the dark-lane clause from the final acceptance; it referenced an eligibility concept no spec defines, and spec 001 acceptance 4 already refuses `dark` outright.
+- 2026-08-08 build: BUILT on `claude/idea-005-hardened-review-payload`. Red Gate honoured: 9 cases first, 8 genuine failures, then implemented.
+- 2026-08-08 review: ADDED a real gate for acceptances 3/5/6. `advance ... pr-open` now refuses a hardened spec without a review report that passes `hardened.sh verdicts` and `boundaries`. Cases 509 and 510 pin it, including that standard specs are unaffected.
+- 2026-08-08 review: FIXED case 507, which the reviewer defeated by gutting the entire payload to the word "x." while keeping the marker and keywords. Now asserts the section's five numbered requirements, all three verifier subcommands, the class-list path, and a minimum length.
+- 2026-08-08 review: FIXED case 508 twice over. Its PR-terminal check was satisfied by boilerplate that predated this spec entirely, and its merge scan used a window narrow enough to miss a merge instruction added elsewhere in the file. Now scoped to what this spec added, and the merge scan covers both files whole.
+- 2026-08-08 review: FIXED unescaped class names meeting a regex in `hardened.sh verdicts` — a metacharacter made a correctly-written verdict line unrecognisable. Failed closed, but wrongly.
+- 2026-08-08 build: REPINNED three of spec 001's cases (profile 204, 207, 209). They asserted `hardened` refuses, which was true only while this payload did not exist. Now pinned against an absent marker via `TRACKER_AGENTS_DIR` rather than against the world's current state.
