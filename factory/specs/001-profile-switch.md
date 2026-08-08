@@ -1,13 +1,14 @@
 ---
 id: 001
 title: Wire profile as a three-position consequence switch
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on: 004
-claimed_by:
+claimed_by: build-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/3
+claimed_at: 2026-08-08T08:32:17Z
 ---
 
 # Spec 001 — Wire profile as a three-position consequence switch
