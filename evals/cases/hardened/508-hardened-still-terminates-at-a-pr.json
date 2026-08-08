@@ -1,8 +1,8 @@
 {
   "id": "hardened-508-hardened-still-terminates-at-a-pr",
-  "target": "acceptance 7 \u2014 a clean hardened review is the strongest signal this pipeline produces and is still not a merge signal. The hardened branch must not introduce any merge command.",
+  "target": "acceptance 7 \u2014 a clean hardened review is still not a merge signal. Scoped to what THIS spec added: the prior version was satisfied by pre-existing top-of-file boilerplate, and its merge scan used a window narrow enough to miss a merge instruction added elsewhere in the file.",
   "kind": "bash-unit",
-  "cmd": "s=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; sec=$(awk \"/[Hh]ardened/{on=1} on{print} on&&/^[0-9]+\\\\. \\\\*\\\\*/{n++; if(n>2) exit}\" \"$s\" | tr \"\\n\" \" \" | tr -s \" \"); merge=$(printf \"%s\" \"$sec\" | grep -ci \"gh pr merge\\|git merge\"); pr=$(grep -ci \"terminal state is an OPEN PR\\|Nothing merges here\" \"$s\"); printf '{\"mergeCmds\":%s,\"prTerminal\":%s}' \"$merge\" \"$pr\"",
+  "cmd": "s=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; r=\"$PLUGIN_ROOT/agents/reviewer.md\"; blk=$(awk \"/hardened.*additionally runs the/{on=1} on{print} on&&/^   - \\\\*\\\\*2\\\\*\\\\*/{exit}\" \"$s\" | tr \"\\n\" \" \" | tr -s \" \"); says=$(printf \"%s\" \"$blk\" | grep -ci \"terminates at an open PR\"); psays=$(awk \"/^## Hardened profile payload/{on=1} on{print}\" \"$r\" | tr \"\\n\" \" \" | tr -s \" \" | grep -ci \"not a merge signal\\|still an open PR\"); merge=$(grep -c \"gh pr merge\\|git merge\" \"$s\" \"$r\" | awk -F: \"{t+=\\$2} END{print t+0}\"); printf '{\"routeSaysPR\":%s,\"payloadSaysPR\":%s,\"mergeCmds\":%s}' \"$says\" \"$psays\" \"$merge\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".mergeCmds == 0 and .prTerminal >= 1"
+      "expr": ".routeSaysPR >= 1 and .payloadSaysPR >= 1 and .mergeCmds == 0"
     }
   ],
   "provenance": {

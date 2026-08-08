@@ -523,6 +523,33 @@ _tracker_obs_skip() {
 #         human's decision with no trace at all. Refusing turns that race into
 #         a visible failure the returning agent has to stop on.
 tracker_advance() {
+  # A hardened spec cannot reach `pr-open` on the reviewer's word. The payload
+  # marker only proves the payload EXISTS in this codebase — a permanent fact
+  # once spec 005 merged, and no evidence at all that it was applied to THIS
+  # review. So require the artifact: a report that passes the payload's own
+  # verifiers. Prose telling a stage to run a checker is not a gate.
+  if [[ "${2:-}" == "pr-open" && -f "${1:-}" ]]; then
+    local _pf _rep _root
+    _pf="$(tracker_profile "$1" 2>/dev/null || true)"
+    if [[ "$_pf" == "hardened" ]]; then
+      _root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+      _rep="${HARDENED_REPORT:-.agentic/artifacts/$(_tracker_field "$1" id)/hardened-review.md}"
+      if [[ ! -f "$_rep" ]]; then
+        echo "tracker: $(basename "$1") is hardened but no hardened review report exists at $_rep" >&2
+        echo "        The payload being installed is not evidence it was applied. Produce the report." >&2
+        return 2
+      fi
+      if ! "$_root/scripts/lib/hardened.sh" verdicts "$_rep" >/dev/null 2>&1; then
+        echo "tracker: the hardened review report at $_rep does not give every class a verdict" >&2
+        return 2
+      fi
+      if ! "$_root/scripts/lib/hardened.sh" boundaries "$_rep" >/dev/null 2>&1; then
+        echo "tracker: the hardened review report at $_rep has a boundary with no abuse case" >&2
+        return 2
+      fi
+    fi
+  fi
+
   # An irreversible spec must not reach `specd` whole. Refuse before any field
   # is written so the spec keeps its current status.
   if [[ "${2:-}" == "specd" && -f "${1:-}" ]]; then

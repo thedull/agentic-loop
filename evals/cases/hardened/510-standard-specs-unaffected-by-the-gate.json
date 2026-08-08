@@ -1,0 +1,21 @@
+{
+  "id": "hardened-510-standard-specs-unaffected-by-the-gate",
+  "target": "the pr-open gate must be specific to hardened specs \u2014 a standard spec advances exactly as before, with no report required.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 960\\ntitle: t\\nstatus: reviewing\\nprofile: standard\\ndepends_on:\\nclaimed_by:\\nbranch:\\npr:\\n---\\n\" > s.md; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance s.md pr-open >/dev/null 2>&1; c=$?; st=$(grep -m1 \"^status:\" s.md|sed \"s/status: //\"); printf '{\"c\":%s,\"status\":\"%s\"}' \"$c\" \"$st\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .status == \"pr-open\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 005 revision 1"
+  }
+}

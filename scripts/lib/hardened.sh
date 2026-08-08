@@ -35,7 +35,9 @@ hardened_verdicts() {
   local report="${1:-}" c missing=0 line
   [[ -n "$report" && -f "$report" ]] || _h_die "usage: hardened.sh verdicts <report>"
   while IFS= read -r c; do
-    line="$(grep -m1 -E "^[[:space:]]*[-*][[:space:]]*${c}[[:space:]]*:" "$report" 2>/dev/null || true)"
+    # The class name is data, not a pattern — escape it before it meets a regex.
+    local esc; esc="$(printf '%s' "$c" | sed 's/[][\\.*^$(){}?+|/]/\\\\&/g')"
+    line="$(grep -m1 -E "^[[:space:]]*[-*][[:space:]]*${esc}[[:space:]]*:" "$report" 2>/dev/null || true)"
     if [[ -z "$line" ]]; then
       echo "hardened: class '$c' has no verdict — silence is indistinguishable from 'did not look'" >&2
       missing=1; continue

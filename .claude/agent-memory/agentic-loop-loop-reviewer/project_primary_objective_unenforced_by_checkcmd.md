@@ -97,3 +97,22 @@ gate. `check_cmd` (`--suite profile`) only exercises the primitive directly
 against fixtures, so it cannot catch either gap — same shape as strike 4:
 a Brief-level acceptance with no hook into any real stage, invisible to a
 suite built purely around the primitive's own fixtures.
+
+6th strike: spec 005 (`hardened-review-payload`). Acceptances 3
+(trust-boundary sketch), 5 (supply-chain check) and 6 (evidence bar) are
+enforced ONLY as prose in `agents/reviewer.md` / `skills/review/SKILL.md`
+step 3b, telling the (LLM) review-stage runner to invoke `scripts/lib/
+hardened.sh boundaries|verdicts|supply-chain` and act on the exit code.
+`tracker.sh` never calls `hardened.sh` anywhere (`grep -n hardened.sh
+scripts/lib/tracker.sh` = no matches) and `tracker_advance` has no gate
+checking that the hardened payload was actually run for a given `hardened`
+spec before it moves `reviewing -> pr-open`. `tracker_profile`'s exit-6
+refusal only checks that the payload marker is *installed in the codebase*
+(a one-time, permanent fact once spec 005 merges) — not that it was
+*applied* to this particular review. Nothing prevents a review stage from
+skipping step 3b/step 4's hardened payload entirely and still successfully
+advancing a `hardened` spec to `pr-open`; the only backstop is a human
+noticing the missing trust-boundary sketch during evening PR review.
+`check_cmd` (`--suite hardened`) only tests `hardened.sh`'s own behavior
+against static report fixtures (acceptances 2-5-mechanics), never that the
+live review invocation calls it.
