@@ -6,4 +6,5 @@
 - [require_key() bypasses on MOCK_RESPONSE_FILE](project_require_key_mock_bypass.md) — common.sh:58 skips the credential check whenever a mock is set; breaks "every case uses MOCK_RESPONSE_FILE" eval guidance for missing-credential acceptances (1st strike: spec 017)
 - [OpenRouter accepts arbitrary model ids, not just 3 aliases](project_openrouter_arbitrary_model_pricing_gap.md) — call_openrouter.sh:38-43 `*)` fallthrough; any per-model price-table spec must name the unpriced-model fallback (1st strike: spec 018)
 - [Spec citations can name the wrong sub-block](project_spec_citation_line_mismatch.md) — always confirm the exact claim, not just file existence, at a cited file:line (1st strike: spec 019, doctor.sh:40-61)
-- [Primary objective can lack check_cmd enforcement](project_primary_objective_unenforced_by_checkcmd.md) — map every acceptance to a fixture; a headline objective satisfiable by a no-op is a real gap (1st strike: spec 019)
+- [Primary objective can lack check_cmd enforcement](project_primary_objective_unenforced_by_checkcmd.md) — map every acceptance to a fixture, incl. required doc/process edits (2nd strike: spec 004, confirmed pattern)
+- [Exit code 4 already overloaded in this repo](project_exit_code_4_already_overloaded.md) — common.sh validate_envelope + judge.sh both already use exit 4 before spec 004 claims it for run_eval.sh

@@ -31,3 +31,21 @@ acceptance (especially the one mirroring the Brief's headline objective) has
 no fixture and its pass condition is satisfiable by a no-op, flag it —
 regardless of how well-specified the *other* acceptances are. 1st strike:
 spec 019.
+
+2nd strike: spec 004 (`factory/specs/004-eval-runner-zero-case-exit.md`)
+acceptance 7's last bullet — "Consequence for build order, which the build
+skill must state: the builder writes the suite and its cases FIRST..." — is a
+required prose edit to `skills/build/SKILL.md` (listed in input_paths) that
+distinguishes exit 4 ("nothing ran," Red Gate NOT satisfied) from exit 1
+(genuine failure, Red Gate satisfied). The spec's own `check_cmd`
+(`./evals/run_eval.sh --suite evalrunner`) can only exercise the runner's
+exit-code behavior (acceptances 1-6); it cannot verify that
+`skills/build/SKILL.md` was actually edited, or edited correctly, to make
+this distinction. Confirmed live: the unmodified `skills/build/SKILL.md`
+step 4 (lines 44-50) says only "Run check_cmd; it MUST fail. If it passes on
+the untouched codebase, the check is vacuous" — generic nonzero-vs-zero
+logic with no exit-4-vs-exit-1 branch, so a builder following it literally
+would treat exit 4 as satisfying "it MUST fail." Pattern now confirmed
+across two unrelated specs — treat as a standing check on every future spec
+whose acceptance criteria include a process/doc change (not just a code
+change): does check_cmd cover it, or is it trust-the-builder?
