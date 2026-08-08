@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-108-passing-suite-exits-0",
+  "target": "acceptance 4 \u2014 a suite with one passing case and one skipped live case still exits 0",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c\nmkdir -p c/mixed\ncat > c/mixed/m-1.json <<'CASEEOF'\n{\"id\": \"m-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"echo '{}'\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\ncat > c/mixed/m-2.json <<'CASEEOF'\n{\"id\": \"m-2\", \"target\": \"synthetic\", \"kind\": \"headless-agent\", \"agent\": \"loop-reviewer\", \"input\": {\"brief\": {\"objective\": \"noop\"}}, \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite mixed >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

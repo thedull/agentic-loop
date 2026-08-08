@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-107-real-failure-exits-1-not-4",
+  "target": "acceptance 6 \u2014 a case that ran and failed is exit 1, distinct from nothing-ran",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c\nmkdir -p c/failing\ncat > c/failing/f-1.json <<'CASEEOF'\n{\"id\": \"f-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"exit 9\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite failing >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

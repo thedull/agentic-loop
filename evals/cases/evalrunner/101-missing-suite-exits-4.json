@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-101-missing-suite-exits-4",
+  "target": "acceptance 2 \u2014 --suite naming a suite that does not exist",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c\nmkdir -p c/real\ncat > c/real/r-1.json <<'CASEEOF'\n{\"id\": \"r-1\", \"target\": \"synthetic\", \"kind\": \"bash-unit\", \"cmd\": \"echo '{}'\", \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite nosuchsuite >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 4"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

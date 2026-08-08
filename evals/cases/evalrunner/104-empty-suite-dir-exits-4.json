@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-104-empty-suite-dir-exits-4",
+  "target": "acceptance 3 \u2014 a suite directory that exists but holds no cases is the same as a missing one",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/hollow\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite hollow >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 4"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

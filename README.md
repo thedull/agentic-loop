@@ -114,7 +114,14 @@ region is detected and refused rather than quietly overwritten, and
 `/agentic-loop:line` adds your customization in the right place for you.
 
 Full guide: [`docs/factory.md`](docs/factory.md) · research companion:
-[`docs/software-factory-analysis.md`](docs/software-factory-analysis.md)
+[`docs/software-factory-analysis.md`](docs/software-factory-analysis.md) ·
+graded against an outside rubric:
+[`docs/osmani-audit.md`](docs/osmani-audit.md) — Addy Osmani's light/dark
+factories essay and his 24-skill catalog, versus what we actually built (four
+gaps, a ranked adoption backlog, and a specified-but-unbuilt dark merge lane) ·
+tier economics: [`docs/codex-subscription.md`](docs/codex-subscription.md) —
+whether a ChatGPT subscription can fund Sol via OpenAI's Codex plugin, and why
+an unmetered Sol quietly voids a safety rule this repo states in seven places
 
 ## Observability & evals (opt-in)
 
