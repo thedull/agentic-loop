@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-109-build-skill-distinguishes-exit-4-from-1",
+  "target": "acceptance 7 \u2014 the build skill's Red Gate step must tell 'nothing ran' from 'a case failed'",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/build/SKILL.md\"; g=$(grep -c \"exit 4\" \"$f\"); h=$(grep -c \"exit 1\" \"$f\"); printf '{\"four\":%s,\"one\":%s}' \"$g\" \"$h\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".four >= 1 and .one >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}

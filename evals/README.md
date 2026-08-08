@@ -21,8 +21,17 @@ including cross-family judges), and the case format (the 6-field brief). See
 ./evals/run_eval.sh --judge openrouter   # judge tier override
 ```
 
-Results land in `evals/results/results-<ts>.jsonl` (gitignored). Exit 1 on
-any failure; skips (missing --live, no judge tier) never fail a run.
+Results land in `evals/results/results-<ts>.jsonl` (gitignored).
+
+Exit codes: **0** all good · **1** a case ran and failed · **4** nothing ran.
+Skips (missing `--live`, no judge tier) never fail a run, but they do not count
+as having run either — a selection matching only skipped cases exits 4. That
+distinction is what makes a suite-scoped `check_cmd` a usable oracle: 1 means
+your gate caught something, 4 means your gate is not wired up.
+
+Test seam: `EVAL_CASES_DIR` points the runner at an alternative cases tree, so
+the `evalrunner` suite can drive the runner as a subprocess without recursing
+into itself. Leave it unset in normal runs.
 
 ## Cost expectations
 

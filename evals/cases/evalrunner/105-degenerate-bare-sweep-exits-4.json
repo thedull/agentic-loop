@@ -1,0 +1,21 @@
+{
+  "id": "evalrunner-105-degenerate-bare-sweep-exits-4",
+  "target": "acceptance 1 \u2014 a bare sweep in which zero cases execute anywhere",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c\nmkdir -p c/only_live\ncat > c/only_live/live-1.json <<'CASEEOF'\n{\"id\": \"live-1\", \"target\": \"synthetic\", \"kind\": \"headless-agent\", \"agent\": \"loop-reviewer\", \"input\": {\"brief\": {\"objective\": \"noop\"}}, \"checks\": [{\"type\": \"exit_code\", \"equals\": 0}]}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 4"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 004 Red Gate"
+  }
+}
