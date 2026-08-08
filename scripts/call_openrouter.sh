@@ -38,7 +38,7 @@ done
 case "$MODEL_ARG" in
   kimi)    MODEL="${OPENROUTER_MODEL_KIMI:-moonshotai/kimi-k2}" ;;
   minimax) MODEL="${OPENROUTER_MODEL_MINIMAX:-minimax/minimax-m2}" ;;
-  mimo)    MODEL="${OPENROUTER_MODEL_MIMO:-xiaomi/mimo-v2}" ;;
+  mimo)    MODEL="${OPENROUTER_MODEL_MIMO:-xiaomi/mimo-v2.5}" ;;
   *)       MODEL="$MODEL_ARG" ;;
 esac
 WORKER_NAME="openrouter/$MODEL"
