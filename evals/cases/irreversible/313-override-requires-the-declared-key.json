@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-313-override-requires-the-declared-key",
+  "target": "acceptance 7 \u2014 the override must be the DECLARED key, not any mention of the word. Loosening the grep to match 'override' anywhere left every case passing.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/irreversible/drop_column.md\" loose.md; printf -- \"\\n- we considered an override here but decided against it\\n\" >> loose.md; v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible loose.md 2>/dev/null); c=$?; vo=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/overridden.md\" 2>/dev/null); printf '{\"loose\":\"%s\",\"c\":%s,\"declared\":\"%s\"}' \"$v\" \"$c\" \"$vo\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".loose == \"irreversible\" and .c == 7 and .declared == \"reversible\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 002 revision 1"
+  }
+}

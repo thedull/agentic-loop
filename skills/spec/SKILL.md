@@ -110,6 +110,26 @@ ideas get no `depends_on` line at all.
    the review-gate subagent's events then carry the spec they vetted
    (silent no-op when observability is off).
 
+4b. **Irreversibility gate.** `scripts/lib/tracker.sh irreversible <file>`:
+   - **0 reversible** → carry on.
+   - **7 irreversible** → the spec CANNOT reach `specd` whole. Run
+     `scripts/lib/tracker.sh split <file>` to emit the expand and contract
+     halves (both `profile: hardened`, joined by `depends_on` so the contract
+     is unclaimable until the expand is `done`), fill in their Briefs, and
+     grill each. The advance will refuse otherwise.
+   - **2 refused** → the signal list is missing or empty. Fix
+     `templates/irreversible-signals.txt`; do NOT advance, because a spec that
+     passes through unclassified is the outcome the gate exists to prevent.
+
+   Classification reads only the spec's own `objective`, `output_spec` and
+   `input_paths` — no branch or database exists yet. Signals live in one
+   editable list; adding one is editing that file and no code. There is no
+   "uncertain" outcome by design.
+
+   A human may override with an explicit line in the spec's Notes:
+   `- **irreversible-override**: <name> — <reason>`. Never add this on the
+   user's behalf without them saying so — silence is not consent.
+
 5. **Advance**: `scripts/lib/tracker.sh advance <file> specd`, run
    `scripts/observe.sh context clear`, then tell the user the id,
    effort_budget, and check command, and move to the next idea.

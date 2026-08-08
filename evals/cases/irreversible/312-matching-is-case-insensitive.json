@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-312-matching-is-case-insensitive",
+  "target": "case-insensitivity is documented as load-bearing but nothing tested it \u2014 removing the case-folding left all cases passing.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\nprofile: standard\\ndepends_on:\\n---\\n\\n\" > u.md; printf -- \"- **objective**: DROP THE legacy column\\n- **input_paths**: a.sh\\n- **output_spec**: gone\\n\" >> u.md; printf -- \"---\\nid: 2\\ntitle: t\\nstatus: queued\\nprofile: standard\\ndepends_on:\\n---\\n\\n\" > m.md; printf -- \"- **objective**: Drop The legacy column\\n- **input_paths**: a.sh\\n- **output_spec**: gone\\n\" >> m.md; a=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible u.md 2>/dev/null); b=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible m.md 2>/dev/null); printf '{\"upper\":\"%s\",\"mixed\":\"%s\"}' \"$a\" \"$b\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".upper == \"irreversible\" and .mixed == \"irreversible\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 002 revision 1"
+  }
+}

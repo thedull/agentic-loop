@@ -52,6 +52,14 @@
 #                                         (dep-waiting items gain "waits: <ids>",
 #                                          dead chains also "stalled: <ids>")
 #   tracker.sh field <file> <key>         print one frontmatter value
+#   tracker.sh irreversible <file>        classify a spec: prints reversible or
+#                                         irreversible. Exit 7 = irreversible,
+#                                         2 = the signal list is missing/empty
+#                                         (refuses rather than guessing).
+#   tracker.sh split <file>               emit the expand/contract pair an
+#                                         irreversible spec needs: both
+#                                         `profile: hardened`, joined by
+#                                         depends_on.
 #   tracker.sh profile <file>             resolve `profile:` (standard|hardened
 #                                         |dark). Exit 2 = refused: unknown
 #                                         value, `dark` (spec 015 unbuilt), or
@@ -66,6 +74,7 @@
 #                                         is verifiably merged (stamps done_at)
 #
 # Exit codes: 0 ok · 1 `claim` found nothing claimable · 2 usage/hard error
+#             7 `irreversible` — the spec matched a declared signal.
 #             5 `profile` refused: `dark` (spec 015 unbuilt).
 #             6 `profile` refused: `hardened` without its payload (spec 005).
 #             3 `shelve`/`supersede` refused — the spec is mid-stage
@@ -364,10 +373,19 @@ tracker_irreversible() {
     /^- \*\*(objective|output_spec|input_paths)\*\*:/ { print }
   ' "$file" | tr '[:upper:]' '[:lower:]')"
 
-  local s
+  # Path signals contain a slash and match as substrings, because a path
+  # fragment legitimately appears inside a longer path. Everything else matches
+  # on WORD BOUNDARIES: an unanchored "drop the" fires inside "backdrop theme",
+  # which is the false-positive class the two-state design cannot afford.
+  local s low
   for s in "${signals[@]}"; do
-    if [[ "$hay" == *"$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')"* ]]; then
-      echo irreversible; return 7
+    low="$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$low" == */* ]]; then
+      [[ "$hay" == *"$low"* ]] && { echo irreversible; return 7; }
+    else
+      if printf '%s' "$hay" | grep -qE "(^|[^a-z0-9])$(printf '%s' "$low" | sed 's/[][\.*^$(){}?+|/]/\\&/g')([^a-z0-9]|$)"; then
+        echo irreversible; return 7
+      fi
     fi
   done
   echo reversible; return 0
@@ -510,6 +528,14 @@ tracker_advance() {
   if [[ "${2:-}" == "specd" && -f "${1:-}" ]]; then
     local _irc=0
     tracker_irreversible "$1" >/dev/null 2>&1 || _irc=$?
+    if [[ $_irc -eq 2 ]]; then
+      # The classifier could not run. Fail closed HERE too — letting a spec
+      # through unclassified is exactly the outcome the fail-closed rule
+      # exists to prevent, and it is the only integration point that matters.
+      echo "tracker: cannot classify $(basename "$1") — the irreversible signal list is missing, unreadable or empty." >&2
+      echo "        Refusing to advance to specd rather than passing it through unclassified." >&2
+      return 2
+    fi
     if [[ $_irc -eq 7 ]]; then
       echo "tracker: $(basename "$1") is classified irreversible and cannot reach specd whole." >&2
       echo "        It needs the expand/contract split — two specs joined by depends_on:" >&2
