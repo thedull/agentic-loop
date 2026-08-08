@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-311-signals-match-on-word-boundaries",
+  "target": "the two-state design cannot afford false positives \u2014 an unanchored 'drop the' fires inside 'backdrop theme'. Text signals match on word boundaries; path signals (containing /) stay substrings.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\nprofile: standard\\ndepends_on:\\n---\\n\\n\" > fp.md; printf -- \"- **objective**: update the backdrop theme and eavesdrop the logs\\n\" >> fp.md; printf -- \"- **input_paths**: a.sh\\n- **output_spec**: nicer\\n\" >> fp.md; fp=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible fp.md 2>/dev/null); real=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/drop_column.md\" 2>/dev/null); path=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/migration_path.md\" 2>/dev/null); printf '{\"falsePositive\":\"%s\",\"real\":\"%s\",\"path\":\"%s\"}' \"$fp\" \"$real\" \"$path\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".falsePositive == \"reversible\" and .real == \"irreversible\" and .path == \"irreversible\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 002 revision 1"
+  }
+}

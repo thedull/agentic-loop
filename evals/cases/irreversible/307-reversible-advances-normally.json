@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-307-reversible-advances-normally",
+  "target": "acceptance 4 \u2014 the refusal is specific to irreversible specs; a reversible one still advances",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/irreversible/plain.md\" t.md; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance t.md specd >/dev/null 2>&1; c=$?; st=$(grep -m1 \"^status:\" t.md | sed \"s/status: //\"); printf '{\"c\":%s,\"status\":\"%s\"}' \"$c\" \"$st\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .status == \"specd\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

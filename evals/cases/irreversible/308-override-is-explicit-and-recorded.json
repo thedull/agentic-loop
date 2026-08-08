@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-308-override-is-explicit-and-recorded",
+  "target": "acceptance 7 \u2014 a recorded override line lets the spec proceed as reversible; without one, silence is never consent",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/irreversible/overridden.md\" o.md; cp \"$FIXTURES/irreversible/drop_column.md\" n.md; vo=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible o.md 2>/dev/null); co=$?; vn=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible n.md 2>/dev/null); cn=$?; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance o.md specd >/dev/null 2>&1; so=$(grep -m1 \"^status:\" o.md | sed \"s/status: //\"); printf '{\"ov\":\"%s\",\"co\":%s,\"nov\":\"%s\",\"cn\":%s,\"advanced\":\"%s\"}' \"$vo\" \"$co\" \"$vn\" \"$cn\" \"$so\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".ov == \"reversible\" and .co == 0 and .nov == \"irreversible\" and .cn == 7 and .advanced == \"specd\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-304-broken-signal-list-refuses",
+  "target": "acceptances 1+3 \u2014 a missing or empty signal list refuses outright, never 'reversible for everything'. This is the only fail-closed path.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p empty; : > empty/irreversible-signals.txt; e=$(IRREVERSIBLE_SIGNALS=\"$PWD/empty/irreversible-signals.txt\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/plain.md\" 2>&1 >/dev/null); c=$?; e2=$(IRREVERSIBLE_SIGNALS=\"$PWD/nope.txt\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/plain.md\" 2>&1 >/dev/null); c2=$?; n=$(printf \"%s\\n%s\" \"$e\" \"$e2\" | grep -ci \"signal list\"); printf '{\"c\":%s,\"c2\":%s,\"namesList\":%s}' \"$c\" \"$c2\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .c2 == 2 and .namesList >= 2"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-302-destructive-text-signals",
+  "target": "acceptance 2 \u2014 drop / rename / remove-public-interface in objective or output_spec classify irreversible",
+  "kind": "bash-unit",
+  "cmd": "a=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/drop_column.md\" 2>/dev/null); b=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/rename_table.md\" 2>/dev/null); c=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/remove_api.md\" 2>/dev/null); printf '{\"a\":\"%s\",\"b\":\"%s\",\"c\":\"%s\"}' \"$a\" \"$b\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".a == \"irreversible\" and .b == \"irreversible\" and .c == \"irreversible\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}

@@ -52,6 +52,14 @@
 #                                         (dep-waiting items gain "waits: <ids>",
 #                                          dead chains also "stalled: <ids>")
 #   tracker.sh field <file> <key>         print one frontmatter value
+#   tracker.sh irreversible <file>        classify a spec: prints reversible or
+#                                         irreversible. Exit 7 = irreversible,
+#                                         2 = the signal list is missing/empty
+#                                         (refuses rather than guessing).
+#   tracker.sh split <file>               emit the expand/contract pair an
+#                                         irreversible spec needs: both
+#                                         `profile: hardened`, joined by
+#                                         depends_on.
 #   tracker.sh profile <file>             resolve `profile:` (standard|hardened
 #                                         |dark). Exit 2 = refused: unknown
 #                                         value, `dark` (spec 015 unbuilt), or
@@ -66,6 +74,7 @@
 #                                         is verifiably merged (stamps done_at)
 #
 # Exit codes: 0 ok · 1 `claim` found nothing claimable · 2 usage/hard error
+#             7 `irreversible` — the spec matched a declared signal.
 #             5 `profile` refused: `dark` (spec 015 unbuilt).
 #             6 `profile` refused: `hardened` without its payload (spec 005).
 #             3 `shelve`/`supersede` refused — the spec is mid-stage
@@ -316,6 +325,126 @@ tracker_profile() {
   esac
 }
 
+# --- irreversibility -------------------------------------------------------
+# Two states, no judgment. A spec either matches a declared signal or it does
+# not; there is deliberately no "uncertain" outcome, because an uncertain state
+# would put an LLM judgment call inside a gate. The only fail-closed path is a
+# BROKEN signal list — that is the tool being broken, not the spec being
+# ambiguous.
+TRACKER_OVERRIDE_KEY="irreversible-override"
+
+_tracker_signal_file() {
+  local root; root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  echo "${IRREVERSIBLE_SIGNALS:-$root/templates/irreversible-signals.txt}"
+}
+
+# tracker_irreversible FILE — print reversible|irreversible.
+#   0  reversible
+#   7  irreversible
+#   2  the signal list is missing, unreadable or empty (refuses outright)
+tracker_irreversible() {
+  local file="${1:-}" sig hay line
+  [[ -n "$file" && -f "$file" ]] || _tracker_die "usage: tracker.sh irreversible <spec file>"
+  sig="$(_tracker_signal_file)"
+  if [[ ! -r "$sig" ]]; then
+    echo "tracker: signal list not readable at $sig — refusing to classify" >&2
+    return 2
+  fi
+  # strip comments and blanks; an empty result is a broken list, not "no signals"
+  local -a signals=()
+  while IFS= read -r line; do
+    line="${line%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"; line="${line%"${line##*[![:space:]]}"}"
+    [[ -n "$line" ]] && signals+=("$line")
+  done < "$sig"
+  if [[ ${#signals[@]} -eq 0 ]]; then
+    echo "tracker: signal list at $sig is empty — refusing to classify" >&2
+    return 2
+  fi
+
+  # An explicit, recorded override wins. Silence never does.
+  if grep -qi -- "\*\*$TRACKER_OVERRIDE_KEY\*\*:" "$file"; then
+    echo reversible; return 0
+  fi
+
+  # Inputs are the spec's own Brief fields only. No branch, diff or database
+  # exists at classification time, and Notes are not scope.
+  hay="$(awk '
+    /^- \*\*(objective|output_spec|input_paths)\*\*:/ { print }
+  ' "$file" | tr '[:upper:]' '[:lower:]')"
+
+  # Path signals contain a slash and match as substrings, because a path
+  # fragment legitimately appears inside a longer path. Everything else matches
+  # on WORD BOUNDARIES: an unanchored "drop the" fires inside "backdrop theme",
+  # which is the false-positive class the two-state design cannot afford.
+  local s low
+  for s in "${signals[@]}"; do
+    low="$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$low" == */* ]]; then
+      [[ "$hay" == *"$low"* ]] && { echo irreversible; return 7; }
+    else
+      if printf '%s' "$hay" | grep -qE "(^|[^a-z0-9])$(printf '%s' "$low" | sed 's/[][\.*^$(){}?+|/]/\\&/g')([^a-z0-9]|$)"; then
+        echo irreversible; return 7
+      fi
+    fi
+  done
+  echo reversible; return 0
+}
+
+# tracker_split FILE — emit the expand/contract pair an irreversible spec needs.
+# Reuses depends_on rather than inventing a "migration pair" state: the tracker
+# already refuses to satisfy a dependency with unmerged work, which is exactly
+# the property expand/contract needs.
+tracker_split() {
+  local file="${1:-}" slug base eid cid
+  [[ -n "$file" && -f "$file" ]] || _tracker_die "usage: tracker.sh split <spec file>"
+  base="$(basename "$file" .md)"
+  slug="$(printf '%s' "$base" | sed 's/^[0-9]*-//')"
+  eid="$(tracker_next_id)"
+  _tracker_write_split "$eid" "$slug" expand "" "$file"
+  cid="$(tracker_next_id)"
+  _tracker_write_split "$cid" "$slug" contract "$eid" "$file"
+  echo "$FACTORY_SPECS_DIR/$eid-$slug-expand.md"
+  echo "$FACTORY_SPECS_DIR/$cid-$slug-contract.md"
+}
+
+_tracker_write_split() {
+  local id="$1" slug="$2" half="$3" dep="$4" src="$5" title
+  title="$(_tracker_field "$src" title)"
+  cat > "$FACTORY_SPECS_DIR/$id-$slug-$half.md" <<SPLITEOF
+---
+id: $id
+title: $title ($half half)
+status: queued
+profile: hardened
+created: $(date +%Y-%m-%d)
+depends_on: $dep
+claimed_by:
+branch:
+pr:
+---
+
+# Spec $id — $title ($half half)
+
+Split from \`$(basename "$src")\` because it was classified irreversible.
+Both halves carry \`profile: hardened\` automatically; the contract half is
+unclaimable until the expand half is \`done\`.
+
+## Brief (the delegation contract)
+
+- **objective**: TODO — the $half half of: $(_tracker_field "$src" title)
+- **input_paths**: TODO
+- **output_spec**: TODO
+- **effort_budget**: TODO
+
+## Notes / decisions (append-only)
+
+## Revision log (deltas only — never regenerate this spec)
+
+- $(date +%Y-%m-%d) split: CREATED as the $half half of $(basename "$src").
+SPLITEOF
+}
+
 tracker_claim() {
   local from="$1" to="$2" actor="$3" target="" f
   local -a skipped=() profile_skipped=()
@@ -394,6 +523,29 @@ _tracker_obs_skip() {
 #         human's decision with no trace at all. Refusing turns that race into
 #         a visible failure the returning agent has to stop on.
 tracker_advance() {
+  # An irreversible spec must not reach `specd` whole. Refuse before any field
+  # is written so the spec keeps its current status.
+  if [[ "${2:-}" == "specd" && -f "${1:-}" ]]; then
+    local _irc=0
+    tracker_irreversible "$1" >/dev/null 2>&1 || _irc=$?
+    if [[ $_irc -eq 2 ]]; then
+      # The classifier could not run. Fail closed HERE too — letting a spec
+      # through unclassified is exactly the outcome the fail-closed rule
+      # exists to prevent, and it is the only integration point that matters.
+      echo "tracker: cannot classify $(basename "$1") — the irreversible signal list is missing, unreadable or empty." >&2
+      echo "        Refusing to advance to specd rather than passing it through unclassified." >&2
+      return 2
+    fi
+    if [[ $_irc -eq 7 ]]; then
+      echo "tracker: $(basename "$1") is classified irreversible and cannot reach specd whole." >&2
+      echo "        It needs the expand/contract split — two specs joined by depends_on:" >&2
+      echo "          scripts/lib/tracker.sh split $1" >&2
+      echo "        Or record an explicit override line in its Notes:" >&2
+      echo "          - **irreversible-override**: <your name> — <reason>" >&2
+      return 2
+    fi
+  fi
+
   local file="$1" status="$2"; shift 2
   [[ -f "$file" ]] || _tracker_die "no such spec file: $file"
   _tracker_valid_status "$status" || _tracker_die "unknown status '$status'"
@@ -721,6 +873,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     report)      tracker_report ;;
     field)       _tracker_field "$@" ;;
     profile)     tracker_profile "$@" ;;
+    irreversible) tracker_irreversible "$@" ;;
+    split)       tracker_split "$@" ;;
     shelve)      tracker_shelve "$@" ;;
     restore)     tracker_restore "$@" ;;
     supersede)   tracker_supersede "$@" ;;
@@ -728,6 +882,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     dep-drop)    tracker_dep_drop "$@" ;;
     dep-replace) tracker_dep_replace "$@" ;;
     reconcile-done) tracker_reconcile_done "$@" ;;
-    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|profile|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
+    *) _tracker_die "usage: tracker.sh list|claim|advance|next-id|report|field|profile|irreversible|split|shelve|restore|supersede|dependents|dep-drop|dep-replace|reconcile-done ..." ;;
   esac
 fi

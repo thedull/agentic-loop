@@ -49,6 +49,12 @@ and see it PASS before advancing to `built`.
 
 ## Notes / decisions (append-only)
 
+<!-- If this spec is classified irreversible (`tracker.sh irreversible <file>`
+     exits 7) it cannot reach `specd` whole — split it with
+     `tracker.sh split <file>`. To override, add an explicit line here:
+     - **irreversible-override**: <your name> — <why this is safe>
+     Silence is never consent; the classifier never asks. -->
+
 <!-- `profile:` is the CONSEQUENCE switch; `effort_budget` is size. The two are
      orthogonal and neither derives the other. Values: standard | hardened |
      dark. Resolve with `scripts/lib/tracker.sh profile <file>`.

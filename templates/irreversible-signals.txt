@@ -1,0 +1,40 @@
+# irreversible-signals.txt — the single tuning knob for spec 002's classifier.
+#
+# One signal per line. Blank lines and #-comments ignored. Matching is a
+# case-insensitive substring test against the spec's own `objective`,
+# `output_spec` and `input_paths` — and nothing else. Notes are deliberately
+# NOT read: a spec that merely mentions having rejected a destructive approach
+# is not itself destructive.
+#
+# Adding a signal is editing this file. There is no code to change, and there
+# is no "uncertain" outcome: a spec either matches a signal or it does not.
+# The accepted cost is that an irreversible change nobody wrote a signal for
+# passes through as reversible. When that happens, add the signal here.
+
+# --- migration-shaped paths ---
+db/migrations
+/migrations/
+migrations/
+alembic/
+flyway/
+liquibase/
+
+# --- destructive schema change ---
+drop column
+drop table
+drop the
+delete column
+delete the table
+truncate
+alter table
+renamed to
+is renamed
+rename table
+rename the column
+
+# --- removal of a published interface ---
+remove the deprecated
+remove the public
+delete the endpoint
+drop the endpoint
+breaking change to the public

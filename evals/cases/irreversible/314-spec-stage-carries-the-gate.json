@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-314-spec-stage-carries-the-gate",
+  "target": "acceptances 2+4+7 \u2014 the spec-authoring stage must actually run the classifier. Wiring tracker without wiring skills/spec leaves the workflow unaware the gate exists.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/spec/SKILL.md\"; calls=$(grep -c \"tracker.sh irreversible\" \"$f\"); split=$(grep -c \"tracker.sh split\" \"$f\"); ovr=$(grep -c \"irreversible-override\" \"$f\"); printf '{\"calls\":%s,\"split\":%s,\"override\":%s}' \"$calls\" \"$split\" \"$ovr\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".calls >= 1 and .split >= 1 and .override >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 002 revision 1"
+  }
+}

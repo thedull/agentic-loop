@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-310-broken-list-blocks-advance",
+  "target": "acceptance 3 fail-closed AT THE INTEGRATION POINT \u2014 a broken signal list must stop `advance specd`, not fall through. The classifier refusing in isolation is worthless if the gate only checks exit 7.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/irreversible/drop_column.md\" t.md; IRREVERSIBLE_SIGNALS=\"$PWD/absent.txt\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance t.md specd >/dev/null 2>&1; c=$?; st=$(grep -m1 \"^status:\" t.md | sed \"s/status: //\"); printf '{\"c\":%s,\"status\":\"%s\"}' \"$c\" \"$st\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .status == \"queued\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 002 revision 1"
+  }
+}

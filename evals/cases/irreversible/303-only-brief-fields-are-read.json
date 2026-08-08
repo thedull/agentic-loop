@@ -1,0 +1,21 @@
+{
+  "id": "irreversible-303-only-brief-fields-are-read",
+  "target": "acceptance 2 \u2014 inputs are limited to objective/output_spec/input_paths. A signal word appearing only in Notes must NOT classify.",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" irreversible \"$FIXTURES/irreversible/notes_only_mention.md\" 2>/dev/null); c=$?; printf '{\"v\":\"%s\",\"c\":%s}' \"$v\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".v == \"reversible\" and .c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 002 Red Gate"
+  }
+}
