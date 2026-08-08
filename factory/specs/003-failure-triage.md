@@ -1,13 +1,14 @@
 ---
 id: 003
 title: Triage build failures before blocking, and treat tool output as data
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on: 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/5
+claimed_at: 2026-08-08T09:15:09Z
 ---
 
 # Spec 003 — Triage build failures before blocking, and treat tool output as data
@@ -83,6 +84,16 @@ runs the reviewer prompt with `guards` explicitly false. Mutation-test each.
   bounded loop becomes an unbounded one, and this repo has already paid for that
   lesson once.
 
+- **Two acceptances remain partly prose, and that is recorded rather than
+  hidden.** Acceptance 1 is now mechanical — `triage.sh payload` constructs the
+  blind payload in one place and case 412 proves builder reasoning cannot leak
+  into it — but nothing forces the build stage to USE it; that is SKILL.md
+  prose. Acceptance 5's regression-test requirement is prose only: no check can
+  tell a root-cause test from any other passing test. And acceptance 3's "cannot
+  advance to blocked as triaged" is not wired into `tracker.sh` — the validator
+  exists and the stage is told to run it. Making these mechanical needs a
+  tracker-side hook, which is a bigger change than this spec's boundaries allow.
+
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-02 spec: ADDED initial spec from `docs/osmani-audit.md` §2.7 backlog item 3, absorbing §2.3.2's surviving half.
@@ -94,3 +105,8 @@ runs the reviewer prompt with `guards` explicitly false. Mutation-test each.
 - 2026-08-02 spec-review: ADDED per-criterion fixture sketches (only one criterion had one) and `depends_on: 004`.
 - 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7.
 - 2026-08-04 grill: ADDED acceptance 1 — triage runs in a fresh context blind to the builder's reasoning (owner ruling). Renumbered the rest, so entries above this line refer to the OLD numbering (old 1->new 2, 2->3, 3->4, 4->5, 5->6, 6->7); added the no-edit boundary and the payload-exclusion fixture.
+- 2026-08-08 build: BUILT on `claude/idea-003-failure-triage`. Red Gate honoured: 11 cases first, 10 genuine failures, then implemented.
+- 2026-08-08 review: FIXED case 408, which checked keyword proximity rather than structural placement. The reviewer moved the whole untrusted-output paragraph INSIDE the guards-gated section and all 11 cases still passed — the exact mutation acceptance 7 exists to prevent. Now asserts line position relative to the guards gate.
+- 2026-08-08 review: ADDED case 411 and a fixture. The `hypothesis:` check had zero coverage; neutering it left every case green.
+- 2026-08-08 review: ADDED `triage.sh payload` and case 412, implementing this spec's own build-order sketch for acceptance 1 rather than leaving it as prose.
+- 2026-08-08 review: NARROWED the scan pattern. A bare `https?://` flagged routine npm/pip fetch errors as embedded instructions, which trains people to ignore the warning. A URL now needs an imperative before it. Case 413 pins both directions.
