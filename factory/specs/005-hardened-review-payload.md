@@ -1,7 +1,7 @@
 ---
 id: 005
 title: Give profile hardened a real security review payload
-status: pr-open
+status: done
 profile: standard
 created: 2026-08-02
 depends_on: 001 004
