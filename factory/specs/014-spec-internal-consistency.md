@@ -1,7 +1,7 @@
 ---
 id: 014
 title: Check a spec against itself before it reaches specd
-status: queued
+status: specd
 profile: standard
 created: 2026-08-04
 depends_on: 004

@@ -1,7 +1,7 @@
 ---
 id: 013
 title: Capture diff size and review-finding count in the event log
-status: queued
+status: specd
 profile: standard
 created: 2026-08-04
 depends_on: 004
@@ -29,8 +29,13 @@ pr:
 
 1. Diff size SHALL be captured at the point a diff exists.
    - Given a spec reaching the review stage, when the event is emitted, then it carries the diff's size in lines added and removed against the branch point; and given no branch or no diff, then both are null.
-2. Review-finding count SHALL be captured from the reviewer's own envelope.
+   - No hook fires at the moment a diff exists — `hooks/hooks.json` registers only SessionStart, SubagentStart, SubagentStop and SessionEnd — so this requires an explicit emit from the review stage. An eval case can prove the emit path records what it is given; it cannot prove the review stage calls it. That gap is stated rather than papered over, and a `bash-unit` assertion that `skills/review/SKILL.md` contains the emit instruction is the closest mechanical proxy.
+   - Given a spec reopened through `reviewing → building → reviewing`, when values are emitted, then each cycle emits its own event; spec 011 acceptance 7 decides which cycle is reported.
+2. Review-finding count SHALL be captured where the reviewer is actually observable.
+   - **Correction to this spec's own premise.** Its `user_intent_verbatim` blames `obs_shim_tap` for not capturing findings. `obs_shim_tap` cannot capture them under any implementation: the reviewer is a Task-tool subagent (`agents/reviewer.md`, tools `Read, Glob, Grep, Bash`), invoked via `skills/review/SKILL.md:41`, and never passes through a `call_*.sh` shim. The only place subagent output is observable is the `SubagentStop` hook path in `scripts/observe.sh`.
    - Given a completed blind review, when the event is emitted, then it carries the count of findings the reviewer returned; and given a review that did not complete, then the count is null — not zero, which would be indistinguishable from a clean review.
+   - "Did not complete" means no parseable envelope was produced. A review returning `status: needs_input` with a partial `findings[]` HAS completed and its count is that array's length; only an absent or unparseable result yields null.
+   - The count SHALL NOT be parsed out of the hook's `summary` field, which `scripts/observe.sh:217` truncates to 1000 characters. A verbose but complete review would silently become null.
 3. Nulls SHALL be honest, per the existing rule.
    - Given any case where a value cannot be determined, when the event is emitted, then the field is null and no fallback value is substituted — `scripts/lib/obs.sh` already forbids fabricating what a source did not report, and this spec adds no exception.
 4. The envelope version SHALL NOT change.
@@ -68,3 +73,8 @@ whole metric family rests on.
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-04 spec: ADDED, split out of spec 011 after the review gate disproved 011's claim that all four proxies were already captured.
+
+- 2026-08-08 spec-review: MODIFIED acceptance 2 — the spec's premise named the wrong capture plane. `obs_shim_tap` wraps `call_*.sh` shims and the reviewer is a Task-tool subagent, so it has no path to the reviewer's output at all; the observable point is the SubagentStop hook in `scripts/observe.sh`.
+- 2026-08-08 spec-review: ADDED the truncation guard — `scripts/observe.sh:217` cuts `summary` to 1000 chars, so parsing the count out of it would turn a verbose complete review into a null.
+- 2026-08-08 spec-review: ADDED a definition of "did not complete" against the reviewer's own `ok|needs_input` enum; a partial findings array is a completed review.
+- 2026-08-08 spec-review: ADDED the honest limit on acceptance 1 — no hook fires when a diff exists, so a case can verify the emit path but not that the stage calls it.

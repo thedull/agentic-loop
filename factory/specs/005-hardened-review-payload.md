@@ -1,7 +1,7 @@
 ---
 id: 005
 title: Give profile hardened a real security review payload
-status: queued
+status: specd
 profile: standard
 created: 2026-08-02
 depends_on: 001 004

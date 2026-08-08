@@ -49,3 +49,34 @@ would treat exit 4 as satisfying "it MUST fail." Pattern now confirmed
 across two unrelated specs — treat as a standing check on every future spec
 whose acceptance criteria include a process/doc change (not just a code
 change): does check_cmd cover it, or is it trust-the-builder?
+
+3rd strike: spec 009 (`factory/specs/009-attempt-ledger.md`). The Brief's
+headline objective ("give the loop a memory of approaches that were tried
+and abandoned") is realized by acceptances 3-4 ("stages consult the ledger
+before proposing an approach" / "retrying is explicit"). The spec's own note
+(lines 56-59) admits these "concern stage reasoning and belong on the
+anchored-rubric or `--live` path," but `check_cmd` (line 45) is
+`./evals/run_eval.sh --suite ledger` with no `--live`. Confirmed live:
+`evals/run_eval.sh:89-91` skips `headless-agent` cases when not `--live`,
+and `evals/README.md:25` states skips "never fail a run." So the spec
+*names its own gap in prose* but still ships a check_cmd that can't reach
+it — the self-awareness doesn't change the mechanical outcome. Treat
+"the spec says these acceptances need --live" as itself a red flag unless
+check_cmd includes --live or a separate always-run gate is named.
+
+4th strike: spec 013 (`comprehension-capture`) acceptance 1 (diff size).
+Unlike acceptance 2 (review-finding count), which can attach to the
+`SubagentStop` hook — an automatic, always-fires CLI hook that bash-unit
+fixtures can already exercise with a synthetic stdin payload (see
+`evals/cases/observability/018`, `/020` — no live agent needed) — diff size
+has no equivalent automatic hook. `hooks/hooks.json` registers only
+SessionStart/SubagentStart/SubagentStop/SessionEnd; nothing fires "when a
+diff exists." The only place a diff is computed is `skills/review/SKILL.md`
+step 4 prose (`git diff main...claude/idea-<slug>`), executed by the live
+orchestrating agent, not by any script under test. A check_cmd suite can
+only prove that `scripts/observe.sh emit <event> <overlay>` plumbs arbitrary
+fields through correctly — which the generic `emit` command already does,
+unmodified — never that the review skill actually calls it. **Pattern
+refinement: when a spec bundles two "new fields," check whether they share a
+capture mechanism — a hook-backed field and a prose-only field can look
+symmetric in the Brief while having very different Red Gate enforceability.**

@@ -1,7 +1,7 @@
 ---
 id: 003
 title: Triage build failures before blocking, and treat tool output as data
-status: queued
+status: specd
 profile: standard
 created: 2026-08-02
 depends_on: 004

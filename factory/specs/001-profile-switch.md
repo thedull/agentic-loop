@@ -1,7 +1,7 @@
 ---
 id: 001
 title: Wire profile as a three-position consequence switch
-status: queued
+status: specd
 profile: standard
 created: 2026-08-02
 depends_on: 004

@@ -1,7 +1,7 @@
 ---
 id: 012
 title: Automate LEARNINGS.md consolidation instead of trusting a checkbox
-status: queued
+status: specd
 profile: standard
 created: 2026-08-04
 depends_on: 004
@@ -28,18 +28,23 @@ pr:
 ## Acceptance (behavioral, testable — no implementation details)
 
 1. The cap SHALL be checked mechanically and reported.
-   - Given a `LEARNINGS.md` over the declared cap, when the check runs, then it reports the overage and the count; and given one under, then it reports clean and exits zero.
+   - The cap SHALL live in one machine-readable place. Today `~300 lines` exists only as prose in `templates/LEARNINGS.md:9`, `templates/LOOP_POLICY.md:136` and `templates/RUNBOOK.md:183`, so nothing can read it. A declared constant is part of this work.
+   - Given a `LEARNINGS.md` over the declared cap, when the check runs, then it reports the overage and the **line count** of the file; and given one under, then it reports clean and exits zero.
    - `doctor.sh` surfaces this, so an over-cap file is visible during preflight rather than discovered when someone remembers the checkbox.
 2. Consolidation SHALL be explicit, never automatic.
    - Given an over-cap file, when the check runs, then it does not modify anything; and given the consolidate action invoked deliberately, then it rewrites the file.
-3. Consolidation SHALL be lossless with respect to distinct learnings.
-   - Given entries that are duplicates or near-duplicates of one another, when consolidation runs, then they are merged into one entry retaining every distinct fact and the earliest date; and given entries that are genuinely distinct, then all of them survive.
-4. Consolidation SHALL be reversible.
-   - Given a consolidation run, when it completes, then the pre-consolidation file is preserved (timestamped alongside, or committed first) so a bad merge can be recovered without git archaeology.
+3. Consolidation SHALL merge only what is decidable, and SHALL propose the rest.
+   - **Exact duplicates are merged; near-duplicates are proposed, never merged automatically.** "Near-duplicate" is a judgment, and this repo's rule is that a gate refuses on decidable facts while a reviewer judges — the same routing spec 014 settled. A consolidator that silently merges on a similarity threshold destroys distinct learnings whenever the threshold is wrong, and nothing later can tell.
+   - Given byte-identical or whitespace-only-differing entries, when consolidation runs, then they are merged into one retaining the earliest date.
+   - Given entries that merely resemble one another, when consolidation runs, then they are listed as merge candidates for a human to accept or reject, and the file is not changed on their account.
+   - Given entries that are genuinely distinct, then all of them survive.
+4. Consolidation SHALL be reversible without depending on git.
+   - Given a consolidation run, when it completes, then the pre-consolidation file is preserved as a timestamped copy alongside it. "Committed first" is explicitly NOT an acceptable form: the eval sandbox is a bare `mktemp -d` with no git, so a git-based reversibility branch could never be verified by any case.
 5. An LLM SHALL NOT be required.
    - Given no model available, when consolidation runs, then it still functions on the mechanical cases — exact and near-duplicate merging, and ordering. A model may be offered to propose merges for review, but consolidation must not depend on one.
 6. The ledger section from spec 009 SHALL be consolidated by the same mechanism.
-   - Given a `LEARNINGS.md` containing ledger entries, when consolidation runs, then ledger entries are subject to the same merging and cap as every other entry — one discipline for the file, not two.
+   - Ledger entries are recognised by spec 009's declared form: bullets under a `## Attempt ledger` heading, shaped `- [<spec id>] tried <what> — dropped because <why>`. That grammar is the contract between the two specs and neither could recognise the class without it.
+   - Given a `LEARNINGS.md` containing ledger entries, when consolidation runs, then they are subject to the same merging and cap as every other entry — one discipline for the file, not two.
 
 ## Check command (the Red Gate contract)
 
@@ -76,3 +81,8 @@ exists for.
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-08-04 spec: ADDED, split out of spec 009 under grilling after the review gate found 009 citing a consolidation mechanism that does not exist.
+
+- 2026-08-08 spec-review: MODIFIED acceptance 3 — near-duplicate merging is now a proposal, not an automatic merge. The criterion was entirely undefined while the spec called it the hardest case, and an undefined similarity threshold inside a gate is judgment in a place this repo puts refusals.
+- 2026-08-08 spec-review: MODIFIED acceptance 4 — "committed first" removed. The bash-unit sandbox is a bare mktemp with no git, so that branch was unverifiable by any case.
+- 2026-08-08 spec-review: MODIFIED acceptance 1 — the ~300 cap exists only as prose in three files; a machine-readable constant is now part of the work, and "the count" is the file's line count.
+- 2026-08-08 spec-review: MODIFIED acceptance 6 to name spec 009's `## Attempt ledger` grammar. Neither spec defined how ledger entries were recognisable.

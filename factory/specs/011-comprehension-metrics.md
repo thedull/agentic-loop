@@ -1,7 +1,7 @@
 ---
 id: 011
 title: Report the comprehension proxies from the event log
-status: queued
+status: specd
 profile: standard
 created: 2026-08-02
 depends_on: 004 013
@@ -43,6 +43,13 @@ pr:
    - Given the two-segment cycle time already implemented, when merge latency is reported, then it is the same `pr-open → done` segment, not a second and potentially divergent calculation.
 7. Adding these metrics SHALL NOT change any existing mode's output.
    - Given the existing `cost`, `phase`, `spec`, `estimate` and `mix` modes, when run before and after this change on the same log, then their output is byte-identical.
+
+7. Multi-cycle specs SHALL report the last cycle, and SHALL disclose that they did.
+   - Given a spec that went `reviewing → building → reviewing` before merge, when its diff size and finding count are reported, then the values from the **final** cycle are used, not a sum and not the first — a sum would double-count code that was rewritten rather than added.
+   - Given such a spec, when it is reported, then its reopen count is shown alongside, so a single-cycle and a five-cycle spec are never presented as comparable.
+8. The density denominator SHALL be defined, and a zero denominator SHALL be null.
+   - Given "review findings per 100 changed lines", when it is computed, then the denominator is **added + removed** lines, since spec 013 captures them separately and either alone understates the change.
+   - Given a denominator of zero, when the metric is computed, then it is null rather than a division error or an infinity — a review of a zero-line diff has no density.
 
 ## Check command (the Red Gate contract)
 
@@ -91,3 +98,6 @@ golden-output comparison.
 - 2026-08-04 grill: MODIFIED the re-open proxy to build churn, named for what obs_metrics.jq:88 actually counts (owner ruling). Removed the post-merge framing; recorded that the lagging signal stays unbuilt and why.
 - 2026-08-04 grill: ADDED a fixed unit (per 100 changed lines) for finding density, which the review flagged as undefined.
 - 2026-08-04 grill: MODIFIED the Brief's objective and output_spec, which still carried the disproved "already captures" claim and the old re-open naming after the acceptances had been corrected.
+- 2026-08-08 spec-review: ADDED acceptance 7 — reopen-cycle aggregation was unstated, and `obs_metrics.jq:88-89` already counts reopens, so multi-cycle specs are real. Last cycle wins, with the reopen count disclosed beside it.
+- 2026-08-08 spec-review: ADDED acceptance 8 — the density denominator was undefined against 013's two separate numbers, and a zero denominator had no stated behaviour.
+- 2026-08-08 spec-review: MODIFIED the fixture list to cover acceptance 2's null pass-through, which it had skipped.

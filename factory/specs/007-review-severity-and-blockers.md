@@ -1,7 +1,7 @@
 ---
 id: 007
 title: Add merge-blocking severity and a bounded presumptive-blocker list to review
-status: queued
+status: specd
 profile: standard
 created: 2026-08-02
 depends_on: 004
@@ -31,8 +31,9 @@ pr:
    - Given any review output, when a finding is emitted, then it states blocking or non-blocking; a finding with no verdict is invalid.
    - Given a finding, when blocking is decided, then it is NOT derived from `severity` by any fixed mapping. The two answer different questions: `severity` is how bad the defect is, blocking is whether it should stop a merge.
    - Both directions must be expressible, and each needs a fixture: a low-severity blocking finding (a one-line silent fallback on an auth path) and a high-severity non-blocking one (a real inefficiency in a script that runs nightly). A rule that forbids either combination is a failure.
-2. The PR body SHALL separate blocking findings from the rest.
+2. The PR body SHALL separate blocking findings from the rest, and the instruction SHALL be mechanically verifiable.
    - Given a review producing at least one blocking finding, when the PR is opened, then the body lists blocking findings in their own section above the others, so the evening reviewer sees them without reading the whole body.
+   - No eval kind exercises a `SKILL.md`, so this acceptance is NOT satisfied by editing prose. A `bash-unit` case SHALL assert that `skills/review/SKILL.md` contains the blocking-section instruction, and SHALL fail when it is absent. A deliverable no check can fail on is not a deliverable.
 3. The presumptive-blocker list SHALL be exactly these four, held in one declared place.
    1. **Complexity relocated, not reduced** — a refactor that moves difficulty elsewhere and calls it simplification.
    2. **Silent fallbacks** — a default or catch that hides a failure instead of surfacing it.
@@ -42,6 +43,7 @@ pr:
    - Osmani's original list carries a fifth, "oversized file with no decomposition". It is deliberately excluded: file size is the most taste-adjacent of the five and the least tied to a concrete failure, and a closed list is only safe while every entry earns its place.
 4. The sweep SHALL run on every review, not behind the `guards` flag.
    - Given a review with `guards` disabled, when it runs, then the presumptive-blocker sweep still happens — `guards` gates the AI-slop quality checklist, and these are structural correctness classes.
+   - The mutation test for this needs `guards: false` visible to the agent, and the `headless-agent` sandbox is a bare `mktemp -d` with no `.agentic/config.json`. Seeding that config into the sandbox is part of this spec's work, not an assumption about the harness.
 5. A presumptive blocker SHALL be reported as a proposal, escalating to blocking only when it makes things actively worse.
    - Given a diff that relocates complexity rather than reducing it, when the review runs, then it is surfaced with a proposed alternative and marked non-blocking; and given the same pattern where the change measurably worsens the property it claims to improve, then it is marked blocking.
 6. The evidence bar SHALL be unchanged.
@@ -50,7 +52,7 @@ pr:
 ## Check command (the Red Gate contract)
 
 ```
-check_cmd: ./evals/run_eval.sh --suite review-severity
+check_cmd: ./evals/run_eval.sh --suite review-severity --live
 ```
 
 **Build order (spec 004 acceptance 7).** This names a **new suite of its own**,
@@ -61,11 +63,19 @@ red gate either — it exits 4 ("nothing ran"), and "no test" is not "a failing
 test". So the builder's first step is to create this suite and its cases, run
 the check, and see them genuinely fail (exit 1). Only then implement.
 
-Acceptances 1–4 and 6 are mechanically checkable over fixture review outputs and
-PR bodies — including acceptance 1's two cross-combination fixtures, which are
-what prove blocking was not quietly derived from severity. Acceptance 5's escalation judgment belongs on the anchored-rubric
-path. Mutation-test acceptance 4 with `guards: false`, confirming the case still
-requires the sweep.
+**This spec is attended-only, by owner ruling (2026-08-08), and `--live` is in
+the check_cmd deliberately.** Acceptances 1, 3, 4 and 6 describe what a live
+reviewer emits; those are `headless-agent` cases, which `evals/run_eval.sh:89-92`
+skips unless `--live` is passed — and a skipped case never fails a run. Without
+the flag this spec's gate could not fail on its own primary objective. With it,
+every run of this check spends subscription tokens on real agent calls, so the
+spec cannot be built by an unattended loop. That is the accepted trade.
+
+Acceptance 1's two cross-combination fixtures are what prove blocking was not
+quietly derived from severity. Acceptance 2 is a `bash-unit` grep over
+`skills/review/SKILL.md` and needs no agent. Acceptance 5's escalation judgment
+belongs on the anchored-rubric path. Mutation-test acceptance 4 with `guards:
+false` seeded into the sandbox, confirming the case still requires the sweep.
 
 ## Notes / decisions (append-only)
 
@@ -90,3 +100,7 @@ requires the sweep.
 - 2026-08-03 grill: MODIFIED build order per spec 004 acceptance 7.
 - 2026-08-04 grill: ADDED the four presumptive blockers by name (owner selection). The draft required a closed enumerated list and then never enumerated it, leaving the contents in docs/osmani-audit.md, which was not in input_paths — now added. Osmani's fifth entry (oversized file) deliberately excluded.
 - 2026-08-04 grill: MODIFIED acceptance 1 — blocking is judged independently of `severity`, never derived from it (owner ruling). Added the two cross-combination fixtures that prove it, and stated that the existing envelope fields are untouched.
+
+- 2026-08-08 spec-review: MODIFIED check_cmd to include `--live` (owner ruling). Acceptances 1/3/4/6 describe live reviewer output, and headless-agent cases skip without the flag (`evals/run_eval.sh:89-92`), so the gate could never fail on the spec's own objective. This spec is now attended-only.
+- 2026-08-08 spec-review: MODIFIED acceptance 2 — the PR-body instruction lives in `skills/review/SKILL.md`, which no eval kind exercises. Now requires a bash-unit assertion that the instruction is present.
+- 2026-08-08 spec-review: MODIFIED acceptance 4 — seeding `.agentic/config.json` into the headless-agent sandbox is part of the work; the sandbox is a bare mktemp with no config for the agent to read.
