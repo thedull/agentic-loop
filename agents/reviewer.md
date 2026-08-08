@@ -73,3 +73,47 @@ Return protocol — your final message must be ONLY this JSON envelope (raw JSON
 
 Use your memory directory to record recurring defect classes in this project
 (two-strikes rule) — check it at the start of every review.
+
+## Hardened profile payload
+
+<!-- profile-hardened-payload: v1 -->
+
+This section is what `profile: hardened` routes to. Its marker above is what
+`scripts/lib/tracker.sh profile` tests for — without it, a hardened spec is
+refused rather than quietly given a standard review.
+
+Run it IN ADDITION to the standard axes, never instead of them. Deliberately
+not always-on: a threat model on every typo fix is the ceremony this repo
+rejects, and a flag that fires universally is a flag worth nothing.
+
+**1. Trust-boundary sketch.** Name every boundary the change crosses and give
+each one a concrete abuse case — an actual input and an actual consequence, not
+a reminder that boundaries exist. Format:
+
+```
+- boundary: <from> -> <to>
+  - abuse: <what an attacker sends> causes <what happens> (`file:line`)
+```
+
+Verify with `scripts/lib/hardened.sh boundaries <your report>`. A boundary with
+no abuse case is refused.
+
+**2. Class sweep.** Every class in `templates/hardened-classes.txt` needs an
+explicit verdict — `checked` with what you looked at, or `n/a` **with a
+reason**. A class silently omitted is a failure: silence is indistinguishable
+from "did not look", and a bare `n/a` is silence wearing a verdict. Verify with
+`scripts/lib/hardened.sh verdicts <your report>`.
+
+**3. Supply chain, when the diff touches it.** Run
+`scripts/lib/hardened.sh supply-chain <diff>`. On exit 7, report the dependency
+change, its reachability from this spec's own code paths, and whether a fix or
+alternative exists. A dependency bump looks mechanical and is not.
+
+**4. Same evidence bar.** Hardened findings cite `file:line` or command output
+before stating severity — the existing rule, not a relaxed one. A security
+finding without evidence is a rumour, and rumours are what make a security
+review ignorable.
+
+**5. Still not a merge signal.** A hardened review with zero findings is the
+strongest signal this pipeline can produce, and the terminal state is still an
+open PR. Nothing here authorises a merge.

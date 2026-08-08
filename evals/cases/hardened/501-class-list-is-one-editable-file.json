@@ -1,0 +1,21 @@
+{
+  "id": "hardened-501-class-list-is-one-editable-file",
+  "target": "acceptance 4 \u2014 the class list lives in one named editable file, not scattered prose. Deleting a class from it must fail this case rather than quietly shrinking the sweep.",
+  "kind": "bash-unit",
+  "cmd": "n=$(\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" classes 2>/dev/null | wc -l | tr -d \" \"); inj=$(\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" classes 2>/dev/null | grep -c \"^injection$\"); ssrf=$(\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" classes 2>/dev/null | grep -c \"^ssrf$\"); pi=$(\"$PLUGIN_ROOT/scripts/lib/hardened.sh\" classes 2>/dev/null | grep -c \"^prompt-injection$\"); printf '{\"n\":%s,\"injection\":%s,\"ssrf\":%s,\"promptInjection\":%s}' \"$n\" \"$inj\" \"$ssrf\" \"$pi\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".n >= 12 and .injection == 1 and .ssrf == 1 and .promptInjection == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

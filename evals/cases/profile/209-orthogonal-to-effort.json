@@ -1,8 +1,8 @@
 {
   "id": "profile-209-profile-orthogonal-to-effort",
-  "target": "acceptance 5 \u2014 effort_budget never derives profile. A trivial+hardened spec must reach the hardened branch specifically (exit 6), not be downgraded to standard (exit 0).",
+  "target": "acceptance 5 \u2014 effort_budget never derives profile. A trivial+hardened spec resolves to hardened, and is never downgraded to standard.",
   "kind": "bash-unit",
-  "cmd": "printf -- \"---\\nid: 902\\ntitle: f\\nstatus: specd\\nprofile: hardened\\ndepends_on:\\nclaimed_by:\\nbranch:\\npr:\\n---\\n\\n- **effort_budget**: trivial\\n\" > t.md; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile t.md >/dev/null 2>&1; c=$?; v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile t.md 2>/dev/null); printf '{\"c\":%s,\"stdout\":\"%s\"}' \"$c\" \"$v\"",
+  "cmd": "printf -- \"---\\nid: 902\\ntitle: f\\nstatus: specd\\nprofile: hardened\\ndepends_on:\\nclaimed_by:\\nbranch:\\npr:\\n---\\n\\n- **effort_budget**: trivial\\n\" > t.md; v=$(\"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile t.md 2>/dev/null); c=$?; a=$(TRACKER_AGENTS_DIR=\"$PWD/none\" \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" profile t.md >/dev/null 2>&1; echo $?); printf '{\"v\":\"%s\",\"c\":%s,\"absent\":%s}' \"$v\" \"$c\" \"$a\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".c == 6 and .stdout == \"\""
+      "expr": ".v == \"hardened\" and .c == 0 and .absent == 6"
     }
   ],
   "provenance": {

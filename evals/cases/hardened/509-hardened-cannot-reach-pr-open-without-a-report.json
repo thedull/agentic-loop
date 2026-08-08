@@ -1,0 +1,21 @@
+{
+  "id": "hardened-509-hardened-cannot-reach-pr-open-without-a-report",
+  "target": "acceptances 3+5+6 as a GATE, not prose \u2014 the payload being installed proves it exists, not that it was applied to this review. A hardened spec needs the report artifact and it must pass the payload's own verifiers.",
+  "kind": "bash-unit",
+  "cmd": "mk(){ printf -- \"---\\nid: 95%s\\ntitle: t\\nstatus: reviewing\\nprofile: hardened\\ndepends_on:\\nclaimed_by:\\nbranch:\\npr:\\n---\\n\" \"$1\" > \"h$1.md\"; }; mk 0; mk 1; mk 2; T=\"$PLUGIN_ROOT/scripts/lib/tracker.sh\"; \"$T\" advance h0.md pr-open >/dev/null 2>&1; none=$?; s0=$(grep -m1 \"^status:\" h0.md|sed \"s/status: //\"); HARDENED_REPORT=\"$FIXTURES/hardened/verdicts_missing.md\" \"$T\" advance h1.md pr-open >/dev/null 2>&1; bad=$?; HARDENED_REPORT=\"$FIXTURES/hardened/verdicts_full.md\" \"$T\" advance h2.md pr-open >/dev/null 2>&1; ok=$?; s2=$(grep -m1 \"^status:\" h2.md|sed \"s/status: //\"); printf '{\"noReport\":%s,\"statusKept\":\"%s\",\"badReport\":%s,\"goodReport\":%s,\"advanced\":\"%s\"}' \"$none\" \"$s0\" \"$bad\" \"$ok\" \"$s2\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".noReport == 2 and .statusKept == \"reviewing\" and .badReport == 2 and .goodReport == 0 and .advanced == \"pr-open\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 005 revision 1"
+  }
+}

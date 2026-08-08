@@ -1,0 +1,21 @@
+{
+  "id": "hardened-507-payload-installed-and-routed",
+  "target": "acceptances 2+3+5 \u2014 the payload must be SUBSTANTIVE, not a marker with keywords around it. The blind review gutted the whole section to the word 'x.' while keeping the marker, the format block and four bare tool mentions, and every case still passed.",
+  "kind": "bash-unit",
+  "cmd": "r=\"$PLUGIN_ROOT/agents/reviewer.md\"; s=\"$PLUGIN_ROOT/skills/review/SKILL.md\"; sec=$(awk \"/^## Hardened profile payload/{on=1} on{print} on&&/^## /&&!/^## Hardened/{exit}\" \"$r\"); len=${#sec}; mark=$(printf \"%s\" \"$sec\" | grep -c \"profile-hardened-payload:\"); reqs=$(printf \"%s\" \"$sec\" | grep -cE \"^\\*\\*[1-5]\\.\"); v1=$(printf \"%s\" \"$sec\" | grep -c \"hardened.sh boundaries\"); v2=$(printf \"%s\" \"$sec\" | grep -c \"hardened.sh verdicts\"); v3=$(printf \"%s\" \"$sec\" | grep -c \"hardened.sh supply-chain\"); lst=$(printf \"%s\" \"$sec\" | grep -c \"templates/hardened-classes.txt\"); route=$(grep -c \"hardened.sh\" \"$s\"); printf '{\"len\":%s,\"marker\":%s,\"reqs\":%s,\"v1\":%s,\"v2\":%s,\"v3\":%s,\"list\":%s,\"routed\":%s}' \"$len\" \"$mark\" \"$reqs\" \"$v1\" \"$v2\" \"$v3\" \"$lst\" \"$route\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".len > 900 and .marker >= 1 and .reqs == 5 and .v1 >= 1 and .v2 >= 1 and .v3 >= 1 and .list >= 1 and .routed >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 005 Red Gate"
+  }
+}

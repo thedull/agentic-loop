@@ -42,7 +42,14 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    branch on the exit code — `profile:` is the consequence switch and this is
    where it routes:
    - **0** → it printed `standard` or `hardened`. `standard` reviews exactly as
-     below. `hardened` additionally runs the deep security payload.
+     below. `hardened` additionally runs the **Hardened profile payload** in
+     `agents/reviewer.md` — trust-boundary sketch with an abuse case per
+     boundary, the class sweep in `templates/hardened-classes.txt` with an
+     explicit verdict for every class, and the supply-chain check when the
+     diff touches dependency surface. Verify each with
+     `scripts/lib/hardened.sh boundaries|verdicts|supply-chain` before
+     accepting the review as complete. A hardened review still terminates at
+     an open PR.
    - **6** → `hardened` was requested but its payload is not installed. **Refuse
      the review.** Mark the spec `blocked` with the tool's own message
      ("hardened profile requested but the hardened review payload is not

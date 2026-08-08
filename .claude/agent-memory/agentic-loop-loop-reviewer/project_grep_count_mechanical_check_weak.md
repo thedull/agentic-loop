@@ -67,3 +67,29 @@ Also found in the same suite (separate class, not vocabulary-co-occurrence):
 *zero* fixture coverage — no `no_hypothesis.md` fixture exists (only
 no_reproduce/no_localize/no_evidence/none/late/good). Neutering that one
 check (`true || _t_die ...`) still passes all 11 triage cases.
+
+4th strike: spec 005 (`hardened-review-payload`). Two cases in
+`evals/cases/hardened/`, confirmed live by editing `agents/reviewer.md` /
+`skills/review/SKILL.md` and rerunning `./evals/run_eval.sh --suite hardened`:
+- `507-payload-installed-and-routed.json` only greps for marker/format-line/
+  keyword co-occurrence (`grep -c "profile-hardened-payload:"`, `grep -c --
+  "- boundary: <from> -> <to>"`, `grep -c -- "- abuse:"`, `grep -c
+  "hardened.sh"`, `grep -c "templates/hardened-classes.txt"`). Replacing the
+  ENTIRE payload prose (all 5 numbered sub-sections, ~40 lines) with a single
+  word `x.` plus the bare marker comment, the format code-block, and four bare
+  keyword mentions (`hardened.sh templates/hardened-classes.txt hardened.sh
+  hardened.sh`) still passes 507 — and every other case in both the
+  `hardened` and `profile` suites (23/23), exit 0.
+- `508-hardened-still-terminates-at-a-pr.json`'s `prTerminal` check
+  (`grep -ci "terminal state is an OPEN PR\|Nothing merges here"`) is NOT
+  scoped to the awk-extracted hardened section — it greps the whole file, so
+  it's satisfied by pre-existing top-of-file boilerplate
+  (`skills/review/SKILL.md:15`, "Nothing merges here") that exists
+  independent of anything spec 005 added. Confirmed live: deleting the
+  hardened-specific "A hardened review still terminates at an open PR"
+  sentence from step 3b still passes 508. Separately, its `mergeCmds` check
+  IS awk-scoped to a window starting at the first "hardened" match and
+  closing after 2 numbered `N. **` headers — but that window is narrow
+  enough that a `gh pr merge --squash` instruction added in a *new* section
+  anywhere past that window (e.g. right before `## Unattended rules`) is
+  invisible to it. Confirmed live: adding such a section still passes 508.

@@ -1,0 +1,3 @@
+--- a/package-lock.json
++++ b/package-lock.json
++  "left-pad": "1.3.0"
