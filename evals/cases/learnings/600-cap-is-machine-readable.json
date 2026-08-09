@@ -1,0 +1,21 @@
+{
+  "id": "learnings-600-cap-is-machine-readable",
+  "target": "acceptance 1 \u2014 the cap exists as a readable constant, not as ~300 in three prose files where nothing can read it",
+  "kind": "bash-unit",
+  "cmd": "v=$(\"$PLUGIN_ROOT/scripts/lib/learnings.sh\" cap 2>/dev/null); printf '{\"v\":\"%s\",\"numeric\":%s}' \"$v\" \"$(printf \"%s\" \"$v\"|grep -cE \"^[0-9]+$\")\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".numeric == 1 and (.v|tonumber) >= 100"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

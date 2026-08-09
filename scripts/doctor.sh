@@ -65,6 +65,18 @@ if command -v ollama >/dev/null 2>&1; then
 else
   warn "ollama not installed — local free tier unavailable (call_ollama.sh will fail)"
 fi
+echo
+echo "cross-run memory:"
+if [[ -f ./LEARNINGS.md ]]; then
+  if out="$("$(dirname "${BASH_SOURCE[0]}")/lib/learnings.sh" check ./LEARNINGS.md 2>&1)"; then
+    ok "${out#learnings: }"
+  else
+    warn "${out#learnings: }"
+  fi
+else
+  ok "no LEARNINGS.md yet (created on the first recorded lesson)"
+fi
+
 command -v shellcheck >/dev/null 2>&1 && ok "shellcheck present (optional)" || true
 
 echo

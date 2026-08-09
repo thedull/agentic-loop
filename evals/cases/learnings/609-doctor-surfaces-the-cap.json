@@ -1,0 +1,21 @@
+{
+  "id": "learnings-609-doctor-surfaces-the-cap",
+  "target": "acceptance 1 \u2014 doctor.sh surfaces an over-cap file during preflight, rather than it being discovered when someone remembers a checkbox",
+  "kind": "bash-unit",
+  "cmd": "d=\"$PLUGIN_ROOT/scripts/doctor.sh\"; n=$(grep -c \"learnings.sh\" \"$d\"); printf '{\"wired\":%s}' \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".wired >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

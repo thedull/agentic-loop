@@ -180,7 +180,9 @@ tail -5 .agentic/STATUS.md                 # the digest so far
 - [ ] `./scripts/observe_prune.sh` — gzip event files older than 30 days and
       cap the reports folder. Lossless (every reader handles `.jsonl.gz`);
       run it after `observe_push.sh` if the export stack is on.
-- [ ] Prune `LEARNINGS.md` (two-strikes rule, ~300-line cap).
+- [ ] `scripts/lib/learnings.sh check LEARNINGS.md` — over the cap, run
+      `consolidate` deliberately. `doctor.sh` surfaces this during preflight,
+      so it is no longer a checkbox anyone has to remember.
 - [ ] `claude plugin update agentic-loop`, then `/agentic-loop:update` — pick
       up plugin fixes shipped since this project was scaffolded. Skips when
       already current; asks before touching anything you edited.

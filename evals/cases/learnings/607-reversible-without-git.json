@@ -1,0 +1,21 @@
+{
+  "id": "learnings-607-reversible-without-git",
+  "target": "acceptance 4 \u2014 the pre-consolidation file is preserved as a timestamped copy alongside. 'Committed first' is not acceptable: the sandbox has no git, so no case could ever verify it.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/exact_dupes.md\" t.md; before=$(cksum < t.md); \"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md >/dev/null 2>&1; bak=$(ls t.md.* 2>/dev/null | head -1); restored=$([ -n \"$bak\" ] && cksum < \"$bak\" || echo none); [ \"$before\" = \"$restored\" ] && ok=1 || ok=0; gitless=$([ -d .git ] && echo 1 || echo 0); printf '{\"backupMatchesOriginal\":%s,\"noGitNeeded\":%s}' \"$ok\" \"$((1-gitless))\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".backupMatchesOriginal == 1 and .noGitNeeded == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

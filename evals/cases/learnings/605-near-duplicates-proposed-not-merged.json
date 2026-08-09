@@ -1,0 +1,21 @@
+{
+  "id": "learnings-605-near-duplicates-proposed-not-merged",
+  "target": "acceptance 3 \u2014 near-duplicates are a JUDGMENT: reported as numbered candidates for a human, never merged. Asserts the parsed candidate COUNT and a numbered candidate block, because the summary line contains the word 'candidate(s)' even when the count is zero.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/near_dupes.md\" t.md; a=$(cksum < t.md); o=$(\"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md 2>&1); b=$(cksum < t.md); [ \"$a\" = \"$b\" ] && same=1 || same=0; n=$(printf \"%s\" \"$o\" | sed -nE \"s/.*; ([0-9]+) near-duplicate candidate\\(s\\) reported.*/\\1/p\" | head -1); blk=$(printf \"%s\" \"$o\" | grep -c \"^  candidate 1:\"); lines=$(grep -c \"shim timeout\" t.md); printf '{\"unchanged\":%s,\"count\":%s,\"block\":%s,\"bothKept\":%s}' \"$same\" \"${n:-0}\" \"$blk\" \"$lines\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".unchanged == 1 and .count >= 1 and .block == 1 and .bothKept == 2"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

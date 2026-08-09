@@ -152,7 +152,7 @@ Rules:
   workers return condensed digests, never transcripts.
 - Cross-run lessons go in `LEARNINGS.md` (committed): record on the SECOND
   occurrence of an error or confirmed approach, not the first; keep it under
-  ~300 lines; prune when stale. No external memory layers (no memory MCPs /
+  the cap `scripts/lib/learnings.sh cap` declares; prune when stale. No external memory layers (no memory MCPs /
   vector DBs) — files + git + native subagent memory are the whole system.
 
 ## Feature flags — .agentic/config.json (all default-off)
