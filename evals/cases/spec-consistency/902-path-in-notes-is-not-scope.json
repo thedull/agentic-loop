@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-902-path-in-notes-is-not-scope",
+  "target": "acceptance 1 \u2014 a path cited only in Notes is provenance, not scope. A spec may cite history without widening its seams.",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/path_only_in_notes.md\" >/dev/null 2>&1; printf '{\"c\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

@@ -16,7 +16,7 @@ pr:
 
 - **objective**: put a number in front of a metered call before it is made, and refuse the call above a threshold unless it is explicitly authorized — turning "the human confirms all metered spend" from prose into a gate.
 - **user_intent_verbatim**: "(§6 item 11) Pre-flight cost estimate before a metered shim call, with a confirmation threshold... Estimate tokens, multiply by the resolved model's price, print it, and require confirmation above a threshold." (2026-08-08). Gate-versus-inform settled by owner ruling the same day: *"Gate: refuse above threshold unless explicitly authorized."*
-- **input_paths**: `scripts/lib/common.sh`, `scripts/call_sol.sh`, `scripts/call_fable.sh`, `scripts/call_openrouter.sh`, `templates/.env.example`, `evals/cases/preflight-cost/`, `evals/fixtures/`
+- **input_paths**: `scripts/lib/common.sh`, `scripts/call_sol.sh`, `scripts/call_fable.sh`, `scripts/call_openrouter.sh`, `templates/.env.example`, `evals/cases/preflight-cost/`, `evals/fixtures/`, `scripts/call_ollama.sh`
 - **boundaries_non_goals**:
   - Does NOT write an estimate into `usage.est_cost_usd`. That field is reserved for what a provider actually reported; `scripts/lib/obs.sh:17-19` forbids fabricating costs a source did not report, and an estimate written there would be indistinguishable from a billed figure forever after.
   - Does NOT gate the free tiers. `call_ollama.sh` spends nothing and is untouched.
@@ -108,3 +108,4 @@ any check that merely asks whether a number is present.
 - 2026-08-08 spec-review: MODIFIED acceptance 3 — the assumed output size now varies with effort. A flat assumption understates `--effort ultra`, which scales token use with subagent count (`call_sol.sh:20-21`), i.e. the costliest call the gate is for.
 - 2026-08-08 spec-review: MODIFIED acceptance 6 — the disable sentinel is now the explicit string `off`. It was unnamed, and by elimination a builder would have reached for `0`, which also reads literally as "refuse everything".
 - 2026-08-08 spec-review: MODIFIED the obs.sh citation from `:18-19` to `:17-19`. Line 17 carries the word "never"; quoting from 18 drops the negation and the prohibition reads as an affirmation.
+- 2026-08-08 spec-check: MODIFIED input_paths — an acceptance named a path the Brief never declared. Found by `scripts/lib/spec_check.sh` on its first run against the real queue, which is the defect class spec 014 exists to catch.

@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-908-runs-standalone",
+  "target": "acceptance 7 \u2014 usable on any spec file with no tracker state, no claim, no branch. Run from a bare sandbox with no git repo at all.",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/clean.md\" >/dev/null 2>&1; c=$?; g=$([ -d .git ] && echo 1 || echo 0); printf '{\"c\":%s,\"hadGit\":%s}' \"$c\" \"$g\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .hadGit == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-906-drift-masked-by-prose-is-a-known-miss",
+  "target": "acceptance 3 \u2014 the KNOWN MISS, pinned so nobody mistakes this check for complete. When the drifted term reappears in unrelated acceptance prose a presence check finds it and stays silent. This is exactly how spec 011's real drift escaped: 're-open' sat in a disclaimer sentence.",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/drift_masked.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\"|grep -c \"candidate \u2014 \"); w=$(printf \"%s\" \"$o\"|grep -c \"widgetronic\"); printf '{\"c\":%s,\"candidate\":%s,\"candidates\":%s,\"names\":%s}' \"$c\" \"$n\" \"$n\" \"$w\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .candidates == 0 and .names == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

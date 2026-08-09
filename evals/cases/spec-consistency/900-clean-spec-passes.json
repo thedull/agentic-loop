@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-900-clean-spec-passes",
+  "target": "a spec consistent with itself passes, exit 0",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/clean.md\" >/dev/null 2>&1; printf '{\"c\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

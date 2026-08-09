@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-901-undeclared-path-blocks",
+  "target": "acceptance 1 \u2014 an acceptance naming a path absent from input_paths blocks, and the message names the path",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/path_missing.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -c \"undeclared.sh\"); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}
