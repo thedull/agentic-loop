@@ -16,7 +16,7 @@ pr:
 
 - **objective**: let the same Sol adversary/reviser call be funded from `OPENROUTER_API_KEY` instead of `OPENAI_API_KEY`, reusing the identical prompts and envelope, so the choice of transport is a billing decision rather than a behavioural one.
 - **user_intent_verbatim**: "(§6 item 4) Add an OpenRouter transport to call_sol.sh... a `--via` flag (or equivalent) that reuses the identical adversary/reviser prompts and envelope, so the same Sol call can be funded from OPENROUTER_API_KEY instead of OPENAI_API_KEY, with the batch variant available for unattended stages." (2026-08-08). Worker naming settled by owner ruling the same day: `sol/openrouter`.
-- **input_paths**: `scripts/call_sol.sh`, `scripts/lib/common.sh`, `templates/.env.example`, `scripts/doctor.sh`, `evals/cases/sol-transport/`, `evals/fixtures/`
+- **input_paths**: `scripts/call_sol.sh`, `scripts/lib/common.sh`, `templates/.env.example`, `scripts/doctor.sh`, `evals/cases/sol-transport/`, `evals/fixtures/`, `scripts/lib/obs.sh`
 - **boundaries_non_goals**:
   - Does NOT change the metered-tier policy. OpenRouter is metered too, so `templates/LOOP_POLICY.md:198-201` applies unchanged — no unattended Sol calls on either transport, and no acceptance here weakens that.
   - **Reconciling the verbatim intent, which asks for more than this spec delivers.** The quoted request says batch should be "available for unattended stages." Making batch *available* is in scope; making any Sol call *unattended* is not, and cannot be until the metered rule is re-grounded on quota (`docs/codex-subscription.md` §6 item 5, unbuilt, and deliberately not a dependency of this spec). This spec ships the transport; it leaves the policy exactly where it found it. Stated here so the gap is a decision rather than an oversight.
@@ -109,3 +109,4 @@ honest-nulls rule exists to prevent, and it would otherwise pass a naive
 - 2026-08-08 spec-review: MODIFIED acceptance 4 — `--effort ultra` on OpenRouter now refuses outright. "Applies the equivalent setting" was a false choice: no equivalent exists, and the phrasing invited a client-side multi-agent emulation nobody asked for.
 - 2026-08-08 spec-review: ADDED the acceptance-6 mock carve-out. The check-command guidance said every case uses `MOCK_RESPONSE_FILE`, which `scripts/lib/common.sh:58` makes a credential test incapable of ever failing.
 - 2026-08-08 spec-review: ADDED a boundary reconciling the verbatim intent's "available for unattended stages" with the no-unattended-metered-calls rule this spec does not touch.
+- 2026-08-08 spec-check: MODIFIED input_paths — an acceptance named a path the Brief never declared. Found by `scripts/lib/spec_check.sh` on its first run against the real queue, which is the defect class spec 014 exists to catch.

@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-913-advance-to-specd-is-gated",
+  "target": "acceptance 6 \u2014 a blocking failure must PREVENT specd. Prose in skills/spec binds only an agent that reads it; the tracker must refuse.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p s; cp \"$FIXTURES/spec-consistency/dup_numbers.md\" s/920-bad.md; cp \"$FIXTURES/spec-consistency/clean.md\" s/921-ok.md; sed -i.bak \"s/^status: queued/status: queued/\" s/920-bad.md 2>/dev/null || true; \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance s/920-bad.md specd >/dev/null 2>&1; bad=$?; st=$(grep -m1 \"^status:\" s/920-bad.md | sed \"s/status: //\"); \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance s/921-ok.md specd >/dev/null 2>&1; ok=$?; st2=$(grep -m1 \"^status:\" s/921-ok.md | sed \"s/status: //\"); printf '{\"badRc\":%s,\"badStatus\":\"%s\",\"okRc\":%s,\"okStatus\":\"%s\"}' \"$bad\" \"$st\" \"$ok\" \"$st2\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".badRc == 2 and .badStatus == \"queued\" and .okRc == 0 and .okStatus == \"specd\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 014 revision 1"
+  }
+}

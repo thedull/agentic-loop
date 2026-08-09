@@ -19,7 +19,7 @@ shelved_at: 2026-08-09T00:30:06Z
 
 - **objective**: make review findings say whether they block a merge, and give the reviewer a short fixed list of structural problems it must surface even when unasked.
 - **user_intent_verbatim**: `docs/osmani-audit.md` §2.3.3 — stolen from `code-review-and-quality`. Our reviewer types findings by layer and severity but never says which ones block, and §1.3(d) found nothing in the pipeline defends legibility.
-- **input_paths**: `agents/reviewer.md`, `skills/review/SKILL.md`, `docs/osmani-audit.md`, `evals/cases/review-severity/`
+- **input_paths**: `agents/reviewer.md`, `skills/review/SKILL.md`, `docs/osmani-audit.md`, `evals/cases/review-severity/`, `.agentic/config.json`
 - **boundaries_non_goals**:
   - Does NOT widen the reviewer's remit to style or taste. `agents/reviewer.md:25` stays exactly as written; the blocker list is finite precisely so it cannot expand into general commentary.
   - Does NOT add a new revision round. Blocking findings route through the existing bounded revision, hard cap 2.
@@ -107,3 +107,4 @@ false` seeded into the sandbox, confirming the case still requires the sweep.
 - 2026-08-08 spec-review: MODIFIED check_cmd to include `--live` (owner ruling). Acceptances 1/3/4/6 describe live reviewer output, and headless-agent cases skip without the flag (`evals/run_eval.sh:89-92`), so the gate could never fail on the spec's own objective. This spec is now attended-only.
 - 2026-08-08 spec-review: MODIFIED acceptance 2 — the PR-body instruction lives in `skills/review/SKILL.md`, which no eval kind exercises. Now requires a bash-unit assertion that the instruction is present.
 - 2026-08-08 spec-review: MODIFIED acceptance 4 — seeding `.agentic/config.json` into the headless-agent sandbox is part of the work; the sandbox is a bare mktemp with no config for the agent to read.
+- 2026-08-08 spec-check: MODIFIED input_paths — an acceptance named a path the Brief never declared. Found by `scripts/lib/spec_check.sh` on its first run against the real queue, which is the defect class spec 014 exists to catch.

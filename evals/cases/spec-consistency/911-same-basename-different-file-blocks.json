@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-911-same-basename-different-file-blocks",
+  "target": "the basename shortcut must not treat two DIFFERENT files as the same. This repo has eight SKILL.md files; declaring one and naming another in an acceptance is genuine scope drift.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\n---\\n\\n## Brief (the delegation contract)\\n\\n\" > b.md; printf -- \"- **input_paths**: \\`skills/spec/SKILL.md\\`\\n- **output_spec**: x\\n\\n\" >> b.md; printf -- \"## Acceptance (behavioral, testable)\\n\\n1. It SHALL work.\\n   - Given \\`skills/review/SKILL.md\\`, when b, then c.\\n\" >> b.md; \"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" b.md >/dev/null 2>&1; other=$?; printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\n---\\n\\n## Brief (the delegation contract)\\n\\n\" > s2.md; printf -- \"- **input_paths**: \\`scripts/lib/obs.sh\\`\\n- **output_spec**: x\\n\\n\" >> s2.md; printf -- \"## Acceptance (behavioral, testable)\\n\\n1. It SHALL work.\\n   - Given \\`obs.sh\\`, when b, then c.\\n\" >> s2.md; \"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" s2.md >/dev/null 2>&1; short=$?; printf '{\"differentFile\":%s,\"shortForm\":%s}' \"$other\" \"$short\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".differentFile == 2 and .shortForm == 0"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 014 revision 1"
+  }
+}

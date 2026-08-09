@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-912-no-false-blocks-on-crlf-or-quoted-citations",
+  "target": "a false block halts the whole queue at spec stage, so it is worse here than a missed defect. CRLF line endings left a trailing \\r on the declared path and blocked a correctly-declared file; a quoted cross-document citation was read as a self-reference.",
+  "kind": "bash-unit",
+  "cmd": "printf \"%s\\r\\n\" \"---\" \"id: 1\" \"title: t\" \"status: queued\" \"---\" \"\" \"## Brief (the delegation contract)\" \"\" \"- **input_paths**: \\`scripts/lib/a.sh\\`\" \"- **output_spec**: x\" \"\" \"## Acceptance (behavioral, testable)\" \"\" \"1. It SHALL work.\" \"   - Given \\`scripts/lib/a.sh\\`, when b, then c.\" > crlf.md; \"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" crlf.md >/dev/null 2>&1; crlf=$?; printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\n---\\n\\n## Brief (the delegation contract)\\n\\n\" > q.md; printf -- \"- **input_paths**: \\`a.sh\\`\\n- **output_spec**: x\\n\\n## Acceptance (behavioral, testable)\\n\\n\" >> q.md; printf -- \"1. It SHALL work.\\n   - Given a, when b, then c.\\n\\n## Notes / decisions (append-only)\\n\\n\" >> q.md; printf -- \"- the user said \\\"please respect acceptance 12 of the OTHER spec\\\".\\n\" >> q.md; \"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" q.md >/dev/null 2>&1; quoted=$?; printf '{\"crlf\":%s,\"quoted\":%s}' \"$crlf\" \"$quoted\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".crlf == 0 and .quoted == 0"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 014 revision 1"
+  }
+}

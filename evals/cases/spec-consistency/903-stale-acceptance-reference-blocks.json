@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-903-stale-acceptance-reference-blocks",
+  "target": "acceptance 2 \u2014 a Notes entry citing acceptance 9 when only 2 exist blocks, naming the number",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/stale_ref.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -c \"9\"); printf '{\"c\":%s,\"names\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

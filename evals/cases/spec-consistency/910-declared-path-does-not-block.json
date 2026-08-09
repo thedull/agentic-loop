@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-910-declared-path-does-not-block",
+  "target": "acceptance 1's true-negative path. Forcing _declared_covers to always return 'not covered' passed the whole suite: no fixture had an acceptance naming a path that IS declared, so only the failing direction was tested.",
+  "kind": "bash-unit",
+  "cmd": "printf -- \"---\\nid: 1\\ntitle: t\\nstatus: queued\\n---\\n\\n## Brief (the delegation contract)\\n\\n\" > d.md; printf -- \"- **input_paths**: \\`scripts/lib/a.sh\\`, \\`evals/cases/x/\\`\\n- **output_spec**: x\\n\\n\" >> d.md; printf -- \"## Acceptance (behavioral, testable)\\n\\n1. It SHALL work.\\n   - Given \\`scripts/lib/a.sh\\`, when b, then c.\\n\" >> d.md; e=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" d.md 2>&1); rc=$?; n=$(printf \"%s\" \"$e\"|grep -c \"does not declare\"); printf '{\"rc\":%s,\"blocked\":%s}' \"$rc\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".rc == 0 and .blocked == 0"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 014 revision 1"
+  }
+}

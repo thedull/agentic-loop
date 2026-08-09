@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-907-boundary-clash-is-a-candidate",
+  "target": "acceptance 4 \u2014 a `Does NOT X` boundary whose terms also appear in an acceptance is listed, without being adjudicated. Being listed is the goal; being right is the reviewer's job.",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/boundary_clash.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\"|grep -ci \"boundary\"); printf '{\"c\":%s,\"listed\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .listed >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-905-drift-is-a-candidate-not-a-block",
+  "target": "acceptance 3 \u2014 a distinctive output_spec term absent from every acceptance is a CANDIDATE. Exit status is unaffected: this is a reading to narrow, not a fact to decide.",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/drift.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\"|grep -c \"candidate \u2014 \"); w=$(printf \"%s\" \"$o\"|grep -c \"widgetronic\"); printf '{\"c\":%s,\"candidate\":%s,\"candidates\":%s,\"names\":%s}' \"$c\" \"$n\" \"$n\" \"$w\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .candidate >= 1 and .names >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

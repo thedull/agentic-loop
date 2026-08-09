@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-909-spec-stage-gates-before-the-reviewer",
+  "target": "acceptances 5+6 \u2014 the spec stage must run this BEFORE spending the reviewer, and must pass candidates into the reviewer payload. Checked structurally: the call must appear before the delegate step, and the payload amendment must be declared.",
+  "kind": "bash-unit",
+  "cmd": "f=\"$PLUGIN_ROOT/skills/spec/SKILL.md\"; chk=$(grep -n \"spec_check.sh\" \"$f\" | head -1 | cut -d: -f1); rev=$(grep -n \"loop-reviewer\" \"$f\" | head -1 | cut -d: -f1); cand=$(grep -ci \"candidate\" \"$f\"); printf '{\"checkLine\":%s,\"reviewerLine\":%s,\"mentionsCandidates\":%s}' \"${chk:-0}\" \"${rev:-0}\" \"$cand\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".checkLine > 0 and .reviewerLine > 0 and .checkLine < .reviewerLine and .mentionsCandidates >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

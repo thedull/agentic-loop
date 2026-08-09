@@ -98,8 +98,28 @@ ideas get no `depends_on` line at all.
    - `profile: hardened` only if the user explicitly asked for
      correctness-critical treatment.
 
+3b. **Self-consistency gate — run BEFORE spending the reviewer.**
+   `scripts/lib/spec_check.sh <file>`:
+   - **exit 2** → the spec contradicts itself on a decidable fact (an acceptance
+     naming a path `input_paths` does not declare; a duplicated acceptance
+     number; a Notes entry citing an acceptance that does not exist). Fix it and
+     re-run. Do NOT advance, and do NOT invoke the reviewer — spending a
+     fresh-context review on a spec that disagrees with itself wastes the
+     cheapest moment in the pipeline.
+   - **exit 0** → consistent. Any `candidate —` lines it printed are NOT
+     verdicts: they are readings to narrow. Pass them into the reviewer's
+     payload alongside the spec path (see below).
+
+   The split is the routing rule this repo uses everywhere: a gate refuses on
+   decidable facts, a reviewer judges. Paths and integers are set operations, so
+   they block. Vocabulary drift and boundary clashes need reading, so they
+   become candidates.
+
 4. **Spec review gate** (skip for `trivial`) — delegate to the `loop-reviewer`
-   subagent with ONLY the spec file path (blind, fresh context). Brief it to
+   subagent with the spec file path AND the candidate list from step 3b
+   (blind, fresh context). This is a declared amendment to the former
+   "ONLY the spec file path" contract: candidates are derived from the spec
+   itself, never from the author's reasoning, so blindness is preserved. Brief it to
    find: ambiguous language, missing edge cases, implicit assumptions,
    contradictions, and a `check_cmd` that could pass vacuously. Fix findings
    now — with the user if a finding needs a decision. This is the cheapest

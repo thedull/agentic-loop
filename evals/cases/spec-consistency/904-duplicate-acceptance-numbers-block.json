@@ -1,0 +1,21 @@
+{
+  "id": "spec-consistency-904-duplicate-acceptance-numbers-block",
+  "target": "acceptance 2, extended \u2014 two acceptances sharing a number is the same internal-inconsistency class as a stale reference, and check 2 as written misses it entirely. Real regression: spec 011 shipped with two acceptance 7s, introduced by its own gating pass and caught only by a human reading it.",
+  "kind": "bash-unit",
+  "cmd": "e=$(\"$PLUGIN_ROOT/scripts/lib/spec_check.sh\" \"$FIXTURES/spec-consistency/dup_numbers.md\" 2>&1 >/dev/null); c=$?; n=$(printf \"%s\" \"$e\"|grep -ci \"duplicate\"); d=$(printf \"%s\" \"$e\"|grep -c \"7\"); printf '{\"c\":%s,\"saysDup\":%s,\"namesNumber\":%s}' \"$c\" \"$n\" \"$d\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 2 and .saysDup >= 1 and .namesNumber >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 014 Red Gate"
+  }
+}

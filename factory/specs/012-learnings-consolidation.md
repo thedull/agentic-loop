@@ -17,7 +17,7 @@ claimed_at: 2026-08-09T00:30:06Z
 
 - **objective**: give `LEARNINGS.md` a mechanical size discipline, so its stated ~300-line cap is enforced rather than remembered.
 - **user_intent_verbatim**: split out of spec 009 during grilling (owner ruling 2026-08-04). The review gate found spec 009 citing automated consolidation that does not exist — the only mechanism is a manual checkbox at `templates/RUNBOOK.md:183`. The owner chose to build the real thing rather than weaken the acceptance.
-- **input_paths**: `templates/LEARNINGS.md`, `templates/RUNBOOK.md`, `scripts/lib/`, `evals/cases/learnings/`
+- **input_paths**: `templates/LEARNINGS.md`, `templates/RUNBOOK.md`, `scripts/lib/`, `evals/cases/learnings/`, `scripts/doctor.sh`
 - **boundaries_non_goals**:
   - Does NOT delete a learning outright. Consolidation merges and compresses; anything genuinely dropped is dropped by a human.
   - Does NOT summarize with an LLM by default. The cap is a mechanical concern and the file is the loop's memory — a lossy rewrite of memory is a worse failure than an oversized file.
@@ -92,3 +92,4 @@ exists for.
 - 2026-08-08 review: FIXED a crash on an empty file. `set -u` plus bash 3.2's empty-array semantics made `${out[@]}` an unbound-variable error, and bash 3.2 is what `#!/usr/bin/env bash` resolves to on this machine.
 - 2026-08-08 review: MODIFIED case 609 from a grep for the string "learnings.sh" to running `doctor.sh` and asserting it actually warns on an over-cap file. The prior version passed against a comment stating the tool was not called.
 - 2026-08-08 build: ADDED the never-INVENTS half of the contract to case 611. Never-loses alone missed a corruption that emitted a line absent from the source while keeping line counts equal — every output line must now appear in the pre-consolidation backup.
+- 2026-08-08 spec-check: MODIFIED input_paths — an acceptance named a path the Brief never declared. Found by `scripts/lib/spec_check.sh` on its first run against the real queue, which is the defect class spec 014 exists to catch.

@@ -17,7 +17,7 @@ claimed_at: 2026-08-09T00:54:35Z
 
 - **objective**: add the two fields the comprehension proxies need — how much code a spec shipped, and how much the reviewer had to say about it.
 - **user_intent_verbatim**: split out of spec 011 during grilling (owner ruling 2026-08-04). The review gate proved spec 011's load-bearing claim false: it asserted all four proxies come from data already captured, and grepping every `obs_event` call site showed diff size and findings count are captured nowhere. `obs_shim_tap` records `detail.artifacts` and `detail.caveats_count` only.
-- **input_paths**: `scripts/lib/obs.sh`, `scripts/observe.sh`, `skills/review/SKILL.md`, `docs/observability.md`, `evals/cases/comprehension-capture/`
+- **input_paths**: `scripts/lib/obs.sh`, `scripts/observe.sh`, `skills/review/SKILL.md`, `docs/observability.md`, `evals/cases/comprehension-capture/`, `agents/reviewer.md`, `hooks/hooks.json`
 - **boundaries_non_goals**:
   - Does NOT compute or report any metric. That is spec 011, which depends on this.
   - Does NOT bump the envelope version. Both fields go under `detail`, and consumers read with `// null` fallbacks, matching how `phase`/`spec_id` were added.
@@ -79,3 +79,4 @@ whole metric family rests on.
 - 2026-08-08 spec-review: ADDED the truncation guard — `scripts/observe.sh:217` cuts `summary` to 1000 chars, so parsing the count out of it would turn a verbose complete review into a null.
 - 2026-08-08 spec-review: ADDED a definition of "did not complete" against the reviewer's own `ok|needs_input` enum; a partial findings array is a completed review.
 - 2026-08-08 spec-review: ADDED the honest limit on acceptance 1 — no hook fires when a diff exists, so a case can verify the emit path but not that the stage calls it.
+- 2026-08-08 spec-check: MODIFIED input_paths — an acceptance named a path the Brief never declared. Found by `scripts/lib/spec_check.sh` on its first run against the real queue, which is the defect class spec 014 exists to catch.
