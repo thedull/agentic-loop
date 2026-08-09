@@ -39,6 +39,41 @@ if [[ "${1:-}" == "emit" ]]; then
   exit 0
 fi
 
+# --- diff size (spec 013) ------------------------------------------------------
+# No hook fires at the moment a diff exists, so the review stage emits this
+# explicitly. Nulls are honest: an unresolvable ref or an empty diff yields
+# null, never 0 — "a diff of no lines" and "we could not tell" are different
+# facts, and the whole comprehension metric family rests on the distinction.
+if [[ "${1:-}" == "diff-size" ]]; then
+  shift
+  DS_BASE=""; DS_HEAD="HEAD"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --base) DS_BASE="${2:-}"; shift 2 ;;
+      --head) DS_HEAD="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  DS_ADD=null; DS_DEL=null
+  if [[ -n "$DS_BASE" ]] \
+     && git rev-parse --verify --quiet "$DS_BASE" >/dev/null 2>&1 \
+     && git rev-parse --verify --quiet "$DS_HEAD" >/dev/null 2>&1; then
+    # numstat prints "-" for binary files. Coercing that to 0 fabricates
+    # "no diff" for a real one — the exact null-vs-zero collapse acceptance 3
+    # forbids. Count only rows carrying real numbers; if NOTHING was countable,
+    # the answer is null, not zero.
+    DS_STAT="$(git diff --numstat "$DS_BASE" "$DS_HEAD" 2>/dev/null \
+               | awk '$1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ {a+=$1; d+=$2; n++}
+                      END {if (n>0) printf "%d %d", a, d}')"
+    if [[ -n "$DS_STAT" ]]; then
+      DS_ADD="${DS_STAT%% *}"; DS_DEL="${DS_STAT##* }"
+    fi
+  fi
+  obs_event diff_size skill "$(jq -cn --argjson a "$DS_ADD" --argjson d "$DS_DEL" \
+    '{detail: {lines_added: $a, lines_removed: $d}}')"
+  exit 0
+fi
+
 # --- stage context -------------------------------------------------------------
 if [[ "${1:-}" == "context" ]]; then
   shift
@@ -203,8 +238,25 @@ case "$EVT" in
     fi
 
     TIER="$(tier_for_agent "$AGENT_TYPE")"
+    # Findings count comes from the reviewer's OWN envelope in the full
+    # message. Deliberately NOT from `summary`, which is truncated to 1000
+    # chars below — a verbose but complete review would silently read as null.
+    # null means "no parseable envelope"; 0 means "a clean review". Opposite
+    # signals, never collapsed.
+    FINDINGS="$(printf '%s' "$INPUT" \
+      | jq -r '.last_assistant_message // ""' 2>/dev/null \
+      | sed -e 's/^[^{]*//' -e 's/[^}]*$//' \
+      | jq -e 'if (.findings|type) == "array" then (.findings|length) else empty end' 2>/dev/null \
+        | tail -1)"
+    # Guard the value itself. Two JSON objects in one message make jq stream two
+    # results, and a multi-line value breaks --argjson below — which takes the
+    # ENTIRE agent_stop event down with it. A telemetry hook must never lose the
+    # event it was called to record.
+    [[ "$FINDINGS" =~ ^[0-9]+$ ]] || FINDINGS=null
+
     OVERLAY="$(printf '%s' "$INPUT" | jq -c \
         --arg tier "$TIER" --argjson dur "$DUR" \
+        --argjson findings "$FINDINGS" \
         --argjson usage "$USAGE" --argjson model "$MODEL_JSON" \
         --argjson usrc "$USAGE_SRC" '
       {session_id: (.session_id // null),
@@ -216,7 +268,8 @@ case "$EVT" in
        duration_ms: $dur,
        summary: ((.last_assistant_message // null) | if . == null then null else .[0:1000] end),
        detail: {transcript_path: (.transcript_path // null),
-                usage_source: $usrc}}' 2>/dev/null)" \
+                usage_source: $usrc,
+                findings_count: $findings}}' 2>/dev/null)" \
       && obs_event agent_stop hook "$OVERLAY"
     ;;
 

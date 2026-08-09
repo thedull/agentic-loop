@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-703-findings-count-from-envelope",
+  "target": "acceptance 2 \u2014 the count comes from the reviewer's own envelope, observed at SubagentStop (the reviewer is a Task subagent and never passes through a shim)",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; : > t.jsonl; printf \"%s\" \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"{\\\\\\\"status\\\\\\\":\\\\\\\"ok\\\\\\\",\\\\\\\"findings\\\\\\\":[{\\\\\\\"a\\\\\\\":1},{\\\\\\\"a\\\\\\\":2},{\\\\\\\"a\\\\\\\":3}]}\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.findings_count == 3"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}

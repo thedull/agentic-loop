@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-706-needs-input-with-findings-has-completed",
+  "target": "acceptance 2 \u2014 a review returning needs_input WITH a partial findings array HAS completed; only an absent or unparseable result yields null",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; : > t.jsonl; printf \"%s\" \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"{\\\\\\\"status\\\\\\\":\\\\\\\"needs_input\\\\\\\",\\\\\\\"findings\\\\\\\":[{\\\\\\\"a\\\\\\\":1}]}\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.findings_count == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}
