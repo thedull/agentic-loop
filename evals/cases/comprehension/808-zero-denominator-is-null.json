@@ -1,0 +1,25 @@
+{
+  "id": "comprehension-808-zero-denominator-is-null",
+  "target": "acceptance 9 \u2014 the density denominator is added+removed, and a zero denominator yields null rather than a division error or an infinity. A review of a zero-line diff has no density.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -c 'map(select(.spec|test(\"902-c\")))[0]'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".findings_per_100_changed == null"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings == 2"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

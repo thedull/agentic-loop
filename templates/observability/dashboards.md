@@ -150,3 +150,31 @@ guard) joins spec-file facts the store does not have — read it from
 > (`usage.input_tokens` → `usage_input_tokens`, `detail.to_status` →
 > `detail_to_status`). If your instance is configured differently, adjust
 > the names once here — the event schema itself never moves.
+
+## Comprehension proxies
+
+```
+scripts/observe_metrics.sh comprehension [--since D] [--until D] [--format tsv]
+```
+
+Four numbers that **correlate** with comprehension debt. None of them measures
+it, and the rendering says so on every run.
+
+| column | meaning |
+|---|---|
+| `diff_added` / `diff_removed` | size of the **final** build cycle's diff, from spec 013 |
+| `findings` | the blind review's finding count for that final cycle |
+| `findings_per_100_changed` | findings ÷ (added + removed) × 100. **null** when the denominator is 0 — a review of a zero-line diff has no density |
+| `merge_latency_ms` | the existing `pr-open → done` segment, reused rather than recomputed |
+| `build_churn` | transitions back into `building` **before** merge |
+
+Two things this deliberately does not do.
+
+**`build_churn` is not a post-merge signal.** It counts re-entry into `building`
+before the PR opens. `done` is terminal in the tracker, so no post-merge signal
+exists to report — and manufacturing one from a pre-merge counter would be the
+fabrication the honest-nulls rule forbids.
+
+**Multi-cycle specs report their last cycle, not a sum.** Summing would
+double-count code that was rewritten rather than added. `build_churn` is shown
+alongside so a one-cycle and a five-cycle spec are never read as comparable.

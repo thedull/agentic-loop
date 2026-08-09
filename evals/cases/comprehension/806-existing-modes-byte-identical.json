@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-806-existing-modes-byte-identical",
+  "target": "acceptance 7 \u2014 adding a mode changes no existing mode's output. Compared byte-for-byte against output captured from the pre-change binary via git.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; ok=1; for m in cost phase spec estimate mix; do new=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" \"$m\" 2>/dev/null | shasum | cut -d\" \" -f1); git -C \"$PLUGIN_ROOT\" show main:scripts/lib/obs_metrics.jq > /tmp/old_$$.jq 2>/dev/null; old=$(cat .agentic/observability/events-*.jsonl | jq -c \".\" | jq -s -f /tmp/old_$$.jq --arg mode \"$m\" --arg budget \"\" --argjson specmeta \"{}\" 2>/dev/null | shasum | cut -d\" \" -f1); [ \"$new\" = \"$old\" ] || ok=0; done; rm -f /tmp/old_$$.jq; printf '{\"identical\":%s}' \"$ok\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".identical == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}
