@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-701-no-diff-is-null-not-zero",
+  "target": "acceptances 1+3 \u2014 no branch or no diff yields NULL, never zero. Zero means 'a diff of no lines'; null means 'we could not tell', and collapsing them is the fabrication the honest-nulls rule forbids.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; git init -q .; git config user.email a@b; git config user.name a; printf \"one\\n\" > f.txt; git add -A; git commit -qm base; \"$PLUGIN_ROOT/scripts/observe.sh\" diff-size --base HEAD --head HEAD </dev/null >/dev/null 2>&1; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.lines_added == null and .detail.lines_removed == null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}

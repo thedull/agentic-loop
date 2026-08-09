@@ -176,6 +176,13 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    `TEST-PLAN.md` lives in the bench worktree, so it is never committed to
    the branch. If benches are off or the bench is missing, skip this silently.
 
+9b. **Record diff size.** `scripts/observe.sh diff-size --base <branch point> --head <branch>`
+   — no hook fires at the moment a diff exists, so the review stage is the only
+   place this can be captured. It emits lines added and removed against the
+   branch point, or nulls when either ref does not resolve or the diff is empty.
+   Nulls are honest: "a diff of no lines" and "we could not tell" are different
+   facts, and spec 011's comprehension proxies rest on the distinction.
+
 10. **Advance + digest.** `tracker.sh advance <file> pr-open pr <url>`, then
    append the digest entry to `.agentic/STATUS.md`.
 

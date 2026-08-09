@@ -1,0 +1,25 @@
+{
+  "id": "comprehension-capture-700-diff-size-recorded",
+  "target": "acceptance 1 \u2014 diff size is captured at the point a diff exists, via an explicit emit from the review stage",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; git init -q .; git config user.email a@b; git config user.name a; printf \"one\\n\" > f.txt; git add -A; git commit -qm base; b=$(git rev-parse HEAD); printf \"one\\ntwo\\nthree\\n\" > f.txt; git add -A; git commit -qm change; \"$PLUGIN_ROOT/scripts/observe.sh\" diff-size --base \"$b\" --head HEAD </dev/null >/dev/null 2>&1; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".event == \"diff_size\""
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.lines_added == 2 and .detail.lines_removed == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}

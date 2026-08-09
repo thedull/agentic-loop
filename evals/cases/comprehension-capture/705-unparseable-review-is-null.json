@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-705-unparseable-review-is-null",
+  "target": "acceptance 2 \u2014 'did not complete' means no parseable envelope; the count is null, never zero The key must be PRESENT and null \u2014 a missing key also reads as null and would let this pass before the field exists at all.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; : > t.jsonl; printf \"%s\" \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"the agent crashed before returning anything\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": "(.detail|has(\"findings_count\")) and .detail.findings_count == null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}

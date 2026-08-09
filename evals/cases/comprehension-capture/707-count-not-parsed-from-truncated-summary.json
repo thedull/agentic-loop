@@ -1,0 +1,25 @@
+{
+  "id": "comprehension-capture-707-count-not-parsed-from-truncated-summary",
+  "target": "acceptance 2 \u2014 the count must NOT come from `summary`, which observe.sh truncates to 1000 chars. A verbose but complete review would silently become null.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; : > t.jsonl; PAD=$(printf \"x%.0s\" $(seq 1 1200)); printf \"%s\" \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"$PAD {\\\\\\\"status\\\\\\\":\\\\\\\"ok\\\\\\\",\\\\\\\"findings\\\\\\\":[{\\\\\\\"a\\\\\\\":1},{\\\\\\\"a\\\\\\\":2}]}\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.findings_count == 2"
+    },
+    {
+      "type": "jq",
+      "expr": "(.summary|length) <= 1000"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 013 Red Gate"
+  }
+}
