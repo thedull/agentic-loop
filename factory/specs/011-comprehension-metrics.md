@@ -1,7 +1,7 @@
 ---
 id: 011
 title: Report the comprehension proxies from the event log
-status: pr-open
+status: done
 profile: standard
 created: 2026-08-02
 depends_on: 004 013
