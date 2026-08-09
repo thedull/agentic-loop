@@ -1,0 +1,21 @@
+{
+  "id": "learnings-606-distinct-entries-all-survive",
+  "target": "acceptance 3 \u2014 a consolidator that quietly drops a distinct learning passes a naive line-count assertion while destroying the thing the file exists for",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/distinct.md\" t.md; \"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md >/dev/null 2>&1; rc=$?; a=$(grep -c alpha t.md); b=$(grep -c beta t.md); g=$(grep -c gamma t.md); printf '{\"rc\":%s,\"a\":%s,\"b\":%s,\"g\":%s}' \"$rc\" \"$a\" \"$b\" \"$g\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".rc == 0 and .a == 1 and .b == 1 and .g == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

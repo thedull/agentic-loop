@@ -1,0 +1,21 @@
+{
+  "id": "learnings-610-no-model-required",
+  "target": "acceptance 5 \u2014 consolidation must function with no model available. Run it with every model-ish env var cleared and no network reachable.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/exact_dupes.md\" t.md; env -u OPENAI_API_KEY -u FABLE_KEY -u OPENROUTER_API_KEY -u ANTHROPIC_API_KEY OLLAMA_HOST=127.0.0.1:1 \"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md >/dev/null 2>&1; c=$?; n=$(grep -c \"shim timeouts\" t.md); printf '{\"c\":%s,\"merged\":%s}' \"$c\" \"$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .merged == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

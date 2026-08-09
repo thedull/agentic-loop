@@ -1,0 +1,21 @@
+{
+  "id": "learnings-602-over-cap-reports-overage-and-count",
+  "target": "acceptance 1 \u2014 an over-cap file reports BOTH the overage and the file's line count",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/learnings.sh\" check \"$FIXTURES/learnings/over.md\" 2>&1); c=$?; n=$(printf \"%s\" \"$o\"|grep -cE \"40[0-9]\"); over=$(printf \"%s\" \"$o\"|grep -ci \"over\"); printf '{\"c\":%s,\"hasCount\":%s,\"saysOver\":%s}' \"$c\" \"$n\" \"$over\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c != 0 and .hasCount >= 1 and .saysOver >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

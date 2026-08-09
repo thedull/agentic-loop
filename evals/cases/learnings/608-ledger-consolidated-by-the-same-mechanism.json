@@ -1,0 +1,21 @@
+{
+  "id": "learnings-608-ledger-consolidated-by-the-same-mechanism",
+  "target": "acceptance 6 \u2014 spec 009's `## Attempt ledger` bullets are subject to the same merging and cap. One discipline for the file, not two.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/with_ledger.md\" t.md; \"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md >/dev/null 2>&1; dup=$(grep -c \"tried regex widening\" t.md); other=$(grep -c \"tried a flat schema\" t.md); lesson=$(grep -c alpha t.md); head=$(grep -c \"## Attempt ledger\" t.md); printf '{\"ledgerDupMerged\":%s,\"ledgerOtherKept\":%s,\"lessonKept\":%s,\"headingKept\":%s}' \"$dup\" \"$other\" \"$lesson\" \"$head\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".ledgerDupMerged == 1 and .ledgerOtherKept == 1 and .lessonKept == 1 and .headingKept == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "learnings-601-under-cap-is-clean",
+  "target": "acceptance 1 \u2014 a file under the cap reports clean and exits zero",
+  "kind": "bash-unit",
+  "cmd": "o=$(\"$PLUGIN_ROOT/scripts/lib/learnings.sh\" check \"$FIXTURES/learnings/under.md\" 2>&1); c=$?; printf '{\"c\":%s,\"clean\":%s}' \"$c\" \"$(printf \"%s\" \"$o\"|grep -ci clean)\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".c == 0 and .clean >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "learnings-603-check-never-modifies",
+  "target": "acceptance 2 \u2014 the check reports and never rewrites. Consolidation is a deliberate action, never a side effect of looking.",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/over.md\" t.md; a=$(cksum < t.md); o=$(\"$PLUGIN_ROOT/scripts/lib/learnings.sh\" check t.md 2>&1); rc=$?; b=$(cksum < t.md); [ \"$a\" = \"$b\" ] && s=1 || s=0; ran=$(printf \"%s\" \"$o\"|grep -ci \"over\\|cap\\|line\"); printf '{\"unchanged\":%s,\"ranProperly\":%s,\"rc\":%s}' \"$s\" \"$ran\" \"$rc\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".unchanged == 1 and .ranProperly >= 1 and .rc != 127"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

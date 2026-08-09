@@ -1,0 +1,21 @@
+{
+  "id": "learnings-604-exact-duplicates-merge-keeping-earliest",
+  "target": "acceptance 3 \u2014 byte-identical entries merge into one retaining the EARLIEST date",
+  "kind": "bash-unit",
+  "cmd": "cp \"$FIXTURES/learnings/exact_dupes.md\" t.md; \"$PLUGIN_ROOT/scripts/lib/learnings.sh\" consolidate t.md >/dev/null 2>&1; n=$(grep -c \"shim timeouts\" t.md); d=$(grep -c \"2026-07-01. shim timeouts\" t.md); other=$(grep -c \"unrelated thing\" t.md); printf '{\"merged\":%s,\"earliestKept\":%s,\"otherSurvived\":%s}' \"$n\" \"$d\" \"$other\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".merged == 1 and .earliestKept == 1 and .otherSurvived == 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 012 Red Gate"
+  }
+}

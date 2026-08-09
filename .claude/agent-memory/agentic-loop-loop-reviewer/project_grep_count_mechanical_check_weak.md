@@ -80,6 +80,18 @@ check (`true || _t_die ...`) still passes all 11 triage cases.
   keyword mentions (`hardened.sh templates/hardened-classes.txt hardened.sh
   hardened.sh`) still passes 507 — and every other case in both the
   `hardened` and `profile` suites (23/23), exit 0.
+
+5th strike: spec 012 (`learnings-consolidation`),
+`evals/cases/learnings/609-doctor-surfaces-the-cap.json`. Its entire mechanism
+is `grep -c "learnings.sh" scripts/doctor.sh; .wired >= 1`. Confirmed live:
+replacing the real wiring (the `if out="$(.../learnings.sh check
+./LEARNINGS.md 2>&1)"; then ok ...; else warn ...; fi` block) with a bare
+comment `# learnings.sh handles LEARNINGS.md size discipline (not actually
+called here)` plus `ok "cross-run memory ok"` — i.e. doctor.sh no longer calls
+learnings.sh at all — still passes `./evals/run_eval.sh --suite learnings`
+11/11. Acceptance 1's "doctor.sh surfaces this" clause is unenforced beyond
+the string "learnings.sh" appearing anywhere in the file, including a comment
+disclaiming that it doesn't run.
 - `508-hardened-still-terminates-at-a-pr.json`'s `prTerminal` check
   (`grep -ci "terminal state is an OPEN PR\|Nothing merges here"`) is NOT
   scoped to the awk-extracted hardened section — it greps the whole file, so
