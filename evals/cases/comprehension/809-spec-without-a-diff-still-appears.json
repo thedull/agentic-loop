@@ -1,0 +1,29 @@
+{
+  "id": "comprehension-809-spec-without-a-diff-still-appears",
+  "target": "acceptance 2 \u2014 a spec with lifecycle transitions but no diff_size event must still be REPORTED, with honest nulls. Dropping it entirely would hide the specs whose capture failed, which is the opposite of what an honest-null rule is for.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; printf \"%s\\n\" '{\"v\":1,\"ts\":\"2026-08-04T10:00:00Z\",\"event\":\"tracker_transition\",\"source\":\"tracker\",\"run_id\":\"r1\",\"phase\":null,\"spec_id\":null,\"session_id\":null,\"agent_id\":null,\"agent_type\":null,\"tier\":null,\"model\":null,\"usage\":{},\"est_cost_usd\":null,\"duration_ms\":null,\"status\":null,\"exit_code\":null,\"summary\":null,\"detail\":{\"spec_file\":\"factory/specs/903-d.md\",\"to_status\":\"specd\"}}' >> .agentic/observability/events-20260801.jsonl; printf \"%s\\n\" '{\"v\":1,\"ts\":\"2026-08-04T11:00:00Z\",\"event\":\"tracker_transition\",\"source\":\"tracker\",\"run_id\":\"r1\",\"phase\":null,\"spec_id\":null,\"session_id\":null,\"agent_id\":null,\"agent_type\":null,\"tier\":null,\"model\":null,\"usage\":{},\"est_cost_usd\":null,\"duration_ms\":null,\"status\":null,\"exit_code\":null,\"summary\":null,\"detail\":{\"spec_file\":\"factory/specs/903-d.md\",\"to_status\":\"pr-open\"}}' >> .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -c 'map(select(.spec|test(\"903-d\")))[0]'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ". != null"
+    },
+    {
+      "type": "jq",
+      "expr": ".diff_added == null and .diff_removed == null and .findings == null"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings_per_100_changed == null"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 011 revision 1"
+  }
+}

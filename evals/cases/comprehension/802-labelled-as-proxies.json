@@ -1,8 +1,8 @@
 {
   "id": "comprehension-802-labelled-as-proxies",
-  "target": "acceptance 3 \u2014 the output names these as PROXIES for comprehension debt, not a measurement of it. Asserted on the rendered TSV a human reads, not on prose in a doc.",
+  "target": "acceptance 3 \u2014 ANY rendering names these as proxies. The prior version only checked --format tsv, so the default JSON output shipped unlabelled.",
   "kind": "bash-unit",
-  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; o=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --format tsv 2>/dev/null); p=$(printf \"%s\" \"$o\" | grep -ci \"proxy\\|proxies\"); printf '{\"labelled\":%s}' \"$p\"",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; tsv=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --format tsv 2>&1 | grep -ci \"proxies\\|proxy\"); jsn=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>&1 | grep -ci \"proxies\\|proxy\"); clean=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -e \"type == \\\"array\\\"\" >/dev/null 2>&1 && echo 1 || echo 0); printf '{\"tsv\":%s,\"json\":%s,\"jsonStillParses\":%s}' \"$tsv\" \"$jsn\" \"$clean\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".labelled >= 1"
+      "expr": ".tsv >= 1 and .json >= 1 and .jsonStillParses == 1"
     }
   ],
   "provenance": {

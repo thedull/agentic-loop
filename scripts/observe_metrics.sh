@@ -116,6 +116,13 @@ if [[ "$MODE" == "spec" && -n "$ONE_SPEC" ]]; then
   RESULT="$(jq --arg s "$ONE_SPEC" 'map(select(.spec == $s))' <<<"$RESULT")"
 fi
 
+# Acceptance 3 applies to ANY rendering, not just the tsv one. The note goes to
+# stderr so `| jq` still works on the JSON, and no output path is unlabelled.
+if [[ "$MODE" == "comprehension" ]]; then
+  echo "PROXIES for comprehension debt — not a measurement of it." >&2
+  echo "build_churn = transitions back into building BEFORE merge. Not a post-merge signal." >&2
+fi
+
 if [[ "$FORMAT" == "tsv" ]]; then
   case "$MODE" in
     spec)
