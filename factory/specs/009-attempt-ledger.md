@@ -1,13 +1,16 @@
 ---
 id: 009
 title: Record reverted attempts in LEARNINGS.md so later runs stop repeating them
-status: specd
+status: shelved
 profile: standard
 created: 2026-08-02
 depends_on: 004 012
 claimed_by:
 branch:
 pr:
+shelved_from: specd
+shelved_reason: same reason as 007: check_cmd carries --live, so every build-loop re-run spawns real claude -p calls. Not a dependency for anything. Shelved by applying the owner's 007 ruling to the identical case; restore with tracker.sh restore for an attended session.
+shelved_at: 2026-08-09T00:54:35Z
 ---
 
 # Spec 009 — Record reverted attempts in LEARNINGS.md so later runs stop repeating them

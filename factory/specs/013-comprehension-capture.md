@@ -1,13 +1,14 @@
 ---
 id: 013
 title: Capture diff size and review-finding count in the event log
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-04
 depends_on: 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/8
+claimed_at: 2026-08-09T00:54:35Z
 ---
 
 # Spec 013 — Capture diff size and review-finding count in the event log
