@@ -1,13 +1,14 @@
 ---
 id: 011
 title: Report the comprehension proxies from the event log
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-02
 depends_on: 004 013
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/9
+claimed_at: 2026-08-09T01:22:10Z
 ---
 
 # Spec 011 — Report the comprehension proxies from the event log
