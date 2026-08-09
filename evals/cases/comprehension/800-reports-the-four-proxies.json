@@ -1,0 +1,37 @@
+{
+  "id": "comprehension-800-reports-the-four-proxies",
+  "target": "acceptance 1 \u2014 four proxies, each read from captured data: diff size, findings per 100 changed lines, the pr-open->done segment, and build churn",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -c 'map(select(.spec|test(\"900-a\")))[0]'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".diff_added == 100 and .diff_removed == 20"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings == 6"
+    },
+    {
+      "type": "jq",
+      "expr": "(.findings_per_100_changed*100|round) == 500"
+    },
+    {
+      "type": "jq",
+      "expr": ".merge_latency_ms == 7200000"
+    },
+    {
+      "type": "jq",
+      "expr": "has(\"build_churn\")"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

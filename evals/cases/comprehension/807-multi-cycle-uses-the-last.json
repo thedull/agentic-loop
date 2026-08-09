@@ -1,0 +1,29 @@
+{
+  "id": "comprehension-807-multi-cycle-uses-the-last",
+  "target": "acceptance 8 \u2014 a spec that went reviewing->building->reviewing reports its FINAL cycle, not a sum: summing double-counts code that was rewritten rather than added. Its reopen count is shown alongside so a one-cycle and a five-cycle spec are never presented as comparable.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -c 'map(select(.spec|test(\"901-b\")))[0]'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".diff_added == 10 and .diff_removed == 0"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings == 1"
+    },
+    {
+      "type": "jq",
+      "expr": ".build_churn >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

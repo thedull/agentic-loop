@@ -44,10 +44,10 @@ pr:
 7. Adding these metrics SHALL NOT change any existing mode's output.
    - Given the existing `cost`, `phase`, `spec`, `estimate` and `mix` modes, when run before and after this change on the same log, then their output is byte-identical.
 
-7. Multi-cycle specs SHALL report the last cycle, and SHALL disclose that they did.
+8. Multi-cycle specs SHALL report the last cycle, and SHALL disclose that they did.
    - Given a spec that went `reviewing → building → reviewing` before merge, when its diff size and finding count are reported, then the values from the **final** cycle are used, not a sum and not the first — a sum would double-count code that was rewritten rather than added.
    - Given such a spec, when it is reported, then its reopen count is shown alongside, so a single-cycle and a five-cycle spec are never presented as comparable.
-8. The density denominator SHALL be defined, and a zero denominator SHALL be null.
+9. The density denominator SHALL be defined, and a zero denominator SHALL be null.
    - Given "review findings per 100 changed lines", when it is computed, then the denominator is **added + removed** lines, since spec 013 captures them separately and either alone understates the change.
    - Given a denominator of zero, when the metric is computed, then it is null rather than a division error or an infinity — a review of a zero-line diff has no density.
 
@@ -101,3 +101,4 @@ golden-output comparison.
 - 2026-08-08 spec-review: ADDED acceptance 7 — reopen-cycle aggregation was unstated, and `obs_metrics.jq:88-89` already counts reopens, so multi-cycle specs are real. Last cycle wins, with the reopen count disclosed beside it.
 - 2026-08-08 spec-review: ADDED acceptance 8 — the density denominator was undefined against 013's two separate numbers, and a zero denominator had no stated behaviour.
 - 2026-08-08 spec-review: MODIFIED the fixture list to cover acceptance 2's null pass-through, which it had skipped.
+- 2026-08-08 build: MODIFIED numbering — the gating pass appended a second acceptance 7 and an 8 alongside an existing 7. Renumbered to 8 and 9. This is precisely the stale/duplicated-reference class spec 014 exists to catch, found by reading the spec before building it.

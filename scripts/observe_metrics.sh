@@ -35,7 +35,7 @@ SPECS_DIR="${FACTORY_SPECS_DIR:-factory/specs}"
 
 MODE="${1:-}"
 case "$MODE" in
-  cost|phase|spec|estimate|mix) shift ;;
+  cost|phase|spec|estimate|mix|comprehension) shift ;;
   *) echo "usage: observe_metrics.sh cost|phase|spec|estimate|mix [--since D] [--until D] [--format json|tsv] [--effort-budget B]" >&2
      exit 2 ;;
 esac
@@ -128,6 +128,13 @@ if [[ "$FORMAT" == "tsv" ]]; then
         jq -r 'to_entries[] | [.key, .value.events, .value.input_tokens,
                       .value.output_tokens, .value.metered_usd, .value.llm_errors,
                       (.value.p50_duration_ms // "-"), (.value.p90_duration_ms // "-")] | @tsv' <<<"$RESULT"; } ;;
+    comprehension)
+      { printf '# PROXIES for comprehension debt — not a measurement of it.\n'
+        printf '# build_churn = transitions back into building BEFORE merge. Not a post-merge signal.\n'
+        printf 'spec\tdiff_added\tdiff_removed\tfindings\tfindings_per_100_changed\tmerge_latency_ms\tbuild_churn\n'
+        jq -r '.[] | [.spec, (.diff_added // "-"), (.diff_removed // "-"),
+                      (.findings // "-"), (.findings_per_100_changed // "-"),
+                      (.merge_latency_ms // "-"), .build_churn] | @tsv' <<<"$RESULT"; } ;;
     estimate)
       { printf 'effort_budget\tn\tsufficient\ttok_p25\ttok_p50\ttok_p75\tusd_p50\n'
         jq -r '.[] | [.effort_budget, .n, .sufficient, (.tokens.p25 // "-"),

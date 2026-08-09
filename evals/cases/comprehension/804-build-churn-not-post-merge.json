@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-804-build-churn-not-post-merge",
+  "target": "acceptance 5 \u2014 the reopens counter is labelled BUILD CHURN and nothing ASSERTS it measures work re-opened after merge. Negated mentions are fine and in fact wanted: the rendering says outright that it is not a post-merge signal, and a cruder check counted that denial as the very claim it forbids.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; o=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --format tsv 2>/dev/null); hdr=$(printf \"%s\" \"$o\" | grep -v \"^#\" | head -1); churn=$(printf \"%s\" \"$hdr\" | grep -c \"build_churn\"); hdrbad=$(printf \"%s\" \"$hdr\" | grep -ci \"after_merge\\|post_merge\\|reopen\"); bad=$(printf \"%s\" \"$o\" | grep -i \"re-open rate\\|reopen rate\\|after merge\\|post-merge\"         | grep -vi \"not \\|never \\|before merge\" | wc -l | tr -d \" \"); denies=$(printf \"%s\" \"$o\" | grep -ci \"not a post-merge signal\"); d=$(grep -i \"re-open rate\\|post-merge re\" \"$PLUGIN_ROOT/templates/observability/dashboards.md\" 2>/dev/null      | grep -vi \"not \\|never \\|no post-merge\" | wc -l | tr -d \" \"); printf '{\"named\":%s,\"headerClaims\":%s,\"falseClaims\":%s,\"denies\":%s,\"docClaims\":%s}' \"$churn\" \"$hdrbad\" \"$bad\" \"$denies\" \"$d\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".named >= 1 and .headerClaims == 0 and .falseClaims == 0 and .denies >= 1 and .docClaims == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

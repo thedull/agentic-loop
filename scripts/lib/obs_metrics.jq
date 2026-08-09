@@ -102,6 +102,44 @@ def spec_rollup:
         + ($lifecycle[$id] // {reopens: 0, blocked_count: 0,
                                cycle_machine_ms: null, cycle_merge_ms: null}));
 
+# --- comprehension: PROXIES, not a measurement ---------------------------------
+# Four numbers that correlate with comprehension debt. None of them measures it.
+# Merge latency deliberately REUSES spec_rollup's cycle_merge_ms rather than
+# recomputing the same segment a second, divergently.
+#
+# Build churn is `reopens` renamed for what it actually counts: transitions back
+# into `building` BEFORE merge. It is not a post-merge signal and must never be
+# rendered as one — `done` is terminal in the tracker, so no post-merge signal
+# exists, and inventing one from a pre-merge counter is exactly the fabrication
+# the honest-nulls rule forbids.
+def comprehension:
+  . as $all
+  | (spec_rollup | map({key: .spec, value: .}) | from_entries) as $roll
+  | ($all | map(select(.event == "diff_size" and .spec_id != null))
+     | group_by(.spec_id)
+     | map({key: .[0].spec_id, value: (sort_by(.ts) | last | .detail)})
+     | from_entries) as $diffs
+  | ($all | map(select(.event == "agent_stop" and .spec_id != null
+                       and (.detail.findings_count != null)))
+     | group_by(.spec_id)
+     | map({key: .[0].spec_id, value: (sort_by(.ts) | last | .detail.findings_count)})
+     | from_entries) as $finds
+  | (($roll | keys) + ($diffs | keys) + ($finds | keys) | unique)
+  | map(. as $id
+      | ($diffs[$id].lines_added) as $a
+      | ($diffs[$id].lines_removed) as $d
+      | ($finds[$id]) as $f
+      | (if $a == null or $d == null then null else ($a + $d) end) as $changed
+      | {spec: $id,
+         diff_added: $a,
+         diff_removed: $d,
+         findings: $f,
+         findings_per_100_changed:
+           (if $f == null or $changed == null or $changed == 0 then null
+            else (($f / $changed) * 100) end),
+         merge_latency_ms: ($roll[$id].cycle_merge_ms // null),
+         build_churn: ($roll[$id].reopens // 0)});
+
 # --- estimate: the lookup table the spec skill quotes -------------------------
 # p25/p50/p75 of observed total tokens and metered $ per effort_budget bucket,
 # with an explicit N and a hard insufficient-history guard. A lookup table,
@@ -136,7 +174,8 @@ def mix:
        else {ok: ($l | map(select(.status == "ok" or .status == null)) | length),
              of: ($l | length)} end)};
 
-if   $mode == "cost"     then cost
+if   $mode == "comprehension" then comprehension
+elif $mode == "cost"     then cost
 elif $mode == "phase"    then phase_rollup
 elif $mode == "spec"     then spec_rollup
 elif $mode == "estimate" then estimate

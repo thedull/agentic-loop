@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-805-merge-latency-reuses-the-segment",
+  "target": "acceptance 6 \u2014 merge latency IS the existing pr-open->done segment, not a second and potentially divergent calculation. Proven by equality with spec mode's cycle_merge_ms.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; s=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" spec 2>/dev/null | jq 'map(select(.spec|test(\"900-a\")))[0].cycle_merge_ms'); c=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq 'map(select(.spec|test(\"900-a\")))[0].merge_latency_ms'); printf '{\"spec\":%s,\"comp\":%s}' \"$s\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".spec == .comp and .spec != null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

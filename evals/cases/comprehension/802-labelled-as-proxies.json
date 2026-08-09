@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-802-labelled-as-proxies",
+  "target": "acceptance 3 \u2014 the output names these as PROXIES for comprehension debt, not a measurement of it. Asserted on the rendered TSV a human reads, not on prose in a doc.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; o=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --format tsv 2>/dev/null); p=$(printf \"%s\" \"$o\" | grep -ci \"proxy\\|proxies\"); printf '{\"labelled\":%s}' \"$p\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".labelled >= 1"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

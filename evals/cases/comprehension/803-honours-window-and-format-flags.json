@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-803-honours-window-and-format-flags",
+  "target": "acceptance 4 \u2014 --since/--until/--format tsv behave as they do for the existing modes",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; a=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --since 2026-08-02 2>/dev/null | jq \"map(select(.spec|test(\\\"900-a\\\")))|length\"); b=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --format tsv 2>/dev/null | grep -v \"^#\" | head -1 | grep -c \"^spec\\t\"); c=$(\"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension --until 2026-08-01 2>/dev/null | jq \"map(select(.spec|test(\\\"902-c\\\")))|length\"); printf '{\"sinceExcludes\":%s,\"tsvHeader\":%s,\"untilExcludes\":%s}' \"$a\" \"$b\" \"$c\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".sinceExcludes == 0 and .tsvHeader >= 1 and .untilExcludes == 0"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}

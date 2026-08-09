@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-801-missing-pr-open-is-null",
+  "target": "acceptance 2 \u2014 a spec with no pr-open transition has null merge latency, never a computed-from-nothing value",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; cp \"$FIXTURES/comprehension/events.jsonl\" .agentic/observability/events-20260801.jsonl; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; \"$PLUGIN_ROOT/scripts/observe_metrics.sh\" comprehension 2>/dev/null | jq -c 'map(select(.spec|test(\"902-c\")))[0]'",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".merge_latency_ms == null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-08",
+    "note": "spec 011 Red Gate"
+  }
+}
