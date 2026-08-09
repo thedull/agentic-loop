@@ -1,7 +1,7 @@
 ---
 id: 013
 title: Capture diff size and review-finding count in the event log
-status: pr-open
+status: done
 profile: standard
 created: 2026-08-04
 depends_on: 004
