@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-710-binary-diff-is-null-not-zero",
+  "target": "acceptances 1+3 \u2014 `git diff --numstat` prints `-` for binary files. Summing that as 0 reports 'no diff' for a real, non-empty one: the exact null-vs-zero collapse this spec forbids. Only countable rows count; if none are countable the answer is null.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; git init -q .; git config user.email a@b; git config user.name a; printf \"x\\n\" > a.txt; git add -A; git commit -qm base; b=$(git rev-parse HEAD); printf \"\\000\\001\\002\\003\\004\\005\" > bin.dat; git add -A; git commit -qm bin; \"$PLUGIN_ROOT/scripts/observe.sh\" diff-size --base \"$b\" --head HEAD </dev/null >/dev/null 2>&1; cat .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".detail.lines_added == null and .detail.lines_removed == null"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 013 revision 1"
+  }
+}

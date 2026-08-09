@@ -138,3 +138,16 @@ for Ollama duty — thinking models can spend the whole budget inside
 - `npx ccusage` for post-hoc subscription-spend audits from Claude Code's own
   logs (covers what the hooks see, not the non-Claude shims — the event log
   covers both).
+
+## `diff_size` (spec 013)
+
+Emitted explicitly by the review stage — no hook fires at the moment a diff
+exists, so `scripts/observe.sh diff-size --base <ref> --head <ref>` is called
+directly. Carries `detail.lines_added` and `detail.lines_removed` against the
+branch point.
+
+Both are **null**, never 0, when the answer is unknown: an unresolvable ref, an
+empty diff, or a diff whose every row is binary (`git diff --numstat` prints
+`-` for those, and counting them as 0 would report "no diff" for a real one).
+`0` means a diff that genuinely changed no lines. Spec 011's comprehension
+proxies rest on that distinction.

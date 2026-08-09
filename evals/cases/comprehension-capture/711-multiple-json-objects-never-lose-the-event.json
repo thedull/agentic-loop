@@ -1,0 +1,21 @@
+{
+  "id": "comprehension-capture-711-multiple-json-objects-never-lose-the-event",
+  "target": "a telemetry hook must never lose the event it was called to record. Two JSON objects in one message made jq stream two values, breaking --argjson and dropping the ENTIRE agent_stop event \u2014 duration, usage, tier, model and summary along with the count.",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic; printf \"%s\" '{\"observability\":{\"enabled\":true}}' > .agentic/config.json; unset CLAUDE_PROJECT_DIR AGENTIC_OBSERVE; : > t.jsonl; printf \"%s\" \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"session_id\\\":\\\"s1\\\",\\\"agent_id\\\":\\\"ag1\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"transcript_path\\\":\\\"$PWD/t.jsonl\\\",\\\"last_assistant_message\\\":\\\"{\\\\\\\"note\\\\\\\":\\\\\\\"d\\\\\\\",\\\\\\\"findings\\\\\\\":[1,2,3]}{\\\\\\\"status\\\\\\\":\\\\\\\"ok\\\\\\\",\\\\\\\"findings\\\\\\\":[9]}\\\",\\\"cwd\\\":\\\"$PWD\\\"}\" | \"$PLUGIN_ROOT/scripts/observe.sh\"; n=$(cat .agentic/observability/events-*.jsonl 2>/dev/null | wc -l | tr -d \" \"); ev=$(cat .agentic/observability/events-*.jsonl 2>/dev/null | tail -1 | jq -r \".event\"); printf '{\"events\":%s,\"event\":\"%s\"}' \"$n\" \"$ev\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".events >= 1 and .event == \"agent_stop\""
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 013 revision 1"
+  }
+}

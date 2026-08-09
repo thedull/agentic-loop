@@ -58,8 +58,13 @@ if [[ "${1:-}" == "diff-size" ]]; then
   if [[ -n "$DS_BASE" ]] \
      && git rev-parse --verify --quiet "$DS_BASE" >/dev/null 2>&1 \
      && git rev-parse --verify --quiet "$DS_HEAD" >/dev/null 2>&1; then
+    # numstat prints "-" for binary files. Coercing that to 0 fabricates
+    # "no diff" for a real one — the exact null-vs-zero collapse acceptance 3
+    # forbids. Count only rows carrying real numbers; if NOTHING was countable,
+    # the answer is null, not zero.
     DS_STAT="$(git diff --numstat "$DS_BASE" "$DS_HEAD" 2>/dev/null \
-               | awk '{a+=$1; d+=$2} END {if (NR>0) printf "%d %d", a, d}')"
+               | awk '$1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ {a+=$1; d+=$2; n++}
+                      END {if (n>0) printf "%d %d", a, d}')"
     if [[ -n "$DS_STAT" ]]; then
       DS_ADD="${DS_STAT%% *}"; DS_DEL="${DS_STAT##* }"
     fi
@@ -241,8 +246,13 @@ case "$EVT" in
     FINDINGS="$(printf '%s' "$INPUT" \
       | jq -r '.last_assistant_message // ""' 2>/dev/null \
       | sed -e 's/^[^{]*//' -e 's/[^}]*$//' \
-      | jq -e 'if (.findings|type) == "array" then (.findings|length) else empty end' 2>/dev/null)"
-    [[ -n "$FINDINGS" ]] || FINDINGS=null
+      | jq -e 'if (.findings|type) == "array" then (.findings|length) else empty end' 2>/dev/null \
+        | tail -1)"
+    # Guard the value itself. Two JSON objects in one message make jq stream two
+    # results, and a multi-line value breaks --argjson below — which takes the
+    # ENTIRE agent_stop event down with it. A telemetry hook must never lose the
+    # event it was called to record.
+    [[ "$FINDINGS" =~ ^[0-9]+$ ]] || FINDINGS=null
 
     OVERLAY="$(printf '%s' "$INPUT" | jq -c \
         --arg tier "$TIER" --argjson dur "$DUR" \
