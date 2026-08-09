@@ -1,9 +1,21 @@
 ---
 name: project-012-learnings-ambiguity
-description: spec 012 (learnings-consolidation) never defines near-duplicate similarity or a ledger-entry on-disk format; spec 009's ledger section is likewise unspecified
+description: RESOLVED by spec-review 2026-08-08 — near-dup now propose-only, ledger grammar now defined. See [[project_012_learnings_impl_bugs]] for the implementation's own defects.
 metadata:
   type: project
 ---
+
+**Update 2026-08-08 (implementation review):** the spec's own revision log now
+shows both gaps closed — acceptance 3 was MODIFIED to make near-duplicates
+propose-only (no threshold needed since nothing merges automatically), and
+acceptance 6 was MODIFIED to cite spec 009's exact ledger grammar
+(`- [<spec id>] tried <what> — dropped because <why>`), which the
+implementation exploits by treating every `- ` bullet uniformly regardless of
+section. Verified the shipped `scripts/lib/learnings.sh` against both: near-dup
+mutation attempts (fuzzy key, post-pass merge, deleting one body) were all
+caught by the eval suite; ledger entries merge/survive correctly per case 608.
+This memory's original concern no longer applies to spec 012 as merged — kept
+below for historical context only.
 
 Spec 012 (`factory/specs/012-learnings-consolidation.md`) acceptance 3
 requires merging "duplicates or near-duplicates" and calls this out itself

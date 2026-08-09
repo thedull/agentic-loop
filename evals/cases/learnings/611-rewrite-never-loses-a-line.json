@@ -1,0 +1,21 @@
+{
+  "id": "learnings-611-rewrite-never-loses-a-line",
+  "target": "the two halves of the contract for a tool that rewrites the project's memory: it never LOSES a line and never INVENTS one. Pins three real defects \u2014 a content line shaped like an internal marker was silently dropped, an empty file crashed under bash 3.2 set -u, and a corrupted rewrite could emit a line that was never in the source while line counts stayed equal.",
+  "kind": "bash-unit",
+  "cmd": "L=\"$PLUGIN_ROOT/scripts/lib/learnings.sh\"; printf \"# L\\n\\n## Lessons\\n\\n- [2026-07-01] a\\n\" > s.md; printf '%s\\n' '\\000ENT:0' >> s.md; printf -- \"- [2026-07-02] b\\n\" >> s.md; b1=$(wc -l < s.md|tr -d \" \"); \"$L\" consolidate s.md >/dev/null 2>&1; a1=$(wc -l < s.md|tr -d \" \"); kept=$(grep -c 'ENT:0' s.md); bak=$(ls s.md.*.bak 2>/dev/null | head -1); invented=$(while IFS= read -r l; do grep -qxF -- \"$l\" \"$bak\" || echo x; done < s.md | wc -l | tr -d \" \"); cp \"$FIXTURES/learnings/exact_dupes.md\" d.md; \"$L\" consolidate d.md >/dev/null 2>&1; dbak=$(ls d.md.*.bak 2>/dev/null | head -1); dinv=$(while IFS= read -r l; do grep -qxF -- \"$l\" \"$dbak\" || echo x; done < d.md | wc -l | tr -d \" \"); : > e.md; \"$L\" consolidate e.md >/dev/null 2>&1; ec=$?; printf \"# L\\n\\n## Lessons\\n\" > h.md; \"$L\" consolidate h.md >/dev/null 2>&1; hc=$?; hl=$(wc -l < h.md|tr -d \" \"); printf '{\"before\":%s,\"after\":%s,\"sentinelKept\":%s,\"invented\":%s,\"dupInvented\":%s,\"emptyRc\":%s,\"headingsRc\":%s,\"headingLines\":%s}' \"$b1\" \"$a1\" \"$kept\" \"$invented\" \"$dinv\" \"$ec\" \"$hc\" \"$hl\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".before == .after and .sentinelKept == 1 and .invented == 0 and .dupInvented == 0 and .emptyRc == 0 and .headingsRc == 0 and .headingLines == 3"
+    }
+  ],
+  "provenance": {
+    "source": "review",
+    "date": "2026-08-08",
+    "note": "spec 012 revision 1 \u2014 both bugs found by adversarial input testing"
+  }
+}

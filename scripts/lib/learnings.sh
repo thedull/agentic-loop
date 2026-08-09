@@ -56,46 +56,55 @@ learnings_consolidate() {
   bak="$f.$(date +%Y%m%d-%H%M%S).bak"
   cp "$f" "$bak"
 
-  local -a out=() keys=() dates=() bodies=()
+  # Two parallel arrays: the line itself, and what it IS. No sentinel strings
+  # are ever written into the data — an earlier version marked entry slots with
+  # a literal "\000ENT:<i>" and silently dropped any real content line that
+  # happened to match it. A file this rewrites is the project's memory; it does
+  # not get to lose a line under any input.
+  local -a lines=() kind=() keys=() dates=() bodies=()
   local line key d i found merged=0
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" != "- "* ]]; then out+=("$line"); continue; fi
+    if [[ "$line" != "- "* ]]; then
+      lines+=("$line"); kind+=("raw"); continue
+    fi
     key="$(_l_key "$line")"; d="$(_l_date "$line")"
     found=-1
     for i in "${!keys[@]}"; do [[ "${keys[$i]}" == "$key" ]] && { found=$i; break; }; done
     if [[ $found -ge 0 ]]; then
       merged=$((merged+1))
-      # keep the EARLIEST date — the lesson dates from when it was first learned
+      # keep the EARLIEST date — a lesson dates from when it was first learned
       if [[ -n "$d" && ( -z "${dates[$found]}" || "$d" < "${dates[$found]}" ) ]]; then
         dates[$found]="$d"; bodies[$found]="$line"
       fi
-      out+=("\000DUP:$found")
+      lines+=("$line"); kind+=("$found")
     else
       keys+=("$key"); dates+=("$d"); bodies+=("$line")
-      out+=("\000ENT:$((${#keys[@]}-1))")
+      lines+=("$line"); kind+=("$((${#keys[@]}-1))")
     fi
   done < "$f"
 
-  # Emit, replacing each entry slot with its surviving line and dropping repeats.
+  # Emit. Every raw line passes through byte-for-byte; each entry index is
+  # emitted once, at its first position, carrying the earliest date.
   local -a seen=()
   : > "$f"
-  for line in "${out[@]}"; do
-    case "$line" in
-      '\000ENT:'*|'\000DUP:'*)
-        i="${line#*:}"
-        if [[ -z "${seen[$i]:-}" ]]; then
-          # rewrite the surviving line with the earliest date
-          printf '%s\n' "$(printf '%s' "${bodies[$i]}" | sed -E "s/^- \[[0-9]{4}-[0-9]{2}-[0-9]{2}\]/- [${dates[$i]:-}]/")" >> "$f"
-          seen[$i]=1
-        fi ;;
-      *) printf '%s\n' "$line" >> "$f" ;;
-    esac
+  local n=0
+  for line in ${lines[@]+"${lines[@]}"}; do
+    if [[ "${kind[$n]}" == "raw" ]]; then
+      printf '%s\n' "$line" >> "$f"
+    else
+      i="${kind[$n]}"
+      if [[ -z "${seen[$i]:-}" ]]; then
+        printf '%s\n' "$(printf '%s' "${bodies[$i]}" | sed -E "s/^- \[[0-9]{4}-[0-9]{2}-[0-9]{2}\]/- [${dates[$i]:-}]/")" >> "$f"
+        seen[$i]=1
+      fi
+    fi
+    n=$((n+1))
   done
 
   # Near-duplicates: reported for a human to accept or reject. The file is NOT
   # changed on their account.
   local a b ka kb cand=0
-  for i in "${!keys[@]}"; do
+  for ((i=0; i<${#keys[@]}; i++)); do
     for ((b=i+1; b<${#keys[@]}; b++)); do
       ka="${keys[$i]}"; kb="${keys[$b]}"
       [[ "$ka" == "$kb" ]] && continue

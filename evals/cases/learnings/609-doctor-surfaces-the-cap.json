@@ -1,8 +1,8 @@
 {
   "id": "learnings-609-doctor-surfaces-the-cap",
-  "target": "acceptance 1 \u2014 doctor.sh surfaces an over-cap file during preflight, rather than it being discovered when someone remembers a checkbox",
+  "target": "acceptance 1 \u2014 doctor.sh must actually surface an over-cap file, not merely mention the tool. The prior version passed against a comment admitting learnings.sh was not called.",
   "kind": "bash-unit",
-  "cmd": "d=\"$PLUGIN_ROOT/scripts/doctor.sh\"; n=$(grep -c \"learnings.sh\" \"$d\"); printf '{\"wired\":%s}' \"$n\"",
+  "cmd": "cp \"$FIXTURES/learnings/over.md\" LEARNINGS.md; o=$(bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 || true); over=$(printf \"%s\" \"$o\" | grep -ci \"over the cap\"); cnt=$(printf \"%s\" \"$o\" | grep -cE \"40[0-9] lines\"); cp \"$FIXTURES/learnings/under.md\" LEARNINGS.md; o2=$(bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 || true); clean=$(printf \"%s\" \"$o2\" | grep -ci \"clean\"); printf '{\"warnsOver\":%s,\"showsCount\":%s,\"saysCleanWhenUnder\":%s}' \"$over\" \"$cnt\" \"$clean\"",
   "checks": [
     {
       "type": "exit_code",
@@ -10,7 +10,7 @@
     },
     {
       "type": "jq",
-      "expr": ".wired >= 1"
+      "expr": ".warnsOver >= 1 and .showsCount >= 1 and .saysCleanWhenUnder >= 1"
     }
   ],
   "provenance": {
