@@ -1,13 +1,14 @@
 ---
 id: 014
 title: Check a spec against itself before it reaches specd
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-04
 depends_on: 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/10
+claimed_at: 2026-08-09T01:52:12Z
 ---
 
 # Spec 014 — Check a spec against itself before it reaches specd
