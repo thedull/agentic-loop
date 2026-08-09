@@ -1,13 +1,14 @@
 ---
 id: 012
 title: Automate LEARNINGS.md consolidation instead of trusting a checkbox
-status: specd
+status: pr-open
 profile: standard
 created: 2026-08-04
 depends_on: 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/7
+claimed_at: 2026-08-09T00:30:06Z
 ---
 
 # Spec 012 — Automate LEARNINGS.md consolidation instead of trusting a checkbox
@@ -86,3 +87,8 @@ exists for.
 - 2026-08-08 spec-review: MODIFIED acceptance 4 — "committed first" removed. The bash-unit sandbox is a bare mktemp with no git, so that branch was unverifiable by any case.
 - 2026-08-08 spec-review: MODIFIED acceptance 1 — the ~300 cap exists only as prose in three files; a machine-readable constant is now part of the work, and "the count" is the file's line count.
 - 2026-08-08 spec-review: MODIFIED acceptance 6 to name spec 009's `## Attempt ledger` grammar. Neither spec defined how ledger entries were recognisable.
+- 2026-08-08 build: BUILT on `claude/idea-012-learnings-consolidation`. Red Gate honoured: 11 cases first, 11 genuine failures, then implemented.
+- 2026-08-08 review: FIXED silent data loss. Entry slots were marked in the output stream with a literal `\000ENT:<i>` string, so a real content line matching that shape was dropped without warning. Sentinels are gone from the data path entirely — two parallel arrays carry the line and what it is.
+- 2026-08-08 review: FIXED a crash on an empty file. `set -u` plus bash 3.2's empty-array semantics made `${out[@]}` an unbound-variable error, and bash 3.2 is what `#!/usr/bin/env bash` resolves to on this machine.
+- 2026-08-08 review: MODIFIED case 609 from a grep for the string "learnings.sh" to running `doctor.sh` and asserting it actually warns on an over-cap file. The prior version passed against a comment stating the tool was not called.
+- 2026-08-08 build: ADDED the never-INVENTS half of the contract to case 611. Never-loses alone missed a corruption that emitted a line absent from the source while keeping line counts equal — every output line must now appear in the pre-consolidation backup.

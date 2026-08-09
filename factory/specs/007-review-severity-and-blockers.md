@@ -1,13 +1,16 @@
 ---
 id: 007
 title: Add merge-blocking severity and a bounded presumptive-blocker list to review
-status: specd
+status: shelved
 profile: standard
 created: 2026-08-02
 depends_on: 004
 claimed_by:
 branch:
 pr:
+shelved_from: specd
+shelved_reason: deferred to an attended session: its check_cmd carries --live, which spawns real claude -p calls on every build-loop re-run. Not a dependency for anything; restore with tracker.sh restore when you want to watch the quota.
+shelved_at: 2026-08-09T00:30:06Z
 ---
 
 # Spec 007 — Add merge-blocking severity and a bounded presumptive-blocker list to review
