@@ -49,6 +49,15 @@ and see it PASS before advancing to `built`.
 
 ## Notes / decisions (append-only)
 
+<!-- Before this spec can reach `specd`, `scripts/lib/tracker.sh advance` runs
+     `scripts/lib/spec_check.sh` over it. It BLOCKS on decidable
+     self-contradiction: an acceptance naming a path `input_paths` does not
+     declare, a duplicated acceptance number, or a Notes entry citing an
+     acceptance that does not exist. It also prints `candidate —` lines for
+     vocabulary drift and boundary clashes; those never block, they just narrow
+     what the blind reviewer reads. Run it yourself any time:
+     `scripts/lib/spec_check.sh <this file>`. -->
+
 <!-- If this spec is classified irreversible (`tracker.sh irreversible <file>`
      exits 7) it cannot reach `specd` whole — split it with
      `tracker.sh split <file>`. To override, add an explicit line here:

@@ -553,6 +553,18 @@ tracker_advance() {
   # An irreversible spec must not reach `specd` whole. Refuse before any field
   # is written so the spec keeps its current status.
   if [[ "${2:-}" == "specd" && -f "${1:-}" ]]; then
+    # Self-consistency is a GATE, not advice. A spec that contradicts itself on
+    # a decidable fact must not reach specd, and prose in skills/spec only binds
+    # an agent that reads it.
+    local _root_sc _sc=0
+    _root_sc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    if [[ -x "$_root_sc/lib/spec_check.sh" ]]; then
+      "$_root_sc/lib/spec_check.sh" "$1" >/dev/null 2>&1 || _sc=$?
+      if [[ $_sc -eq 2 ]]; then
+        echo "tracker: $(basename "$1") contradicts itself — run scripts/lib/spec_check.sh for the detail" >&2
+        return 2
+      fi
+    fi
     local _irc=0
     tracker_irreversible "$1" >/dev/null 2>&1 || _irc=$?
     if [[ $_irc -eq 2 ]]; then

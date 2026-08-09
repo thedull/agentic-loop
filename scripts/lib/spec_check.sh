@@ -17,8 +17,8 @@ FILE="${1:-}"
 [[ -n "$FILE" && -f "$FILE" ]] || _sc_die "usage: spec_check.sh <spec file>"
 
 # --- section extraction -------------------------------------------------------
-_sec_acceptance() { awk '/^## Acceptance/{on=1;next} /^## /{on=0} on' "$FILE"; }
-_sec_brief()      { awk '/^## Brief/{on=1;next} /^## /{on=0} on' "$FILE"; }
+_sec_acceptance() { tr -d '\r' < "$FILE" | awk '/^## Acceptance/{on=1;next} /^## /{on=0} on'; }
+_sec_brief()      { tr -d '\r' < "$FILE" | awk '/^## Brief/{on=1;next} /^## /{on=0} on'; }
 
 BLOCK=0
 CANDIDATES=0
@@ -42,7 +42,10 @@ _declared_covers() {
     d="${d#./}"; [[ -n "$d" ]] || continue
     [[ "$p" == "$d" ]] && return 0
     [[ "$d" == */ && "$p" == "$d"* ]] && return 0
-    [[ "${p##*/}" == "${d##*/}" ]] && return 0
+    # A bare filename in an acceptance (`obs.sh`) is a shorter way of naming a
+    # declared path. Two DIFFERENT directories sharing a basename are not the
+    # same file — this repo has eight `SKILL.md`s.
+    [[ "$p" != */* && "${p}" == "${d##*/}" ]] && return 0
   done <<< "$DECLARED"
   return 1
 }
@@ -53,7 +56,7 @@ while IFS= read -r path; do
     echo "spec_check: acceptance names '$path', which input_paths does not declare" >&2
     BLOCK=1
   fi
-done < <(_sec_acceptance | grep -oE '`[A-Za-z0-9_./-]+\.(sh|jq|md|json|js|txt|py)`' \
+done < <(_sec_acceptance | grep -oE '`[A-Za-z0-9_./ -]+\.(sh|jq|md|json|js|txt|py)`' \
          | tr -d '`' | sort -u)
 
 # --- check 2: stale and duplicated acceptance numbers -------------------------
@@ -79,7 +82,8 @@ while IFS= read -r n; do
     BLOCK=1
   fi
 done < <(awk '/^## (Notes|Revision)/{on=1} on' "$FILE" \
-         | sed -E 's/spec [0-9]+[^.]*acceptance [0-9]+//gi' \
+         | grep -v '"' \
+         | sed -E 's/spec [0-9]+[^.]*acceptance [0-9]+//gi; s/acceptance [0-9]+ of [^.]*//gi' \
          | grep -oiE 'acceptance [0-9]+' | grep -oE '[0-9]+' | sort -un)
 
 # --- check 3: vocabulary drift (CANDIDATE, never blocking) --------------------
