@@ -1,13 +1,14 @@
 ---
 id: 017
 title: Fund Sol through OpenRouter as an alternate transport
-status: specd
+status: done
 profile: standard
 created: 2026-08-08
 depends_on: 004
-claimed_by:
+claimed_by: auto-loop
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/12
+claimed_at: 2026-08-10T05:39:53Z
 ---
 
 # Spec 017 — Fund Sol through OpenRouter as an alternate transport
