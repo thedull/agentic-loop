@@ -10,7 +10,7 @@
         "estimate",
         "gpt-5.6-sol",
         "assumed output",
-        "chars"
+        "bytes/4"
       ]
     }
   ],

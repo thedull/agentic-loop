@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-031-estimate-is-locale-independent",
+  "target": "the token estimate is the same number under any locale — a threshold decision must not depend on the machine it runs on",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | LC_ALL=C MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>ec >/dev/null; cat \"$FIXTURES/preflight/brief-large.json\" | LC_ALL=en_US.UTF-8 MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>eu >/dev/null; grep -qi estimate ec && cmp -s ec eu && echo LOCALE_INDEPENDENT",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "LOCALE_INDEPENDENT"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

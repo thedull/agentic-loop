@@ -256,7 +256,7 @@ finalize_envelope() {
 PREFLIGHT_DEFAULT_THRESHOLD_USD="1.00"
 PREFLIGHT_EXIT_REFUSED=7      # distinct: 2 bad flag, 3 missing tool, 4 schema,
                               # 5 transport, 6 provider refusal, 7 cost gate
-PREFLIGHT_CHARS_PER_TOKEN=4   # documented heuristic; see preflight_estimate_tokens
+PREFLIGHT_BYTES_PER_TOKEN=4   # documented heuristic; see preflight_estimate_tokens
 
 # preflight_price MODEL — prints "IN_PER_M OUT_PER_M", or returns 1 if unpriced.
 # Committed table, deliberately NOT a live lookup: a network round-trip before
@@ -282,13 +282,21 @@ preflight_price() {
   esac
 }
 
-# preflight_estimate_tokens TEXT — chars/4, rounded up. An approximation, and
+# preflight_estimate_tokens TEXT — bytes/4, rounded up. An approximation, and
 # labelled as one everywhere it is reported. It is deterministic, which is the
 # property that actually matters here: the same brief must always produce the
 # same threshold decision, or the gate is a coin flip.
+#
+# BYTES, not characters, and deliberately so. `${#var}` counts characters under
+# a UTF-8 locale and bytes otherwise, which would make the same prompt estimate
+# differently on two machines and a threshold decision non-reproducible across
+# environments. `local LC_ALL=C` pins it to bytes everywhere. Bytes are also the
+# better proxy: a multibyte character is usually MORE than one token, not fewer,
+# so counting characters would understate non-ASCII prompts.
 preflight_estimate_tokens() {
+  local LC_ALL=C
   local n=${#1}
-  echo $(( (n + PREFLIGHT_CHARS_PER_TOKEN - 1) / PREFLIGHT_CHARS_PER_TOKEN ))
+  echo $(( (n + PREFLIGHT_BYTES_PER_TOKEN - 1) / PREFLIGHT_BYTES_PER_TOKEN ))
 }
 
 # emit_blocked WORKER MESSAGE — a refusal envelope. Distinct from emit_error:
@@ -348,7 +356,7 @@ preflight_gate() {
   local line="preflight: estimated cost "
   if [[ $priced -eq 1 ]]; then line+="${cost_str} USD"; else line+="UNKNOWN (no committed price)"; fi
   line+=" for ${model} — estimate only, never recorded as a cost."
-  line+=" Method: ${in_tok} input tokens by chars/${PREFLIGHT_CHARS_PER_TOKEN} heuristic"
+  line+=" Method: ${in_tok} input tokens by bytes/${PREFLIGHT_BYTES_PER_TOKEN} heuristic"
   line+=" + assumed output ${assumed_out} tokens (assumed, not measured)"
   line+=" at ${p_in}/${p_out} USD per 1M. threshold ${thr} USD"
   [[ $authorized -eq 1 ]] && line+=" — AUTHORIZED explicitly, gate bypassed"

@@ -92,6 +92,18 @@ learnings.sh at all — still passes `./evals/run_eval.sh --suite learnings`
 11/11. Acceptance 1's "doctor.sh surfaces this" clause is unenforced beyond
 the string "learnings.sh" appearing anywhere in the file, including a comment
 disclaiming that it doesn't run.
+6th strike: spec 018 (`preflight-cost-estimate`),
+`evals/cases/preflight-cost/015-default-threshold-applies.json`. Its `must_find`
+only checks the literal word "threshold" appears in stderr — it never asserts
+the printed value equals the documented default (1.00 USD, declared at
+`scripts/lib/common.sh:256` and in `templates/.env.example`). Confirmed live:
+changing `PREFLIGHT_DEFAULT_THRESHOLD_USD="1.00"` to `"9999.00"` (a real
+regression that would make the gate refuse almost nothing by default) still
+passes `./evals/run_eval.sh --suite preflight-cost` 30/30. Same root cause as
+the other strikes (word-presence stands in for the actual assertion) but here
+there's no distinction/pairing to garble — the case just never captures or
+compares the value it greps for.
+
 - `508-hardened-still-terminates-at-a-pr.json`'s `prTerminal` check
   (`grep -ci "terminal state is an OPEN PR\|Nothing merges here"`) is NOT
   scoped to the awk-extracted hardened section — it greps the whole file, so
