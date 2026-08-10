@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-030-at-the-threshold-refuses",
+  "target": "acceptance 4 says 'at or above': an estimate exactly EQUAL to the threshold must refuse, not slip through",
+  "kind": "bash-unit",
+  "cmd": "EST=$(cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=off bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>&1 >/dev/null | grep -o 'estimated cost [0-9.]*' | grep -o '[0-9.]*'); echo \"EST=$EST\"; cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=\"$EST\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary >out 2>/dev/null; echo \"EXIT:$?\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:7"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "mutation testing 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

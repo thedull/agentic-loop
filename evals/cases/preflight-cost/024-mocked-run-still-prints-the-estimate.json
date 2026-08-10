@@ -1,0 +1,22 @@
+{
+  "id": "preflight-cost-024-mocked-run-still-prints-the-estimate",
+  "target": "exempt from refusing is not exempt from telling you the number",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | FACTORY_COST_THRESHOLD_USD=0.001 MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >/dev/null; grep -i estimate err",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "estimate"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

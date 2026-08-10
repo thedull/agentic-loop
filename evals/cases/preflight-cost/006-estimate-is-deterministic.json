@@ -1,0 +1,19 @@
+{
+  "id": "preflight-cost-006-estimate-is-deterministic",
+  "target": "the same input estimated twice gives the same number, so a threshold decision is reproducible",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>e1 >/dev/null; cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>e2 >/dev/null; grep -qi estimate e1 && [ -s e1 ] && cmp -s e1 e2 && echo DETERMINISTIC",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "DETERMINISTIC"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Requires e1 to be non-empty AND contain an estimate: comparing two empty stderr streams is 'identical' for the wrong reason."
+}

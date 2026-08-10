@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-029-cost-includes-assumed-output",
+  "target": "the estimated COST changes with the assumed output size — an input-only estimate would price both efforts identically and silently understate every call",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --effort standard 2>&1 >/dev/null | grep -o 'estimated cost [0-9.]*' | grep -o '[0-9.]*' > cs; cat \"$FIXTURES/preflight/brief-large.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --effort max 2>&1 >/dev/null | grep -o 'estimated cost [0-9.]*' | grep -o '[0-9.]*' > cm; echo \"standard=$(cat cs) max=$(cat cm)\"; [ -s cs ] && [ -s cm ] && [ \"$(cat cs)\" != \"$(cat cm)\" ] && echo OUTPUT_IS_PRICED",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "OUTPUT_IS_PRICED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "mutation testing 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

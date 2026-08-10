@@ -1,0 +1,19 @@
+{
+  "id": "preflight-cost-008-above-threshold-refuses-with-exit-7",
+  "target": "call_sol.sh — above the threshold it refuses with exit 7 and a status:blocked envelope, before any request",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >out; echo \"EXIT:$?\"; cat out",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:7",
+        "blocked"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

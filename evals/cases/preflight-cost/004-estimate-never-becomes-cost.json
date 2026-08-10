@@ -1,0 +1,16 @@
+{
+  "id": "preflight-cost-004-estimate-never-becomes-cost",
+  "target": "call_sol.sh — usage.est_cost_usd still holds the PROVIDER figure, never the pre-flight estimate",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >out; jq -e '.usage.est_cost_usd == 0.018' out",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

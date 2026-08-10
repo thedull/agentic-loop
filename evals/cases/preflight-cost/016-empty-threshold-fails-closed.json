@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-016-empty-threshold-fails-closed",
+  "target": "a set-but-empty threshold refuses rather than silently meaning no limit",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD= bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>/dev/null; echo \"EXIT:$?\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:7"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

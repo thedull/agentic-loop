@@ -1,0 +1,23 @@
+{
+  "id": "preflight-cost-025-fable-prints-an-estimate",
+  "target": "call_fable.sh — metered, so it estimates too",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/preflight/fable-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_fable.sh\" 2>err >out; grep -i estimate err",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "estimate",
+        "claude-fable-5"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

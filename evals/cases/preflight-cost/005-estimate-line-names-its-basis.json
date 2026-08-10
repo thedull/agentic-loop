@@ -1,0 +1,21 @@
+{
+  "id": "preflight-cost-005-estimate-line-names-its-basis",
+  "target": "the printed line identifies itself as an estimate and names the model, the price basis, the method, and the assumed output",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >out; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "estimate",
+        "gpt-5.6-sol",
+        "assumed output",
+        "bytes/4"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

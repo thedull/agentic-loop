@@ -1,0 +1,20 @@
+{
+  "id": "preflight-cost-022-unpriced-model-passable-with-authorization",
+  "target": "an unknown price is a reason to ask, not a permanent stop — explicit authorization is the way through",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_AUTHORIZED=1 bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model some-vendor/never-priced-v9 2>err >/dev/null; echo \"EXIT:$?\"; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:2",
+        "authorized"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Without the needle this passes on require_key's exit 2 with no gate present."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-027-fable-above-threshold-refuses",
+  "target": "call_fable.sh — the gate is not sol-only",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 bash \"$PLUGIN_ROOT/scripts/call_fable.sh\" 2>/dev/null; echo \"EXIT:$?\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:7"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

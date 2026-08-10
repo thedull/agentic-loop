@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-014-authorization-not-inferred-from-a-tty",
+  "target": "acceptance 5 — authorization is never inferred from an interactive session; running under a pty still refuses",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 script -q /dev/null bash -c 'cat \"$FIXTURES/preflight/brief-large.json\" | \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary' >out 2>/dev/null; echo \"EXIT:$?\"; grep -o blocked out || true",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "blocked"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

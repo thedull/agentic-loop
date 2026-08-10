@@ -70,6 +70,7 @@ while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
       esac
       i=$((i+2)) ;;
     --batch)  BATCH=1; i=$((i+1)) ;;
+    --authorize-cost) PREFLIGHT_AUTHORIZED=1; i=$((i+1)) ;;
     *) emit_error "$WORKER_NAME" "unknown flag: $FLAG"; exit 2 ;;
   esac
 done
@@ -105,10 +106,7 @@ if [[ $BATCH -eq 1 ]]; then
   MODEL="${MODEL}:batch"
 fi
 
-case "$VIA" in
-  openai)     require_key OPENAI_API_KEY     "$WORKER_NAME" ;;
-  openrouter) require_key OPENROUTER_API_KEY "$WORKER_NAME" ;;
-esac
+
 
 case "$MODE" in
   adversary)
@@ -166,6 +164,25 @@ if [[ $MULTI_AGENT -eq 1 && "$VIA" != "openai" ]]; then
   emit_error "$WORKER_NAME" "--effort ultra is available only on the direct transport (--via openai): it needs the Responses multi-agent beta, which has no equivalent on OpenRouter. Use --effort max here, or --via openai for ultra."
   exit 2
 fi
+
+# Assumed output scales with effort: ultra runs parallel subagents and token use
+# scales with agent count (max_concurrent_subagents: 3), so a flat assumption
+# would systematically understate the single most expensive path — exactly the
+# call this gate exists to catch.
+case "$EFFORT" in
+  standard) ASSUMED_OUT=2000 ;;
+  max)      ASSUMED_OUT=6000 ;;
+  ultra)    ASSUMED_OUT=18000 ;;
+  *)        ASSUMED_OUT=2000 ;;
+esac
+preflight_gate "$WORKER_NAME" "$MODEL" "$SYSTEM_PROMPT$TASK_PROMPT" "$ASSUMED_OUT"
+
+# Credentials are checked AFTER the gate: a call refused on cost must be refused
+# before it needs a key, so the refusal is about the spend and not the setup.
+case "$VIA" in
+  openai)     require_key OPENAI_API_KEY     "$WORKER_NAME" ;;
+  openrouter) require_key OPENROUTER_API_KEY "$WORKER_NAME" ;;
+esac
 
 if [[ "$VIA" == "openrouter" ]]; then
   REQUEST="$(jq -n \

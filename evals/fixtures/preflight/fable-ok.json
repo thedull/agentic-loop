@@ -1,0 +1,13 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"drafted\",\"result\":\"a draft\",\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"medium\",\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"est_cost_usd\":0}}"
+    }
+  ],
+  "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 400
+  },
+  "stop_reason": "end_turn"
+}

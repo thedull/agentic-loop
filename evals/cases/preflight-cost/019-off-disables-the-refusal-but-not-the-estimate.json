@@ -1,0 +1,19 @@
+{
+  "id": "preflight-cost-019-off-disables-the-refusal-but-not-the-estimate",
+  "target": "the sentinel 'off' disables refusal; the estimate is still printed",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=off bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >/dev/null; echo \"EXIT:$?\"; grep -i estimate err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:2",
+        "estimate"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

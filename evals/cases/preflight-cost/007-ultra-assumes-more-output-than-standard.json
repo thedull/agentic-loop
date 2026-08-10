@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-007-ultra-assumes-more-output-than-standard",
+  "target": "acceptance 3 — the assumed output size scales with effort; ultra runs parallel subagents so a flat number would understate the costliest path",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --effort standard 2>es >/dev/null; cat \"$FIXTURES/preflight/brief-large.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --effort ultra 2>eu >/dev/null; S=$(grep -o 'assumed output [0-9]*' es | grep -o '[0-9]*'); U=$(grep -o 'assumed output [0-9]*' eu | grep -o '[0-9]*'); echo \"S=$S U=$U\"; [ -n \"$S\" ] && [ -n \"$U\" ] && [ \"$U\" -gt \"$S\" ] && echo ULTRA_ASSUMES_MORE",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "ULTRA_ASSUMES_MORE"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

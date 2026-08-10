@@ -19,7 +19,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
 load_env
-require_key OPENROUTER_API_KEY "openrouter"
 
 parse_brief "$@"
 
@@ -28,6 +27,7 @@ i=0
 while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
   case "${EXTRA_ARGS[$i]}" in
     --model) MODEL_ARG="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
+    --authorize-cost) PREFLIGHT_AUTHORIZED=1; i=$((i+1)) ;;
     *) emit_error "openrouter" "unknown flag: ${EXTRA_ARGS[$i]}"; exit 2 ;;
   esac
 done
@@ -49,6 +49,12 @@ editorialize.
 $(envelope_instructions "$WORKER_NAME")"
 
 TASK_PROMPT="$(build_task_prompt)"
+
+# No effort flag on this tier, so a single documented assumption.
+preflight_gate "$WORKER_NAME" "$MODEL" "$SYSTEM_PROMPT$TASK_PROMPT" 2000
+
+# After the gate: an unpriced or oversized call is refused before it needs a key.
+require_key OPENROUTER_API_KEY "openrouter"
 
 REQUEST="$(jq -n --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" '{
   model: $model,
