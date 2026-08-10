@@ -1,13 +1,13 @@
 ---
 id: 016
 title: Require a code location on every adversary finding
-status: specd
+status: done
 profile: standard
 created: 2026-08-08
 depends_on: 004
 claimed_by:
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/11
 ---
 
 # Spec 016 — Require a code location on every adversary finding
