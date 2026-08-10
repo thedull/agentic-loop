@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-016-numeric-confidence-rejected",
+  "target": "validate_envelope.jq — a numeric confidence on a finding is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/numeric-confidence.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "confidence"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-007-file-empty-rejected",
+  "target": "validate_envelope.jq — an empty location.file is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/file-empty.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "file"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

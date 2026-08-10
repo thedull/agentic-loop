@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-017-numeric-score-rejected",
+  "target": "validate_envelope.jq — a numeric score on a finding is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/numeric-score.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "score"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

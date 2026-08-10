@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-008-second-finding-bad-rejected",
+  "target": "validate_envelope.jq — EVERY finding is checked, not just the first",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/second-finding-bad.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "searched"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

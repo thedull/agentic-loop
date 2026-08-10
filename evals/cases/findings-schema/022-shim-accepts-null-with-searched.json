@@ -1,0 +1,38 @@
+{
+  "id": "findings-schema-022-shim-accepts-null-with-searched",
+  "target": "call_sol.sh — location:null + searched survives the round trip",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/findings/sol-response-null-with-searched.json",
+  "args": [
+    "--mode",
+    "adversary"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "",
+      "input_paths": [],
+      "boundaries_non_goals": [],
+      "output_spec": "findings with locations",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "envelope_valid"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings[0] | has(\"location\") and .location == null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

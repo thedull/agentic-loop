@@ -1,0 +1,31 @@
+{
+  "id": "findings-schema-020-shim-refuses-unlocated-finding",
+  "target": "call_sol.sh — a provider that ignores the schema is still refused at receipt (exit 4)",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/findings/sol-response-location-absent.json",
+  "args": [
+    "--mode",
+    "adversary"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "",
+      "input_paths": [],
+      "boundaries_non_goals": [],
+      "output_spec": "findings with locations",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 4
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -52,12 +52,20 @@ Return protocol — your final message must be ONLY this JSON envelope (raw JSON
   "result": {"verdict": "pass|fail", "checks_run": ["commands you executed and their exit status"]},
   "findings": [
     {"claim": "what is wrong", "evidence": "file:line / command output / quote",
-     "severity": "high|medium|low"}
+     "severity": "high|medium|low",
+     "location": {"file": "path/as/committed.sh", "line_start": 10, "line_end": 12}}
   ],
   "artifacts": [], "key_decisions": [], "caveats": [], "assumptions": [],
   "confidence_ordinal": "high|medium|low",
   "usage": {"input_tokens": 0, "output_tokens": 0, "est_cost_usd": 0}
 }
+
+`location` is mandatory on every finding and is checked mechanically, not read.
+For a finding about an absence — something missing, unhandled, or never called —
+set `"location": null` and add `"searched": "<the files and scopes you actually
+examined>"`. Never invent line 1 to fill the field, and never add a numeric
+confidence or score: severity is ordinal here. An envelope whose finding carries
+neither a location nor a searched scope is refused on receipt.
 
 Use your memory directory to record recurring defect classes in this project
 (two-strikes rule) — check it at the start of every review.

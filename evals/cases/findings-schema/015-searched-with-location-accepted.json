@@ -1,0 +1,20 @@
+{
+  "id": "findings-schema-015-searched-with-location-accepted",
+  "target": "validate_envelope.jq — searched alongside a real location is not an error",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/searched-with-location.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".findings[0] | (.location.file | length) > 0 and ((.searched | length) > 0)"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

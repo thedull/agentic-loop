@@ -1,0 +1,29 @@
+{
+  "worker": "sol",
+  "status": "ok",
+  "summary": "adversary review",
+  "result": "reviewed",
+  "artifacts": [],
+  "key_decisions": [],
+  "caveats": [],
+  "assumptions": [],
+  "confidence_ordinal": "medium",
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 20,
+    "est_cost_usd": 0.001
+  },
+  "findings": [
+    {
+      "claim": "the guard does not fire on an empty list",
+      "evidence": "run_eval.sh returns 0 with zero cases",
+      "severity": "high",
+      "location": {
+        "file": "evals/run_eval.sh",
+        "line_start": 210,
+        "line_end": 214
+      },
+      "score": 7
+    }
+  ]
+}

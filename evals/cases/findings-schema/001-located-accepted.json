@@ -1,0 +1,20 @@
+{
+  "id": "findings-schema-001-located-accepted",
+  "target": "validate_envelope.jq — {file,line_start,line_end} passes",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/located.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".findings[0].location | (has(\"file\") and has(\"line_start\") and has(\"line_end\"))"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
