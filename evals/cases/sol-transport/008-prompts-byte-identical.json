@@ -1,0 +1,22 @@
+{
+  "id": "sol-transport-008-prompts-byte-identical",
+  "target": "call_sol.sh — system and task prompts are byte-identical across transports",
+  "kind": "bash-unit",
+  "cmd": "A=\"$PWD/a.json\"; B=\"$PWD/b.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" SOL_REQUEST_DUMP=\"$A\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary >/dev/null 2>&1; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$B\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -r \".instructions\" \"$A\" > sysA; jq -r \".input[0].content\" \"$A\" > taskA; jq -r \".messages[0].content\" \"$B\" > sysB; jq -r \".messages[1].content\" \"$B\" > taskB; cmp -s sysA sysB && cmp -s taskA taskB && [ -s sysA ] && [ -s taskA ] && echo IDENTICAL",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "IDENTICAL"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

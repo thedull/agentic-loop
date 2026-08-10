@@ -1,0 +1,37 @@
+{
+  "id": "sol-transport-006-openrouter-cost-absent-is-null",
+  "target": "call_sol.sh — no reported cost means null, never 0 and never the OpenAI price table",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openrouter-no-cost.json",
+  "args": [
+    "--via",
+    "openrouter"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".usage | has(\"est_cost_usd\") and .est_cost_usd == null"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

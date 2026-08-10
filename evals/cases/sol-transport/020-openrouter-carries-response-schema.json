@@ -1,0 +1,16 @@
+{
+  "id": "sol-transport-020-openrouter-carries-response-schema",
+  "target": "call_sol.sh — the OpenRouter request declares the findings schema in ITS wire shape (response_format), so spec 016's optimisation survives the new transport",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -e '.response_format.json_schema.schema.properties.findings.items.required | index(\"location\") != null' \"$D\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "sol-transport-016-missing-openai-key-unchanged",
+  "target": "call_sol.sh — the direct transport still names OPENAI_API_KEY when it is missing",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/sol-transport/brief.json\" | env -u MOCK_RESPONSE_FILE -u OPENROUTER_API_KEY -u OPENAI_API_KEY bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 2
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "type": "jq",
+      "expr": ".status == \"error\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Deliberately unmocked: require_key returns success unconditionally when MOCK_RESPONSE_FILE is set (scripts/lib/common.sh:58), so a mocked credential case could not fail even with the gate deleted."
+}

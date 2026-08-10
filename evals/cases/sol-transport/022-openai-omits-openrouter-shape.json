@@ -1,0 +1,16 @@
+{
+  "id": "sol-transport-022-openai-omits-openrouter-shape",
+  "target": "call_sol.sh — the direct transport keeps its Responses-API body, no chat/completions fields",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary >/dev/null 2>&1; jq -e \"(has(\\\"response_format\\\") | not) and (has(\\\"messages\\\") | not)\" \"$D\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

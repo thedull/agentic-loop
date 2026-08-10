@@ -1,0 +1,22 @@
+{
+  "id": "sol-transport-017-doctor-reports-both-transports",
+  "target": "doctor.sh — with both keys, both Sol transports are reported as available",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENAI_API_KEY=sk-test\\nOPENROUTER_API_KEY=or-test\\n\" > .env; printf \"*.env\\n\" > .gitignore; bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i \"sol\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "openrouter"
+      ]
+    },
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

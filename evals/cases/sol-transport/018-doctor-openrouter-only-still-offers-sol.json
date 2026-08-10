@@ -1,0 +1,22 @@
+{
+  "id": "sol-transport-018-doctor-openrouter-only-still-offers-sol",
+  "target": "doctor.sh — an OpenRouter key alone still makes Sol reachable, not 'unavailable'",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \"*.env\\n\" > .gitignore; bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i \"sol\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "openrouter"
+      ]
+    },
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

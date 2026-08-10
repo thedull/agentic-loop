@@ -86,9 +86,22 @@ if [[ -f ./.env ]]; then
   [[ -n "${FABLE_KEY:-}" ]]          && ok "FABLE_KEY set (Fable worker, Claude API metered)" \
                                      || warn "FABLE_KEY missing — call_fable.sh unavailable"
   [[ -n "${OPENAI_API_KEY:-}" ]]     && ok "OPENAI_API_KEY set (Sol worker, OpenAI metered)" \
-                                     || warn "OPENAI_API_KEY missing — call_sol.sh unavailable"
+                                     || warn "OPENAI_API_KEY missing — the direct Sol transport is unavailable"
   [[ -n "${OPENROUTER_API_KEY:-}" ]] && ok "OPENROUTER_API_KEY set (bulk workers)" \
                                      || warn "OPENROUTER_API_KEY missing — call_openrouter.sh unavailable"
+
+  # Sol has two transports and either key alone is enough for one of them.
+  # Reporting only "call_sol.sh unavailable" on a missing OPENAI_API_KEY was
+  # wrong the moment --via openrouter existed.
+  if [[ -n "${OPENAI_API_KEY:-}" && -n "${OPENROUTER_API_KEY:-}" ]]; then
+    ok "Sol transports: direct (--via openai) and openrouter (--via openrouter, :batch available)"
+  elif [[ -n "${OPENAI_API_KEY:-}" ]]; then
+    ok "Sol transport: direct (--via openai). openrouter unavailable — OPENROUTER_API_KEY missing"
+  elif [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
+    ok "Sol transport: openrouter (--via openrouter). direct unavailable — OPENAI_API_KEY missing, so --effort ultra cannot be used"
+  else
+    warn "no Sol transport available — set OPENAI_API_KEY (direct) or OPENROUTER_API_KEY (--via openrouter)"
+  fi
 else
   warn "./.env not found — copy .env.example to .env and fill in the keys you have"
 fi

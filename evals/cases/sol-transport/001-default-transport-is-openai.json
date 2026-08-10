@@ -1,0 +1,37 @@
+{
+  "id": "sol-transport-001-default-transport-is-openai",
+  "target": "call_sol.sh — no flag means the direct OpenAI path, worker 'sol'",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openai-ok.json",
+  "args": [],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "envelope_valid"
+    },
+    {
+      "type": "jq",
+      "expr": ".worker == \"sol\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

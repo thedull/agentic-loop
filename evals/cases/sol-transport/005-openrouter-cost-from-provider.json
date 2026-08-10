@@ -1,0 +1,41 @@
+{
+  "id": "sol-transport-005-openrouter-cost-from-provider",
+  "target": "call_sol.sh — est_cost_usd is OpenRouter's own reported .usage.cost",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openrouter-with-cost.json",
+  "args": [
+    "--via",
+    "openrouter"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".usage.est_cost_usd == 0.0731"
+    },
+    {
+      "type": "jq",
+      "expr": ".usage.input_tokens == 1200 and .usage.output_tokens == 400"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

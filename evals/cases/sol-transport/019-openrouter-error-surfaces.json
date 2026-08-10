@@ -1,0 +1,39 @@
+{
+  "id": "sol-transport-019-openrouter-error-surfaces",
+  "target": "call_sol.sh — an OpenRouter error response exits 5 and names the provider",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openrouter-error.json",
+  "args": [
+    "--via",
+    "openrouter"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 5
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "openrouter"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
