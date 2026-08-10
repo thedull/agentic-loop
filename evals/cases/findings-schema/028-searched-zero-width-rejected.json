@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-028-searched-zero-width-rejected",
+  "target": "validate_envelope.jq — zero-width characters (U+200B/FEFF/2060/00AD) do not name a scope",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/searched-zero-width.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "searched"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

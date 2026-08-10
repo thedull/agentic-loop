@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-025-location-absent-even-with-searched-rejected",
+  "target": "validate_envelope.jq — an absent location is refused even when searched is supplied (acceptance 1: absent != null)",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/location-absent-with-searched.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "location"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "mutation-testing 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-024-envelope-suite-still-green",
+  "target": "acceptance 5 — the existing envelope suite still passes after this change",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/evals/run_eval.sh\" --suite envelope",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "pass, 0 fail,"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

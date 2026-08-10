@@ -1,0 +1,16 @@
+{
+  "worker": "sol",
+  "status": "ok",
+  "summary": "adversary review",
+  "result": "reviewed",
+  "artifacts": [],
+  "key_decisions": [],
+  "caveats": [],
+  "assumptions": [],
+  "confidence_ordinal": "medium",
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 20,
+    "est_cost_usd": 0.001
+  }
+}

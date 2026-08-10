@@ -64,7 +64,14 @@ Rules:
   findings list is a valid, useful answer.
 - Be terse. Your output tokens are the most expensive in this system.
 In your envelope, additionally include:
-  \"findings\": [{\"claim\": \"...\", \"evidence\": \"...\", \"severity\": \"high|medium|low\"}]"
+  \"findings\": [{\"claim\": \"...\", \"evidence\": \"...\", \"severity\": \"high|medium|low\",
+                \"location\": {\"file\": \"...\", \"line_start\": N, \"line_end\": N}}]
+Every finding MUST carry \"location\". If the finding is about an absence — \
+something missing, unhandled or never called — set \"location\": null and add \
+\"searched\": \"<the files and scopes you actually examined>\". Do not invent \
+line 1 to satisfy the field, and do not report a numeric confidence or score: \
+severity is ordinal here. A finding that carries neither a location nor a \
+searched scope is rejected on receipt and the whole call is wasted."
     ;;
   reviser)
     SYSTEM_PROMPT="You are a best-of-best reviser in a multi-model agentic loop. \
@@ -97,6 +104,55 @@ REQUEST="$(jq -n \
     input: [{role: "user", content: $task}],
     reasoning: {effort: $effort}
   }')"
+
+# Ask the provider to enforce the finding shape at generation time. This is an
+# OPTIMISATION, never the gate: response_format support varies by provider and
+# by model, and a gate that stops gating the moment a parameter is dropped is
+# not a gate. validate_envelope.jq refuses a malformed finding at receipt
+# whether or not this schema was honored.
+if [[ "$MODE" == "adversary" ]]; then
+  REQUEST="$(echo "$REQUEST" | jq '. + {
+    text: {format: {
+      type: "json_schema",
+      name: "adversary_envelope",
+      strict: false,
+      schema: {
+        type: "object",
+        properties: {
+          findings: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["claim", "evidence", "severity", "location"],
+              properties: {
+                claim:    {type: "string"},
+                evidence: {type: "string"},
+                severity: {type: "string", enum: ["high", "medium", "low"]},
+                location: {anyOf: [
+                  {type: "object",
+                   required: ["file", "line_start", "line_end"],
+                   properties: {
+                     file:       {type: "string", minLength: 1},
+                     line_start: {type: "integer", minimum: 1},
+                     line_end:   {type: "integer", minimum: 1}}},
+                  {type: "null"}]},
+                searched: {type: "string",
+                           description: "required when location is null: the scopes actually examined"}
+              }
+            }
+          }
+        }
+      }
+    }}
+  }')"
+fi
+
+# Test seam (same spirit as MOCK_RESPONSE_FILE): dump the exact request body so
+# an eval can assert on the schema we send, rather than grepping this file for
+# a keyword. Unset in every normal run.
+if [[ -n "${SOL_REQUEST_DUMP:-}" ]]; then
+  printf '%s' "$REQUEST" > "$SOL_REQUEST_DUMP"
+fi
 
 BETA_HEADER=()
 if [[ $MULTI_AGENT -eq 1 ]]; then

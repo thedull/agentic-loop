@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-023-request-carries-response-schema",
+  "target": "call_sol.sh — the adversary request declares a response schema requiring location",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; printf %s '{\"objective\":\"adversarially review the candidate\",\"user_intent_verbatim\":\"\",\"input_paths\":[],\"boundaries_non_goals\":[],\"output_spec\":\"findings with locations\",\"effort_budget\":\"one pass\"}' | MOCK_RESPONSE_FILE=\"$FIXTURES/findings/sol-response-located.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary >/dev/null 2>&1; jq -e '.text.format.type == \"json_schema\" and (.text.format.schema.properties.findings.items.required | index(\"location\") != null) and ([.text.format.schema.properties.findings.items.properties.location | .. | objects | select(has(\"required\")) | .required[]] | (index(\"file\") != null and index(\"line_start\") != null and index(\"line_end\") != null))' \"$D\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

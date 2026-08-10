@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-031-file-zero-width-rejected",
+  "target": "validate_envelope.jq — a zero-width location.file is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/file-zero-width.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "file"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

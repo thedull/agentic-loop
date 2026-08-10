@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-027-line-end-fractional-rejected",
+  "target": "validate_envelope.jq — a fractional line_end is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/line-end-fractional.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "line_end"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "mutation-testing 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

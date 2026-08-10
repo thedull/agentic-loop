@@ -1,0 +1,38 @@
+{
+  "id": "findings-schema-021-shim-accepts-located-finding",
+  "target": "call_sol.sh — a located finding survives the round trip",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/findings/sol-response-located.json",
+  "args": [
+    "--mode",
+    "adversary"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "",
+      "input_paths": [],
+      "boundaries_non_goals": [],
+      "output_spec": "findings with locations",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "envelope_valid"
+    },
+    {
+      "type": "jq",
+      "expr": ".findings[0].location.line_start == 210"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "findings-schema-018-no-findings-key-unaffected",
+  "target": "validate_envelope.jq — an envelope with no findings key still passes",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/no-findings-key.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": "has(\"findings\") | not"
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
