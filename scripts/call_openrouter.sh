@@ -33,11 +33,18 @@ while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
 done
 [[ -z "$MODEL_ARG" ]] && { emit_error "openrouter" "--model is required (kimi|minimax|mimo or a full OpenRouter id)"; exit 2; }
 
-# Alias table — override in .env (e.g. OPENROUTER_MODEL_KIMI=moonshotai/kimi-k3)
-# if these ids go stale.
+# Alias table — override in .env (e.g. OPENROUTER_MODEL_KIMI=moonshotai/kimi-k4)
+# if these ids go stale. They WILL go stale: doctor.sh checks them against the
+# live catalog on every run precisely because a delisted or superseded id is
+# still a well-formed string that no offline test can catch.
+#
+# Verified against https://openrouter.ai/api/v1/models on 2026-08-10:
+#   moonshotai/kimi-k3   context_length 1048576  (k2 was 131072)
+#   minimax/minimax-m3   context_length 1048576  (m2 was 204800)
+#   xiaomi/mimo-v2.5     context_length 1050000  (fixed in 0.14.8, already current)
 case "$MODEL_ARG" in
-  kimi)    MODEL="${OPENROUTER_MODEL_KIMI:-moonshotai/kimi-k2}" ;;
-  minimax) MODEL="${OPENROUTER_MODEL_MINIMAX:-minimax/minimax-m2}" ;;
+  kimi)    MODEL="${OPENROUTER_MODEL_KIMI:-moonshotai/kimi-k3}" ;;
+  minimax) MODEL="${OPENROUTER_MODEL_MINIMAX:-minimax/minimax-m3}" ;;
   mimo)    MODEL="${OPENROUTER_MODEL_MIMO:-xiaomi/mimo-v2.5}" ;;
   *)       MODEL="$MODEL_ARG" ;;
 esac

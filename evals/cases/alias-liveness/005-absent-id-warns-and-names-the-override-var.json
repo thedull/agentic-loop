@@ -1,0 +1,20 @@
+{
+  "id": "alias-liveness-005-absent-id-warns-and-names-the-override-var",
+  "target": "acceptance 2 — an alias absent from the catalog warns, naming the alias, the dead id, and the OPENROUTER_MODEL_* variable that would override it",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-missing-mimo.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i 'mimo'",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "mimo",
+        "xiaomi/mimo-v2.5",
+        "OPENROUTER_MODEL_MIMO"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

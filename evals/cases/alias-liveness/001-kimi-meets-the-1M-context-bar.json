@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-001-kimi-meets-the-1M-context-bar",
+  "target": "acceptance 1 — the kimi alias resolves to an id whose catalog context_length is >= 1,000,000 (kimi-k2's 131,072 fails this)",
+  "kind": "bash-unit",
+  "cmd": "resolve() { cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/openrouter-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model \"$1\" 2>/dev/null | jq -r \".worker\" | sed \"s|^openrouter/||\"; }; ID=$(resolve kimi); echo \"kimi=$ID\"; CTX=$(jq -r --arg i \"$ID\" '.data[] | select(.id==$i) | .context_length' $FIXTURES/alias-liveness/catalog-full.json); echo \"context=$CTX\"; [ -n \"$CTX\" ] && [ \"$CTX\" -ge 1000000 ] && echo MEETS_BAR",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "MEETS_BAR"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

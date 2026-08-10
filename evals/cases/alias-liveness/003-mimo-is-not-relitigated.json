@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-003-mimo-is-not-relitigated",
+  "target": "acceptance 1 — mimo stays xiaomi/mimo-v2.5, corrected in 0.14.8 and deliberately not re-litigated here",
+  "kind": "bash-unit",
+  "cmd": "resolve() { cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/openrouter-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model \"$1\" 2>/dev/null | jq -r \".worker\" | sed \"s|^openrouter/||\"; }; ID=$(resolve mimo); echo \"mimo=$ID\"; [ \"$ID\" = \"xiaomi/mimo-v2.5\" ] && echo UNCHANGED",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "UNCHANGED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-010-empty-catalog-is-unverifiable-not-three-dead-aliases",
+  "target": "acceptance 3 — an empty but well-formed catalog is unverifiable, NOT three simultaneously-dead aliases, which would read as catastrophic when the likeliest cause is an upstream hiccup",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-empty.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" > out 2>&1; grep -i 'could not' out; if grep -qi 'not in the openrouter catalog' out; then echo REPORTED_AS_DEAD; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

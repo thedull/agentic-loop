@@ -1,0 +1,22 @@
+{
+  "id": "alias-liveness-012-probe-is-bounded-and-cannot-hang",
+  "target": "acceptance 4 — a probe that cannot connect takes the unverifiable path promptly instead of hanging the health check",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_URL='http://127.0.0.1:9/models' bash \"$PLUGIN_ROOT/scripts/doctor.sh\" > out 2>&1; echo \"EXIT:$?\"; grep -i 'could not' out",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not"
+      ]
+    },
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -66,6 +66,67 @@ else
   warn "ollama not installed — local free tier unavailable (call_ollama.sh will fail)"
 fi
 echo
+echo "openrouter alias liveness:"
+# doctor.sh's first non-localhost dependency, and a deliberate one: a delisted
+# or superseded model id is a well-formed string, so no offline test can catch
+# it. The `mimo` alias pointed at an id that had left the catalog and shipped
+# that way into every stamped project. Mirrors the Ollama gate above — warn on
+# unreachable, never fail the run, because offline is a normal state here.
+OR_CATALOG_URL="${OPENROUTER_CATALOG_URL:-https://openrouter.ai/api/v1/models}"
+OR_CATALOG_TIMEOUT=5   # documented bound: a server that accepts and never
+                       # answers must not hang a health check
+
+# Exactly one request, whatever the alias count — fetched here, above the loop.
+OR_CATALOG=""
+if [[ -n "${OPENROUTER_CATALOG_FILE:-}" ]]; then   # test seam (evals/)
+  [[ -n "${OPENROUTER_CATALOG_FETCH_LOG:-}" ]] && \
+    echo "file $OPENROUTER_CATALOG_FILE --max-time $OR_CATALOG_TIMEOUT" >> "$OPENROUTER_CATALOG_FETCH_LOG"
+  OR_CATALOG="$(cat "$OPENROUTER_CATALOG_FILE" 2>/dev/null)" || OR_CATALOG=""
+else
+  # The logged line and the executed call are the SAME argv, deliberately. A log
+  # built from a separate string can claim a --max-time the call does not carry,
+  # which is a seam that lies — it would report the bound while curl ran
+  # unbounded, and the case asserting the bound would still pass.
+  OR_CURL_ARGS=(-sS --max-time "$OR_CATALOG_TIMEOUT" "$OR_CATALOG_URL")
+  [[ -n "${OPENROUTER_CATALOG_FETCH_LOG:-}" ]] && \
+    echo "curl ${OR_CURL_ARGS[*]}" >> "$OPENROUTER_CATALOG_FETCH_LOG"
+  OR_CATALOG="$(curl "${OR_CURL_ARGS[@]}" 2>/dev/null)" || OR_CATALOG=""
+fi
+
+# Unverifiable covers four states that are all the same thing to a user: no
+# network, a timeout, a response that is not the catalog, and a catalog with no
+# models in it. That last one is NOT "every alias died at once" — the likeliest
+# cause by far is an upstream hiccup, and reporting three dead aliases would
+# read as catastrophic while being almost certainly wrong.
+if ! echo "$OR_CATALOG" | jq -e '(.data | type) == "array" and (.data | length) > 0' >/dev/null 2>&1; then
+  warn "could not verify OpenRouter aliases — catalog unreachable, malformed, or empty. This is unknown, not broken; aliases are unchecked this run."
+else
+  for OR_ALIAS in kimi minimax mimo; do
+    case "$OR_ALIAS" in
+      kimi)    OR_VAR=OPENROUTER_MODEL_KIMI;    OR_DEFAULT=moonshotai/kimi-k3 ;;
+      minimax) OR_VAR=OPENROUTER_MODEL_MINIMAX; OR_DEFAULT=minimax/minimax-m3 ;;
+      mimo)    OR_VAR=OPENROUTER_MODEL_MIMO;    OR_DEFAULT=xiaomi/mimo-v2.5 ;;
+    esac
+    # Check what the project ACTUALLY calls: an .env override wins, exactly as
+    # call_openrouter.sh resolves it. Checking the built-in default while the
+    # project uses something else would report on a value nobody calls.
+    # Resolved exactly as call_openrouter.sh resolves it: an exported variable
+    # wins, then ./.env, then the shim default. This block runs before doctor's
+    # worker-key section sources ./.env, so read the file directly rather than
+    # relying on it already being in the environment — the same shape the Ollama
+    # gate above uses.
+    OR_ID="${!OR_VAR:-}"
+    [[ -n "$OR_ID" ]] || OR_ID="$(grep -m1 "^${OR_VAR}=" ./.env 2>/dev/null | cut -d= -f2- | tr -d '"'"'"'')"
+    [[ -n "$OR_ID" ]] || OR_ID="$OR_DEFAULT"
+    if echo "$OR_CATALOG" | jq -e --arg i "$OR_ID" '[.data[] | select(.id == $i)] | length > 0' >/dev/null 2>&1; then
+      ok "alias '$OR_ALIAS' -> $OR_ID is in the OpenRouter catalog"
+    else
+      warn "alias '$OR_ALIAS' -> $OR_ID is not in the OpenRouter catalog — the id is dead or renamed. Set $OR_VAR in ./.env to a live id (browse $OR_CATALOG_URL)."
+    fi
+  done
+fi
+
+echo
 echo "cross-run memory:"
 if [[ -f ./LEARNINGS.md ]]; then
   if out="$("$(dirname "${BASH_SOURCE[0]}")/lib/learnings.sh" check ./LEARNINGS.md 2>&1)"; then
