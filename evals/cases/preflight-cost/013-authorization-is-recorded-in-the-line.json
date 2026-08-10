@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-013-authorization-is-recorded-in-the-line",
+  "target": "the printed line records that the call was explicitly authorized",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --authorize-cost 2>err >/dev/null; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "authorized"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

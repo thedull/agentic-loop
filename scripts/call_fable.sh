@@ -28,7 +28,6 @@ PRICE_IN_PER_M=10
 PRICE_OUT_PER_M=50
 
 load_env
-require_key FABLE_KEY "$WORKER_NAME"
 
 parse_brief "$@"
 
@@ -39,6 +38,7 @@ while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
   case "${EXTRA_ARGS[$i]}" in
     --effort)      EFFORT="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
     --no-fallback) USE_FALLBACK=0; i=$((i+1)) ;;
+    --authorize-cost) PREFLIGHT_AUTHORIZED=1; i=$((i+1)) ;;
     *) emit_error "$WORKER_NAME" "unknown flag: ${EXTRA_ARGS[$i]}"; exit 2 ;;
   esac
 done
@@ -57,6 +57,21 @@ TASK_PROMPT="$(build_task_prompt)"
 # Fable 5: thinking is always on — omit the thinking parameter entirely.
 # Fallback to Opus 4.8 on safety-classifier refusals (server-side beta) is on
 # by default; disable with --no-fallback.
+# Assumed output scales with the requested effort rather than being flat.
+case "$EFFORT" in
+  low)   ASSUMED_OUT=1000 ;;
+  medium) ASSUMED_OUT=2000 ;;
+  high)  ASSUMED_OUT=4000 ;;
+  xhigh) ASSUMED_OUT=8000 ;;
+  max)   ASSUMED_OUT=$MAX_TOKENS ;;
+  *)     ASSUMED_OUT=2000 ;;
+esac
+preflight_gate "$WORKER_NAME" "$MODEL" "$SYSTEM_PROMPT$TASK_PROMPT" "$ASSUMED_OUT"
+
+# After the gate on purpose: a call refused on cost is refused before it needs
+# a credential.
+require_key FABLE_KEY "$WORKER_NAME"
+
 REQUEST="$(jq -n \
   --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" \
   --arg effort "$EFFORT" --argjson max_tokens "$MAX_TOKENS" '{

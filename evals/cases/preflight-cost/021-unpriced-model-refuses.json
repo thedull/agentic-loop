@@ -1,0 +1,19 @@
+{
+  "id": "preflight-cost-021-unpriced-model-refuses",
+  "target": "call_openrouter.sh accepts arbitrary model ids, so an unpriced one must refuse rather than be treated as free",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model some-vendor/never-priced-v9 2>/dev/null; echo \"EXIT:$?\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:7",
+        "never-priced-v9"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

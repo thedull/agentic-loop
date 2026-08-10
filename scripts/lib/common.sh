@@ -238,3 +238,141 @@ finalize_envelope() {
     | .usage = {input_tokens: $in, output_tokens: $out, est_cost_usd: $cost}
   ' | validate_envelope
 }
+
+# --- pre-flight cost gate -----------------------------------------------------
+# "The human confirms all metered spend" exists in seven places as prose with
+# nothing enforcing it. This is the enforcement: every metered shim prints what
+# the call is expected to cost BEFORE issuing it, and refuses above a threshold
+# unless explicitly authorized.
+#
+# Two rules that look like details and are not:
+#   1. The estimate NEVER reaches usage.est_cost_usd. That field is reserved for
+#      what a provider actually reported (obs.sh:17-19 — "never fabricate tokens
+#      or costs a source did not report"). An estimate written there would be
+#      indistinguishable from a billed figure for the rest of the log's life.
+#   2. A broken threshold refuses. A gate that reads a garbage config and
+#      concludes "no limit" is worse than no gate, because it looks like one.
+
+PREFLIGHT_DEFAULT_THRESHOLD_USD="1.00"
+PREFLIGHT_EXIT_REFUSED=7      # distinct: 2 bad flag, 3 missing tool, 4 schema,
+                              # 5 transport, 6 provider refusal, 7 cost gate
+PREFLIGHT_CHARS_PER_TOKEN=4   # documented heuristic; see preflight_estimate_tokens
+
+# preflight_price MODEL — prints "IN_PER_M OUT_PER_M", or returns 1 if unpriced.
+# Committed table, deliberately NOT a live lookup: a network round-trip before
+# every call trades the thing being protected (cost) for latency and a new
+# failure mode. The staleness is the accepted trade — the OpenRouter catalog
+# moved 34% on one model within a single day on 2026-08-07.
+# Sourced from docs/codex-subscription.md §7.1 (snapshot 2026-08-07) and the
+# per-shim constants in call_sol.sh / call_fable.sh.
+preflight_price() {
+  case "$1" in
+    gpt-5.6-sol|openai/gpt-5.6-sol) echo "5 30" ;;
+    openai/gpt-5.6-sol:batch)       echo "2.50 15" ;;
+    claude-fable-5)                 echo "10 50" ;;
+    moonshotai/kimi-k3)             echo "3.00 15.00" ;;
+    qwen/qwen3.8-max)               echo "2.00 6.00" ;;
+    z-ai/glm-5.2)                   echo "0.5026 1.5796" ;;
+    z-ai/glm-5.2:batch)             echo "0.70 2.20" ;;
+    minimax/minimax-m3)             echo "0.30 1.20" ;;
+    deepseek/deepseek-v4-flash)     echo "0.14 0.28" ;;
+    deepseek/deepseek-v4-pro)       echo "0.435 0.87" ;;
+    xiaomi/mimo-v2.5-pro)           echo "0.435 0.87" ;;
+    *) return 1 ;;
+  esac
+}
+
+# preflight_estimate_tokens TEXT — chars/4, rounded up. An approximation, and
+# labelled as one everywhere it is reported. It is deterministic, which is the
+# property that actually matters here: the same brief must always produce the
+# same threshold decision, or the gate is a coin flip.
+preflight_estimate_tokens() {
+  local n=${#1}
+  echo $(( (n + PREFLIGHT_CHARS_PER_TOKEN - 1) / PREFLIGHT_CHARS_PER_TOKEN ))
+}
+
+# emit_blocked WORKER MESSAGE — a refusal envelope. Distinct from emit_error:
+# nothing went wrong, the call was declined before it was made.
+emit_blocked() {
+  jq -n --arg worker "$1" --arg msg "$2" '{
+    worker: $worker, status: "blocked", summary: $msg, result: null,
+    artifacts: [], key_decisions: [], caveats: [], assumptions: [],
+    confidence_ordinal: "high",
+    usage: {input_tokens: 0, output_tokens: 0, est_cost_usd: null}
+  }' | obs_shim_tap
+}
+
+# preflight_gate WORKER MODEL PROMPT_TEXT ASSUMED_OUT_TOKENS
+# Prints the estimate to stderr (never stdout — that belongs to the envelope),
+# then either returns 0 or refuses with exit 7.
+preflight_gate() {
+  local worker="$1" model="$2" text="$3" assumed_out="$4"
+  local in_tok cost_str price p_in p_out priced=1 authorized=0 thr raw
+
+  in_tok="$(preflight_estimate_tokens "$text")"
+
+  if price="$(preflight_price "$model")"; then
+    p_in="${price% *}"; p_out="${price#* }"
+    cost_str="$(awk -v i="$in_tok" -v o="$assumed_out" -v pi="$p_in" -v po="$p_out" \
+      'BEGIN{printf "%.4f", (i*pi + o*po)/1000000}')"
+  else
+    priced=0; cost_str=""; p_in="?"; p_out="?"
+  fi
+
+  # Authorization is EXPLICIT only. Never inferred from a TTY, from an
+  # interactive session, or from the absence of a CI variable — the unattended
+  # path is precisely the one nobody is watching, and inferring intent there
+  # would leave it ungated.
+  if [[ "${FACTORY_COST_AUTHORIZED:-}" == "1" || "${PREFLIGHT_AUTHORIZED:-0}" == "1" ]]; then
+    authorized=1
+  fi
+
+  # Resolve the threshold for reporting. UNSET means "no configuration" and gets
+  # the documented default; SET-BUT-BROKEN (empty, negative, non-numeric) is a
+  # different thing entirely and must not read as "no limit".
+  local thr_valid=1
+  if [[ -z "${FACTORY_COST_THRESHOLD_USD+x}" ]]; then
+    thr="$PREFLIGHT_DEFAULT_THRESHOLD_USD"
+  else
+    raw="$FACTORY_COST_THRESHOLD_USD"
+    if [[ "$raw" == "off" ]]; then
+      thr="off"
+    elif [[ "$raw" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      thr="$raw"
+    else
+      thr="$raw"; thr_valid=0
+    fi
+  fi
+
+  # The line. Always printed, on every metered call, whatever happens next.
+  local line="preflight: estimated cost "
+  if [[ $priced -eq 1 ]]; then line+="${cost_str} USD"; else line+="UNKNOWN (no committed price)"; fi
+  line+=" for ${model} — estimate only, never recorded as a cost."
+  line+=" Method: ${in_tok} input tokens by chars/${PREFLIGHT_CHARS_PER_TOKEN} heuristic"
+  line+=" + assumed output ${assumed_out} tokens (assumed, not measured)"
+  line+=" at ${p_in}/${p_out} USD per 1M. threshold ${thr} USD"
+  [[ $authorized -eq 1 ]] && line+=" — AUTHORIZED explicitly, gate bypassed"
+  printf '%s\n' "$line" >&2
+
+  # Mocked runs spend nothing. Mirrors require_key's existing exemption at :58.
+  [[ -n "${MOCK_RESPONSE_FILE:-}" ]] && return 0
+  [[ $authorized -eq 1 ]] && return 0
+
+  if [[ $thr_valid -eq 0 ]]; then
+    emit_blocked "$worker" "refusing: FACTORY_COST_THRESHOLD_USD is '${raw}', which is not a number or the sentinel 'off'. A threshold that cannot be read must not be treated as no limit. Set a number, or 'off' to disable the gate (note: 0 keeps its literal meaning and refuses everything)."
+    exit $PREFLIGHT_EXIT_REFUSED
+  fi
+
+  if [[ $priced -eq 0 ]]; then
+    emit_blocked "$worker" "refusing: no committed price for model '${model}', so the cost of this call is unknown — an unpriced model is a reason to ask, not a reason to bill blind. Estimated ${in_tok} input + ${assumed_out} assumed output tokens. Add it to preflight_price() in scripts/lib/common.sh, or pass --authorize-cost / FACTORY_COST_AUTHORIZED=1 to proceed anyway."
+    exit $PREFLIGHT_EXIT_REFUSED
+  fi
+
+  [[ "$thr" == "off" ]] && return 0
+
+  if [[ "$(awk -v c="$cost_str" -v t="$thr" 'BEGIN{print (c+0 >= t+0) ? 1 : 0}')" == "1" ]]; then
+    emit_blocked "$worker" "refusing: estimated ${cost_str} USD is at or above the threshold ${thr} USD, and this call was not explicitly authorized. Nothing was sent. Pass --authorize-cost (or FACTORY_COST_AUTHORIZED=1) to make the spend a decision, or raise FACTORY_COST_THRESHOLD_USD."
+    exit $PREFLIGHT_EXIT_REFUSED
+  fi
+  return 0
+}

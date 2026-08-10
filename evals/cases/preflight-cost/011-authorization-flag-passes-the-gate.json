@@ -1,0 +1,20 @@
+{
+  "id": "preflight-cost-011-authorization-flag-passes-the-gate",
+  "target": "an explicit flag carries the call past the gate (exit 2 = reached require_key, not 7 = refused)",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --authorize-cost 2>err >/dev/null; echo \"EXIT:$?\"; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:2",
+        "authorized"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "--authorize-cost is an UNKNOWN FLAG before this spec, which also exits 2. Requiring the line to say 'authorized' is what makes exit 2 mean 'passed the gate' rather than 'rejected the flag'."
+}

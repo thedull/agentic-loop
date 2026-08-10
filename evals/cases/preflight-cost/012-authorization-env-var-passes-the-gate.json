@@ -1,0 +1,20 @@
+{
+  "id": "preflight-cost-012-authorization-env-var-passes-the-gate",
+  "target": "an explicit environment variable does the same",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 FACTORY_COST_AUTHORIZED=1 bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >/dev/null; echo \"EXIT:$?\"; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:2",
+        "authorized"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Same reasoning as 011: without the 'authorized' needle, exit 2 proves nothing about the gate."
+}

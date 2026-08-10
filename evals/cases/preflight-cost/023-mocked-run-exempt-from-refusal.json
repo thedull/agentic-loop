@@ -1,0 +1,19 @@
+{
+  "id": "preflight-cost-023-mocked-run-exempt-from-refusal",
+  "target": "acceptance 8 — a mocked run spends nothing, so the gate does not refuse it (mirrors require_key's existing exemption)",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | FACTORY_COST_THRESHOLD_USD=0.001 MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >out; echo \"EXIT:$?\"; jq -e 'type == \"object\"' out >/dev/null && echo RAN",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:0",
+        "RAN"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

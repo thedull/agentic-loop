@@ -1,0 +1,10 @@
+{
+  "objective": "adversarially review the candidate",
+  "user_intent_verbatim": "is this safe to ship?",
+  "input_paths": [],
+  "boundaries_non_goals": [
+    "blind review"
+  ],
+  "output_spec": "findings",
+  "effort_budget": "one pass"
+}

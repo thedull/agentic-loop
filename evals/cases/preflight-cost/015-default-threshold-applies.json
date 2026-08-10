@@ -1,0 +1,18 @@
+{
+  "id": "preflight-cost-015-default-threshold-applies",
+  "target": "with no configuration a documented default threshold applies",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >/dev/null; echo \"EXIT:$?\"; grep -io 'threshold [0-9.]*' err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "threshold"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "preflight-cost-009-blocked-envelope-names-estimate-and-threshold",
+  "target": "the blocked envelope names both the estimate and the threshold that refused it",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-large.json\" | env -u MOCK_RESPONSE_FILE -u OPENAI_API_KEY -u OPENROUTER_API_KEY -u FABLE_KEY FACTORY_COST_THRESHOLD_USD=0.001 bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>/dev/null",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 7
+    },
+    {
+      "type": "envelope_valid"
+    },
+    {
+      "type": "jq",
+      "expr": ".status == \"blocked\""
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "0.001"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

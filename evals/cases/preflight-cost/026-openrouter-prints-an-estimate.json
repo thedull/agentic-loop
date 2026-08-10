@@ -1,0 +1,23 @@
+{
+  "id": "preflight-cost-026-openrouter-prints-an-estimate",
+  "target": "call_openrouter.sh — metered, so it estimates too, against its resolved model id",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/openrouter-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model z-ai/glm-5.2 2>err >out; grep -i estimate err",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "estimate",
+        "glm-5.2"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

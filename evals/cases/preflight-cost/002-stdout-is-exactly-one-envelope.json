@@ -1,0 +1,22 @@
+{
+  "id": "preflight-cost-002-stdout-is-exactly-one-envelope",
+  "target": "call_sol.sh — the stdout contract is unchanged: one envelope JSON, nothing else",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary 2>err >out; jq -e 'type == \"object\"' out >/dev/null && [ \"$(jq -s 'length' out)\" = 1 ] && echo ONE_ENVELOPE",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "ONE_ENVELOPE"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
