@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-006-env-override-is-the-value-checked",
+  "target": "acceptance 2 — when .env overrides an alias, the OVERRIDE is what gets checked; checking the built-in default would report on a value nobody calls",
+  "kind": "bash-unit",
+  "cmd": "printf 'OPENROUTER_API_KEY=or-test\\nOPENROUTER_MODEL_KIMI=some-vendor/not-in-catalog\\n' > .env; printf '.env\\n' > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-full.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i 'kimi'",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "some-vendor/not-in-catalog"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

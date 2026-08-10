@@ -1,0 +1,20 @@
+{
+  "id": "alias-liveness-019-catalog-of-only-junk-is-unverifiable",
+  "target": "acceptance 3 — an array with no usable entries is unverifiable, not three dead aliases",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-all-junk.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" > out 2>&1; echo \"EXIT:$?\"; grep -i 'could not verify OpenRouter' out; if grep -q 'is in the OpenRouter catalog' out; then echo CLAIMED_OK_ANYWAY; else echo NO_ALIAS_CLAIMED_OK; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not verify OpenRouter",
+        "NO_ALIAS_CLAIMED_OK",
+        "EXIT:0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

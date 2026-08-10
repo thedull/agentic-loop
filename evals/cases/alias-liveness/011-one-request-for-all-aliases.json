@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-011-one-request-for-all-aliases",
+  "target": "acceptance 4 — at most one catalog request regardless of how many aliases are checked",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FETCH_LOG=\"$PWD/fetches\" OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-full.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" >/dev/null 2>&1; N=$(wc -l < fetches | tr -d ' '); echo \"FETCHES=$N\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "FETCHES=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

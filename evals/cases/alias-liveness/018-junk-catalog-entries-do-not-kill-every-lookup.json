@@ -1,0 +1,20 @@
+{
+  "id": "alias-liveness-018-junk-catalog-entries-do-not-kill-every-lookup",
+  "target": "acceptance 3 — one non-object row in .data must not make all three present aliases read as dead",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-with-junk-entries.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i alias",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "moonshotai/kimi-k3 is in the OpenRouter catalog",
+        "minimax/minimax-m3 is in the OpenRouter catalog",
+        "xiaomi/mimo-v2.5 is in the OpenRouter catalog"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

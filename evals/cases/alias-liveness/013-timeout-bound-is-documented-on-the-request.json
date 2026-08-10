@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-013-timeout-bound-is-documented-on-the-request",
+  "target": "acceptance 4 — the recorded probe carries an explicit max-time bound, so a server that accepts and never answers cannot hang doctor",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FETCH_LOG=\"$PWD/fetches\" OPENROUTER_CATALOG_URL='http://127.0.0.1:9/models' bash \"$PLUGIN_ROOT/scripts/doctor.sh\" >/dev/null 2>&1; cat fetches",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "max-time"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

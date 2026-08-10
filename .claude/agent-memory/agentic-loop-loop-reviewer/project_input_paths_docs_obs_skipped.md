@@ -28,3 +28,13 @@ See also [[project_002_skill_not_wired_and_005_gap]] — same pattern (an
 `input_paths` entry silently skipped) on a prior spec; this is now a 2nd
 sighting of "builder touches the code paths but skips a named doc/skill
 file" and is worth flagging on sight going forward.
+
+**3rd sighting (spec 019, 2026-08-10):** `templates/.env.example` was listed
+in `input_paths` but has zero diff (`git log --oneline -- templates/.env.example`
+last touched by spec 018, not 019). Its commented override examples at
+lines 43-45 still read `OPENROUTER_MODEL_KIMI=moonshotai/kimi-k2` and
+`OPENROUTER_MODEL_MINIMAX=minimax/minimax-m2` — the exact ids spec 019
+just retired for being under the 1M-context bar. A user copying the
+example verbatim would set an override to the id the spec fixed. Always
+`git log -- <path>` every declared `input_paths` entry against the diff
+range before signing off; three specs in a row have shipped this exact gap.

@@ -1,0 +1,22 @@
+{
+  "id": "alias-liveness-015-shim-behaviour-unchanged",
+  "target": "acceptance 6 — the existing shim suite still passes; only the resolved ids moved",
+  "kind": "bash-unit",
+  "cmd": "\"$PLUGIN_ROOT/evals/run_eval.sh\" --suite shim",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "pass, 0 fail,"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

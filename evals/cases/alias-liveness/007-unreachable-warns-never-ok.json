@@ -1,0 +1,21 @@
+{
+  "id": "alias-liveness-007-unreachable-warns-never-ok",
+  "target": "acceptance 3 — an unreachable catalog reports one 'could not verify' warning, reports NO alias as ok, and does not fail the run",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/does-not-exist.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" > out 2>&1; echo \"EXIT:$?\"; grep -i \"could not verify OpenRouter\" out; if grep -q \"is in the OpenRouter catalog\" out; then echo CLAIMED_OK_ANYWAY; else echo NO_ALIAS_CLAIMED_OK; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not verify OpenRouter",
+        "NO_ALIAS_CLAIMED_OK",
+        "EXIT:0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "The earlier form used grep -c, which prints a COUNT — so the needle 'could not' never appeared in the case output and the check could not pass. It also now asserts positively that no alias was reported ok, rather than only that a warning appeared."
+}

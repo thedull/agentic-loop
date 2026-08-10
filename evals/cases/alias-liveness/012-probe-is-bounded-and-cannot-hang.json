@@ -1,0 +1,23 @@
+{
+  "id": "alias-liveness-012-probe-is-bounded-and-cannot-hang",
+  "target": "acceptance 4 — a probe that CANNOT CONNECT takes the unverifiable path promptly. Note this exercises connection-refused, not a genuine hang; case 013 is what proves the --max-time bound is on the executed request.",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_URL='http://127.0.0.1:9/models' bash \"$PLUGIN_ROOT/scripts/doctor.sh\" > out 2>&1; echo \"EXIT:$?\"; grep -i 'could not' out",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not"
+      ]
+    },
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Honest scope: 127.0.0.1:9 fails via ECONNREFUSED in milliseconds, so this does not exercise the 5s timeout. Simulating a real accept-but-never-respond server needs a background listener, which is platform-dependent and flaky in CI. The bound itself is asserted by case 013 against the executed argv."
+}

@@ -1,0 +1,22 @@
+{
+  "id": "alias-liveness-008-malformed-json-treated-as-unreachable",
+  "target": "acceptance 3 — a response that is not valid JSON is treated exactly as unreachable",
+  "kind": "bash-unit",
+  "cmd": "printf \"OPENROUTER_API_KEY=or-test\\n\" > .env; printf \".env\\n\" > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-malformed.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i 'could not'",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "could not"
+      ]
+    },
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

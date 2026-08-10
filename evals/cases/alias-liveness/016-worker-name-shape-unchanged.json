@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-016-worker-name-shape-unchanged",
+  "target": "acceptance 6 — the worker name keeps its openrouter/<id> shape, which obs_tier_from_worker depends on",
+  "kind": "bash-unit",
+  "cmd": "resolve() { cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/openrouter-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model \"$1\" 2>/dev/null | jq -r \".worker\" | sed \"s|^openrouter/||\"; }; cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/openrouter-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model kimi 2>/dev/null | jq -r '.worker'",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "openrouter/moonshotai/kimi-k3"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
