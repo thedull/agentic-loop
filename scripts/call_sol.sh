@@ -51,12 +51,26 @@ VIA="openai"
 BATCH=0
 i=0
 while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
-  case "${EXTRA_ARGS[$i]}" in
-    --mode)   MODE="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
-    --effort) EFFORT="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
-    --via)    VIA="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
+  FLAG="${EXTRA_ARGS[$i]}"
+  case "$FLAG" in
+    --mode|--effort|--via)
+      # Read the value only after confirming there IS one. Indexing past the end
+      # under `set -u` aborts with a raw bash error and no envelope at all,
+      # which breaks the contract that every failure path emits a status:"error"
+      # envelope a caller can parse.
+      if [[ $((i+1)) -ge ${#EXTRA_ARGS[@]} ]]; then
+        emit_error "$WORKER_NAME" "$FLAG requires a value (nothing followed it)"
+        exit 2
+      fi
+      VAL="${EXTRA_ARGS[$((i+1))]}"
+      case "$FLAG" in
+        --mode)   MODE="$VAL" ;;
+        --effort) EFFORT="$VAL" ;;
+        --via)    VIA="$VAL" ;;
+      esac
+      i=$((i+2)) ;;
     --batch)  BATCH=1; i=$((i+1)) ;;
-    *) emit_error "$WORKER_NAME" "unknown flag: ${EXTRA_ARGS[$i]}"; exit 2 ;;
+    *) emit_error "$WORKER_NAME" "unknown flag: $FLAG"; exit 2 ;;
   esac
 done
 
