@@ -1,0 +1,16 @@
+{
+  "id": "sol-transport-012-batch-opt-in-on-openrouter",
+  "target": "call_sol.sh — --batch selects the :batch model id on OpenRouter",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter --batch >/dev/null 2>&1; jq -e \".model | endswith(\\\":batch\\\")\" \"$D\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "sol-transport-023-via-without-a-value-refused",
+  "target": "call_sol.sh — a value-taking flag with nothing after it emits an error ENVELOPE and exits 2, never a raw bash unbound-variable abort",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openai-ok.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 2
+    },
+    {
+      "type": "envelope_valid"
+    },
+    {
+      "type": "jq",
+      "expr": ".status == \"error\""
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "via requires a value"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  },
+  "_note": "needle deliberately omits the leading dashes: evals/run_eval.sh's must_find runs grep -qiF \"$needle\" with no -- terminator, so a needle starting with - is read as a grep option and the check can never pass. Fails closed, so no case passes falsely."
+}

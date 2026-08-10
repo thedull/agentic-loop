@@ -1,0 +1,31 @@
+{
+  "id": "sol-transport-015-missing-openrouter-key-refused",
+  "target": "call_sol.sh — a missing OPENROUTER_API_KEY names THAT variable, not the OpenAI one",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/sol-transport/brief.json\" | env -u MOCK_RESPONSE_FILE -u OPENROUTER_API_KEY -u OPENAI_API_KEY bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 2
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "OPENROUTER_API_KEY"
+      ]
+    },
+    {
+      "type": "jq",
+      "expr": ".summary | test(\"OPENAI_API_KEY\") | not"
+    },
+    {
+      "type": "jq",
+      "expr": ".status == \"error\""
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Deliberately unmocked: require_key returns success unconditionally when MOCK_RESPONSE_FILE is set (scripts/lib/common.sh:58), so a mocked credential case could not fail even with the gate deleted."
+}

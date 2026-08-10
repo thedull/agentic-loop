@@ -1,0 +1,41 @@
+{
+  "id": "sol-transport-009-ultra-refused-on-openrouter",
+  "target": "call_sol.sh — --effort ultra on OpenRouter refuses rather than silently downgrading",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openrouter-with-cost.json",
+  "args": [
+    "--via",
+    "openrouter",
+    "--effort",
+    "ultra"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 2
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "ultra"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

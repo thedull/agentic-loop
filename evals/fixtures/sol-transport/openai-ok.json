@@ -1,0 +1,17 @@
+{
+  "output": [
+    {
+      "type": "message",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"reviewed the candidate\",\"result\":\"no requirement gaps found\",\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"medium\",\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"est_cost_usd\":0},\"findings\":[]}"
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 400
+  }
+}

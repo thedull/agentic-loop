@@ -1,0 +1,40 @@
+{
+  "id": "sol-transport-014-batch-refused-on-openai",
+  "target": "call_sol.sh — --batch on the direct transport refuses (OpenAI batch is a different endpoint)",
+  "kind": "shim",
+  "shim": "call_sol.sh",
+  "mock_response": "fixtures/sol-transport/openai-ok.json",
+  "args": [
+    "--batch"
+  ],
+  "input": {
+    "brief": {
+      "objective": "adversarially review the candidate",
+      "user_intent_verbatim": "is this safe to ship?",
+      "input_paths": [],
+      "boundaries_non_goals": [
+        "blind review"
+      ],
+      "output_spec": "findings",
+      "effort_budget": "one pass"
+    }
+  },
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 2
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "batch",
+        "openrouter"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "must_find names openrouter too: --batch is an unknown flag today, which already exits 2, so asserting exit 2 alone would pass for the wrong reason."
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sol-transport-011-batch-not-the-default",
+  "target": "call_sol.sh — the plain model id is used unless batch is asked for",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -e \".model | (endswith(\\\":batch\\\") | not) and (contains(\\\"gpt-5.6-sol\\\"))\" \"$D\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

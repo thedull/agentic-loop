@@ -1,0 +1,22 @@
+{
+  "id": "sol-transport-004-tier-attribution-holds",
+  "target": "obs.sh — sol/openrouter still classifies as the sol tier (no obs.sh change)",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/obs.sh\" 2>/dev/null; obs_tier_from_worker \"sol/openrouter\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "sol"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}

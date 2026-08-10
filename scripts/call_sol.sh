@@ -27,27 +27,88 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/common.sh"
 
+# The name the MODEL is told, and the name the ENVELOPE carries, are deliberately
+# two different things. The transport must not leak into the prompt — acceptance
+# 4 requires the system prompt to be byte-identical on both paths, and
+# envelope_instructions() interpolates whatever name it is given. So prompts are
+# always built as "sol"; finalize_envelope overrides .worker afterwards.
+PROMPT_WORKER="sol"
 WORKER_NAME="sol"
 MODEL="gpt-5.6-sol"
-# Pricing as of 2026-07-12 (recalibrate from the OpenAI usage dashboard):
+# Pricing as of 2026-07-12 (recalibrate from the OpenAI usage dashboard).
+# Used ONLY by the direct transport — OpenRouter reports what it actually
+# billed, and a figure it did not report is null, never one of these.
 PRICE_IN_PER_M=5
 PRICE_OUT_PER_M=30
 
 load_env
-require_key OPENAI_API_KEY "$WORKER_NAME"
 
 parse_brief "$@"
 
 MODE="adversary"
 EFFORT="standard"
+VIA="openai"
+BATCH=0
 i=0
 while [[ $i -lt ${#EXTRA_ARGS[@]} ]]; do
-  case "${EXTRA_ARGS[$i]}" in
-    --mode)   MODE="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
-    --effort) EFFORT="${EXTRA_ARGS[$((i+1))]}"; i=$((i+2)) ;;
-    *) emit_error "$WORKER_NAME" "unknown flag: ${EXTRA_ARGS[$i]}"; exit 2 ;;
+  FLAG="${EXTRA_ARGS[$i]}"
+  case "$FLAG" in
+    --mode|--effort|--via)
+      # Read the value only after confirming there IS one. Indexing past the end
+      # under `set -u` aborts with a raw bash error and no envelope at all,
+      # which breaks the contract that every failure path emits a status:"error"
+      # envelope a caller can parse.
+      if [[ $((i+1)) -ge ${#EXTRA_ARGS[@]} ]]; then
+        emit_error "$WORKER_NAME" "$FLAG requires a value (nothing followed it)"
+        exit 2
+      fi
+      VAL="${EXTRA_ARGS[$((i+1))]}"
+      case "$FLAG" in
+        --mode)   MODE="$VAL" ;;
+        --effort) EFFORT="$VAL" ;;
+        --via)    VIA="$VAL" ;;
+      esac
+      i=$((i+2)) ;;
+    --batch)  BATCH=1; i=$((i+1)) ;;
+    *) emit_error "$WORKER_NAME" "unknown flag: $FLAG"; exit 2 ;;
   esac
 done
+
+# --- transport selection ------------------------------------------------------
+# Never inferred from which keys happen to be present. A project that adds an
+# OpenRouter key for bulk work must not silently start billing its Sol calls
+# there: an absent key is a failure of the REQUESTED transport, not a reason to
+# quietly use the other one.
+case "$VIA" in
+  openai)
+    ENDPOINT="https://api.openai.com/v1/responses"
+    ;;
+  openrouter)
+    WORKER_NAME="sol/openrouter"   # obs_tier_from_worker's sol* glob still maps
+    MODEL="openai/gpt-5.6-sol"     # this to the sol tier — obs.sh is untouched
+    ENDPOINT="https://openrouter.ai/api/v1/chat/completions"
+    ;;
+  *)
+    emit_error "$WORKER_NAME" "--via must be openai|openrouter (got '$VIA')"
+    exit 2 ;;
+esac
+
+if [[ $BATCH -eq 1 ]]; then
+  if [[ "$VIA" != "openrouter" ]]; then
+    emit_error "$WORKER_NAME" "--batch is openrouter-only: ':batch' is an OpenRouter model-id suffix, while OpenAI's batch discount is a separate asynchronous /v1/batches endpoint with a different request lifecycle (out of scope). Retry with --via openrouter."
+    exit 2
+  fi
+  # Opt-in only, never automatic: batch is NOT reliably a discount. On
+  # 2026-08-07 z-ai/glm-5.2:batch was priced ABOVE its own non-batch variant,
+  # so anything reaching for :batch on its own would sometimes pay more for
+  # worse latency. Compare prices before using this.
+  MODEL="${MODEL}:batch"
+fi
+
+case "$VIA" in
+  openai)     require_key OPENAI_API_KEY     "$WORKER_NAME" ;;
+  openrouter) require_key OPENROUTER_API_KEY "$WORKER_NAME" ;;
+esac
 
 case "$MODE" in
   adversary)
@@ -83,7 +144,7 @@ do not rewrite what is not broken. Be terse outside the artifact itself."
   *) emit_error "$WORKER_NAME" "--mode must be adversary|reviser"; exit 2 ;;
 esac
 SYSTEM_PROMPT+="
-$(envelope_instructions "$WORKER_NAME")"
+$(envelope_instructions "$PROMPT_WORKER")"
 
 TASK_PROMPT="$(build_task_prompt)"
 
@@ -96,14 +157,35 @@ case "$EFFORT" in
   *) emit_error "$WORKER_NAME" "--effort must be standard|max|ultra"; exit 2 ;;
 esac
 
-REQUEST="$(jq -n \
-  --arg model "$MODEL" --arg instructions "$SYSTEM_PROMPT" \
-  --arg task "$TASK_PROMPT" --arg effort "$REASONING_EFFORT" '{
-    model: $model,
-    instructions: $instructions,
-    input: [{role: "user", content: $task}],
-    reasoning: {effort: $effort}
-  }')"
+# ultra is a Responses-API capability, not a setting with an equivalent
+# elsewhere: it sets a multi_agent field AND an OpenAI-Beta header, and the
+# OpenRouter chat/completions body carries no reasoning or effort field at all.
+# Refuse rather than downgrade — a flag that silently does less than it says is
+# a lie — and do not emulate multi-agent client-side.
+if [[ $MULTI_AGENT -eq 1 && "$VIA" != "openai" ]]; then
+  emit_error "$WORKER_NAME" "--effort ultra is available only on the direct transport (--via openai): it needs the Responses multi-agent beta, which has no equivalent on OpenRouter. Use --effort max here, or --via openai for ultra."
+  exit 2
+fi
+
+if [[ "$VIA" == "openrouter" ]]; then
+  REQUEST="$(jq -n \
+    --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" '{
+      model: $model,
+      messages: [
+        {role: "system", content: $system},
+        {role: "user", content: $task}
+      ]
+    }')"
+else
+  REQUEST="$(jq -n \
+    --arg model "$MODEL" --arg instructions "$SYSTEM_PROMPT" \
+    --arg task "$TASK_PROMPT" --arg effort "$REASONING_EFFORT" '{
+      model: $model,
+      instructions: $instructions,
+      input: [{role: "user", content: $task}],
+      reasoning: {effort: $effort}
+    }')"
+fi
 
 # Ask the provider to enforce the finding shape at generation time. This is an
 # OPTIMISATION, never the gate: response_format support varies by provider and
@@ -111,12 +193,7 @@ REQUEST="$(jq -n \
 # not a gate. validate_envelope.jq refuses a malformed finding at receipt
 # whether or not this schema was honored.
 if [[ "$MODE" == "adversary" ]]; then
-  REQUEST="$(echo "$REQUEST" | jq '. + {
-    text: {format: {
-      type: "json_schema",
-      name: "adversary_envelope",
-      strict: false,
-      schema: {
+  FINDINGS_SCHEMA="$(jq -n '{
         type: "object",
         properties: {
           findings: {
@@ -142,16 +219,22 @@ if [[ "$MODE" == "adversary" ]]; then
             }
           }
         }
-      }
-    }}
-  }')"
-fi
-
-# Test seam (same spirit as MOCK_RESPONSE_FILE): dump the exact request body so
-# an eval can assert on the schema we send, rather than grepping this file for
-# a keyword. Unset in every normal run.
-if [[ -n "${SOL_REQUEST_DUMP:-}" ]]; then
-  printf '%s' "$REQUEST" > "$SOL_REQUEST_DUMP"
+      }')"
+  # Same schema, two wire shapes. The Responses API takes text.format; the
+  # OpenRouter chat/completions body takes response_format.json_schema. Sending
+  # either shape to the other provider is a field it does not understand, so
+  # this branches on transport rather than on hope.
+  if [[ "$VIA" == "openrouter" ]]; then
+    REQUEST="$(echo "$REQUEST" | jq --argjson schema "$FINDINGS_SCHEMA" '. + {
+      response_format: {type: "json_schema",
+                        json_schema: {name: "adversary_envelope", strict: false, schema: $schema}}
+    }')"
+  else
+    REQUEST="$(echo "$REQUEST" | jq --argjson schema "$FINDINGS_SCHEMA" '. + {
+      text: {format: {type: "json_schema", name: "adversary_envelope",
+                      strict: false, schema: $schema}}
+    }')"
+  fi
 fi
 
 BETA_HEADER=()
@@ -160,10 +243,24 @@ if [[ $MULTI_AGENT -eq 1 ]]; then
   BETA_HEADER=(-H "OpenAI-Beta: responses_multi_agent=v1")
 fi
 
+# Test seam (same spirit as MOCK_RESPONSE_FILE): dump the exact request body so
+# an eval can assert on what we send, rather than grepping this file for a
+# keyword. Must stay LAST, after every field has been added — dumping earlier
+# would let an eval pass on a request the provider never sees. Unset in every
+# normal run.
+if [[ -n "${SOL_REQUEST_DUMP:-}" ]]; then
+  printf '%s' "$REQUEST" > "$SOL_REQUEST_DUMP"
+fi
+
 if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
   RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
+elif [[ "$VIA" == "openrouter" ]]; then
+  RESPONSE="$(curl -sS --max-time 900 "$ENDPOINT" \
+    -H "content-type: application/json" \
+    -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+    -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching OpenRouter"; exit 5; }
 else
-  RESPONSE="$(curl -sS --max-time 900 https://api.openai.com/v1/responses \
+  RESPONSE="$(curl -sS --max-time 900 "$ENDPOINT" \
     -H "content-type: application/json" \
     -H "Authorization: Bearer $OPENAI_API_KEY" \
     "${BETA_HEADER[@]}" \
@@ -171,7 +268,11 @@ else
 fi
 
 if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
-  ERR_MSG="$(echo "$RESPONSE" | jq -r '.error.message')"
+  ERR_MSG="$(echo "$RESPONSE" | jq -r '.error.message // .error')"
+  if [[ "$VIA" == "openrouter" ]]; then
+    emit_error "$WORKER_NAME" "openrouter API error: $ERR_MSG"
+    exit 5
+  fi
   if [[ $MULTI_AGENT -eq 1 ]]; then
     ERR_MSG+=" (ultra uses the Responses multi-agent beta — if the error names multi_agent, your account may lack beta access; retry with --effort max)"
   fi
@@ -179,16 +280,28 @@ if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
   exit 5
 fi
 
-# Responses API: output[] contains message items with content[].text parts.
-MODEL_TEXT="$(echo "$RESPONSE" | jq -r '
-  [.output[]? | select(.type == "message") | .content[]?
-   | select(.type == "output_text") | .text] | join("\n")')"
-[[ -z "$MODEL_TEXT" ]] && MODEL_TEXT="$(echo "$RESPONSE" | jq -r '.output_text // empty')"
+if [[ "$VIA" == "openrouter" ]]; then
+  MODEL_TEXT="$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')"
+  IN_TOK="$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')"
+  OUT_TOK="$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')"
+  # OpenRouter reports what it actually billed, which beats our own constants.
+  # When it reports nothing, the answer is null — NOT 0, and NOT a figure
+  # computed from the OpenAI price table above. Substituting either would
+  # attribute a number to a source that never produced one, which is exactly
+  # what scripts/lib/obs.sh:18-19 exists to prevent.
+  COST="$(echo "$RESPONSE" | jq -c '.usage.cost // null')"
+else
+  # Responses API: output[] contains message items with content[].text parts.
+  MODEL_TEXT="$(echo "$RESPONSE" | jq -r '
+    [.output[]? | select(.type == "message") | .content[]?
+     | select(.type == "output_text") | .text] | join("\n")')"
+  [[ -z "$MODEL_TEXT" ]] && MODEL_TEXT="$(echo "$RESPONSE" | jq -r '.output_text // empty')"
 
-IN_TOK="$(echo "$RESPONSE" | jq -r '.usage.input_tokens // 0')"
-OUT_TOK="$(echo "$RESPONSE" | jq -r '.usage.output_tokens // 0')"
-COST="$(jq -n --argjson i "$IN_TOK" --argjson o "$OUT_TOK" \
-  --argjson pi "$PRICE_IN_PER_M" --argjson po "$PRICE_OUT_PER_M" \
-  '(($i * $pi) + ($o * $po)) / 1000000 * 1000 | round / 1000')"
+  IN_TOK="$(echo "$RESPONSE" | jq -r '.usage.input_tokens // 0')"
+  OUT_TOK="$(echo "$RESPONSE" | jq -r '.usage.output_tokens // 0')"
+  COST="$(jq -n --argjson i "$IN_TOK" --argjson o "$OUT_TOK" \
+    --argjson pi "$PRICE_IN_PER_M" --argjson po "$PRICE_OUT_PER_M" \
+    '(($i * $pi) + ($o * $po)) / 1000000 * 1000 | round / 1000')"
+fi
 
 finalize_envelope "$MODEL_TEXT" "$WORKER_NAME" "$IN_TOK" "$OUT_TOK" "$COST"
