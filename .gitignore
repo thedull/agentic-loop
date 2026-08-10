@@ -8,3 +8,6 @@ evals/results/
 
 # local dev-server config (machine-specific)
 .claude/launch.json
+
+# Mutation-testing scratch files — never belong in the tree.
+*.bak

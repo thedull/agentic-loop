@@ -1,13 +1,13 @@
 ---
 id: 019
 title: Refresh the OpenRouter aliases and detect delisted model ids
-status: specd
+status: done
 profile: standard
 created: 2026-08-08
 depends_on: 004
 claimed_by:
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/14
 ---
 
 # Spec 019 — Refresh the OpenRouter aliases and detect delisted model ids
