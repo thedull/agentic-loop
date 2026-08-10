@@ -1,0 +1,18 @@
+{
+  "id": "alias-liveness-017-export-prefixed-override-is-honoured",
+  "target": "acceptance 2 — an 'export VAR=' override is what the shim resolves, so it must be what doctor checks; a bare-name grep misses it and reports on a value nobody calls",
+  "kind": "bash-unit",
+  "cmd": "printf 'OPENROUTER_API_KEY=or-test\\nexport OPENROUTER_MODEL_KIMI=totally-dead/does-not-exist\\n' > .env; printf '.env\\n' > .gitignore; OPENROUTER_CATALOG_FILE=\"$FIXTURES/alias-liveness/catalog-full.json\" bash \"$PLUGIN_ROOT/scripts/doctor.sh\" 2>&1 | grep -i kimi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "totally-dead/does-not-exist"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "blind review 2026-08-10",
+    "date": "2026-08-10"
+  }
+}
