@@ -19,8 +19,13 @@ def check_finding($i; $f):
   | if $l == null then
       if (($f.searched // "") | type) != "string" then
         ffail($i; "searched must be a string when location is null")
-      elif (($f.searched // "") | test("\\S") | not) then
-        ffail($i; "location is null, so searched must name the non-empty scope that was examined")
+      # A scope has to NAME something, so it must contain at least one letter or
+      # digit. Testing \S instead lets zero-width characters through — U+200B,
+      # U+FEFF, U+2060 and the rest of the Cf category are not \s to oniguruma,
+      # so `searched: "​"` would read as a commitment while being blank on
+      # screen. Requiring \p{L}/\p{N} also rejects punctuation-only ("...").
+      elif (($f.searched // "") | test("[\\p{L}\\p{N}]") | not) then
+        ffail($i; "location is null, so searched must name the scope that was examined (at least one letter or digit; whitespace, zero-width characters and punctuation alone do not name anything)")
       else . end
     elif ($l | type) != "object" then
       ffail($i; "location must be an object {file, line_start, line_end} or null, not a " + ($l | type))
@@ -29,8 +34,8 @@ def check_finding($i; $f):
       # null, and each per-key check below already refuses null. Mutation testing
       # showed the combined check was undetectable when deleted — subsumed, so it
       # was not a guard.
-      (if (($l.file | type) == "string") and ($l.file | test("\\S"))
-           then . else ffail($i; "location.file must be a non-empty string") end)
+      (if (($l.file | type) == "string") and ($l.file | test("[\\p{L}\\p{N}]"))
+           then . else ffail($i; "location.file must be a non-empty path (at least one letter or digit — same zero-width caveat as searched)") end)
       | (if (($l.line_start | type) == "number") and ($l.line_start == ($l.line_start | floor)) and ($l.line_start >= 1)
            then . else ffail($i; "location.line_start must be an integer >= 1") end)
       | (if (($l.line_end | type) == "number") and ($l.line_end == ($l.line_end | floor)) and ($l.line_end >= 1)

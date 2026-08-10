@@ -38,6 +38,21 @@ instead of the raw field, any review whose JSON exceeds 1000 chars —
 trivial with a couple of findings that carry `evidence` strings — silently
 degrades a *completed* review to null.
 
+2nd strike: spec 016 (`structured-findings`). The spec's stated objective is
+"enforced by a response schema and by envelope validation, not by prompt text
+a model can decline" and its own revision log claims that leaving
+`agents/reviewer.md`/`agents/reviewer-frontier.md` unchanged "would have had
+the system instruct its own reviewers to emit envelopes it **then refuses on
+receipt**." That claim is false: there is no receipt-side refusal for these
+two files. `validate_envelope.jq` is only ever invoked from
+`scripts/lib/common.sh`'s `validate_envelope()`, which only `call_*.sh` shims
+call — confirmed by grep, no hit for `validate_envelope` in `observe.sh` or
+anywhere else touching `SubagentStop`. The diff adds a `location` mandatory
+instruction (`agents/reviewer.md:67-72`, `agents/reviewer-frontier.md:53-58`)
+that is exactly the "prompt text a model can decline" pattern the spec's own
+objective sentence explicitly rejects — for these two files specifically,
+there is no mechanical gate at all, only prose.
+
 **How to apply:** for any future spec that wants to capture data from a
 subagent's *content* (not just duration/tokens), check whether that subagent
 is invoked via Task-tool (no shim access, only opaque `last_assistant_message`

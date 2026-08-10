@@ -11,7 +11,7 @@
     {
       "type": "must_find",
       "strings": [
-        "0 fail"
+        "pass, 0 fail,"
       ]
     }
   ],
