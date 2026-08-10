@@ -1,13 +1,13 @@
 ---
 id: 018
 title: Estimate the cost of a metered shim call before making it
-status: specd
+status: done
 profile: standard
 created: 2026-08-08
 depends_on: 004
 claimed_by:
 branch:
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/13
 ---
 
 # Spec 018 — Estimate the cost of a metered shim call before making it
