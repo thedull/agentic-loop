@@ -1,0 +1,26 @@
+{
+  "id": "tracker-sm-005-a-concurrent-shelve-is-not-overwritten",
+  "target": "advance reads the status BEFORE taking the lock and never re-applies the gated-status check to the value it re-reads after — so a shelve landing in that window is silently reversed",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 924 building; if TRACKER_TEST_PRELOCK_HOOK=\"TRACKER_FORCE_LIVE=1 FACTORY_SPECS_DIR=$PWD/specs bash $PLUGIN_ROOT/scripts/lib/tracker.sh shelve $PWD/specs/924-t.md racer reason\" FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/924-t.md built >/dev/null 2>&1; then echo ADVANCED; else echo \"REFUSED:$?\"; fi; echo \"status=$(grep '^status:' specs/924-t.md | head -1)\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED:3",
+        "status: shelved"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "status: built"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  },
+  "_note": "TRACKER_FORCE_LIVE belongs to the HOOK's shelve (it targets a live 'building' spec), never to the advance under test — on the advance it is the documented override and would bypass the very guard this case exists to exercise. An earlier version had it on both."
+}

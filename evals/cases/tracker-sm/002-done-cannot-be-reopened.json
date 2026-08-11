@@ -1,0 +1,24 @@
+{
+  "id": "tracker-sm-002-done-cannot-be-reopened",
+  "target": "a merged spec must not walk backwards to queued",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 921 done; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/921-t.md queued >/dev/null 2>&1; echo \"status=$(grep '^status:' specs/921-t.md | head -1)\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "status: done"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "status: queued"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

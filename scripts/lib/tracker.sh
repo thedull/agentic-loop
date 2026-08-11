@@ -27,6 +27,21 @@
 # evals/mine.sh mines `blocked` transitions as failure signal, so routing a
 # deliberate deprioritization through `blocked` would poison that signal.
 #
+# Edges, not just states, are enforced — see _TRACKER_EDGES. TRACKER_FORCE_LIVE=1
+# overrides both the edge check and the gated-status check for the cases where
+# you genuinely mean it (test fixtures resetting state, a human unpicking a
+# mistake).
+#
+# `claimed_by` is ADVISORY and is not enforced. Stated plainly because the field
+# looks like a lock and is not one: tracker_advance takes no actor argument at
+# all, so nothing compares a caller against it, and any invocation can move a
+# spec another worker claimed. That is survivable today because one loop runs at
+# a time and the lock makes each write atomic — what is NOT protected is two
+# concurrent loops, where the loser's work is silently overwritten rather than
+# refused. Enforcing it means threading an actor through every advance call site
+# in skills/build, skills/review and templates/workflows, plus an override for
+# the human; worth doing deliberately, not as a side effect of a bug fix.
+#
 # Dependencies: a spec with depends_on is only claimable once EVERY listed id
 # is `done` (merged) or a VERIFIED `superseded`. built/pr-open do not count —
 # unmerged work is not on main, so a dependent build could not see it (the
@@ -102,6 +117,33 @@ TRACKER_LOCK_DIR="${TRACKER_LOCK_DIR:-.agentic/tracker.lock}"
 TRACKER_LOCK_TIMEOUT="${TRACKER_LOCK_TIMEOUT:-30}"
 
 VALID_STATUSES="queued specd building built reviewing pr-open blocked shelved superseded done"
+
+# The EDGES of the machine documented at the top of this file, not just its
+# states. advance used to validate only that the destination was a valid status
+# and then write it, so `advance <queued-spec> done` and `advance <done-spec>
+# queued` both succeeded — skipping every intermediate stage and every refusal
+# gate attached to one. Verified working before this was added.
+#
+# shelved and superseded are deliberately absent: they carry bookkeeping
+# (shelved_from, shelved_reason, the verified citation) that only their own
+# functions write, and _TRACKER_GATED_STATUSES already keeps advance out of them.
+_TRACKER_EDGES="
+queued:specd
+specd:building
+building:built
+built:reviewing
+reviewing:pr-open
+pr-open:done
+queued:blocked specd:blocked building:blocked built:blocked reviewing:blocked pr-open:blocked
+blocked:queued blocked:specd blocked:building blocked:built blocked:reviewing
+"
+
+# _tracker_edge_ok FROM TO — is this a declared transition?
+_tracker_edge_ok() {
+  local e
+  for e in $_TRACKER_EDGES; do [[ "$1:$2" == "$e" ]] && return 0; done
+  return 1
+}
 
 # Statuses that carry bookkeeping which a plain `advance` would not write.
 # Reaching one without that bookkeeping produces a record that cannot be
@@ -231,9 +273,18 @@ _tracker_supersede_lands() {
     return 1
   fi
   git rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1 || return 1
+  # The DEFAULT branch, never the current one. Falling back to `symbolic-ref
+  # HEAD` meant that on a feature branch a commit unique to that branch passed
+  # `merge-base --is-ancestor` and unblocked every dependent — while never having
+  # landed anywhere shared. A citation that proves nothing is worse than none,
+  # because dependents become claimable on the strength of it.
   base="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)"
-  [[ -n "$base" ]] || base="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
-  [[ -n "$base" ]] || base="main"
+  if [[ -z "$base" ]]; then
+    for _b in main master; do
+      if git rev-parse --verify --quiet "refs/heads/$_b" >/dev/null 2>&1; then base="$_b"; break; fi
+    done
+  fi
+  [[ -n "$base" ]] || return 1
   if git merge-base --is-ancestor "$ref" "$base" 2>/dev/null; then return 0; fi
   return 1
 }
@@ -643,9 +694,37 @@ tracker_advance() {
     _tracker_die "$file is '$cur' — someone took it out of the queue while this stage ran. Stop and report; do not retry. (TRACKER_FORCE_LIVE=1 overrides.)"
   fi
   mkdir -p "$(dirname "$TRACKER_LOCK_DIR")"
+  # Test seam: run a command in the window between the pre-lock read and the
+  # lock, which is the race being modelled — another process shelving the file
+  # while this advance sits between reading the status and taking the mutex.
+  # Placed BEFORE tracker_lock deliberately: run after it, the hook's own
+  # tracker.sh invocation would block on the mutex this process already holds.
+  # Unset in every normal run.
+  [[ -n "${TRACKER_TEST_PRELOCK_HOOK:-}" ]] && eval "$TRACKER_TEST_PRELOCK_HOOK" >/dev/null 2>&1 || true
   tracker_lock
   local prev
   prev="$(_tracker_field "$file" status)"
+  # Re-apply the checks to the value read UNDER the lock. They were applied only
+  # to the pre-lock read, so a shelve or supersede landing in that window was
+  # silently reversed — the gated status is exactly what must not be overwritten.
+  if _tracker_gated_status "$prev" && [[ "${TRACKER_FORCE_LIVE:-0}" != "1" ]]; then
+    tracker_unlock
+    echo "tracker: $file became '$prev' while this advance was starting — refusing to overwrite it." >&2
+    echo "        Someone shelved or superseded it. Use restore first if that was not intended." >&2
+    return 3
+  fi
+  # TRACKER_FORCE_LIVE is the documented override for both of these. It already
+  # let a caller move a shelved spec (see the tracker suite's clobber case), so
+  # an edge check that ignored it would have quietly revoked an escape hatch
+  # people rely on.
+  if [[ "${TRACKER_FORCE_LIVE:-0}" != "1" ]] && ! _tracker_edge_ok "$prev" "$status"; then
+    tracker_unlock
+    echo "tracker: '$prev' -> '$status' is not a transition in the state machine." >&2
+    echo "        Legal from '$prev': $(for e in $_TRACKER_EDGES; do [[ "$e" == "$prev:"* ]] && printf '%s ' "${e#*:}"; done)" >&2
+    echo "        Off-ramps use their own commands: shelve, supersede, restore." >&2
+    echo "        TRACKER_FORCE_LIVE=1 overrides this when you genuinely mean it." >&2
+    return 2
+  fi
   _tracker_set_field "$file" status "$status"
   while [[ $# -ge 2 ]]; do
     _tracker_set_field "$file" "$1" "$2"

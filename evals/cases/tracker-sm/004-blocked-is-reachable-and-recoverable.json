@@ -1,0 +1,19 @@
+{
+  "id": "tracker-sm-004-blocked-is-reachable-and-recoverable",
+  "target": "any live state may reach blocked, and a blocked spec must be able to resume — it still wants doing",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 923 building; A=no; B=no; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/923-t.md blocked >/dev/null 2>&1 && A=yes; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/923-t.md building >/dev/null 2>&1 && B=yes; echo \"to_blocked=$A resume=$B\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "to_blocked=yes",
+        "resume=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

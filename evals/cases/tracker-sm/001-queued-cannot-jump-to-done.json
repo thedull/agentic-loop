@@ -1,0 +1,24 @@
+{
+  "id": "tracker-sm-001-queued-cannot-jump-to-done",
+  "target": "the declared machine is queued -> specd -> building -> built -> reviewing -> pr-open -> done; advance validated only that the target was a valid STATUS, so a spec could skip every stage and every gate attached to them",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 920 queued; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/920-t.md done >/dev/null 2>&1; echo \"status=$(grep '^status:' specs/920-t.md | head -1)\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "status: queued"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "status: done"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
