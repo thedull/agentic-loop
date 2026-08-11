@@ -1,0 +1,24 @@
+{
+  "id": "summary-limit-001-overlong-summary-warns",
+  "target": "the envelope contract documents a <=100 word summary in common.sh and agents/reviewer.md and enforces it nowhere; an overlong one must be surfaced",
+  "kind": "bash-unit",
+  "cmd": "LONG=$(python3 -c \"print(\\\" \\\".join([\\\"word\\\"]*260))\"); jq -n --arg s \"$LONG\" \"{worker:\\\"placeholder\\\",status:\\\"ok\\\",summary:\\$s,result:\\\"r\\\",artifacts:[],key_decisions:[],caveats:[],assumptions:[],confidence_ordinal:\\\"high\\\",usage:{}}\" > env.json; jq -n --arg c \"$(jq -c . env.json)\" \"{choices:[{message:{content:\\$c}}],usage:{prompt_tokens:1,completion_tokens:1,cost:0}}\" > mock.json; printf %s \"{\\\"objective\\\":\\\"x\\\"}\" | MOCK_RESPONSE_FILE=$PWD/mock.json bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter 2>err >out; echo \"EXIT:$?\"; grep -i 'summary' err || echo NO_WARNING",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:0"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "NO_WARNING"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11 (finding 5 of 5)",
+    "date": "2026-08-11"
+  }
+}
