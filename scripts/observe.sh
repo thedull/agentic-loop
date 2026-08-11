@@ -48,9 +48,13 @@ if [[ "${1:-}" == "diff-size" ]]; then
   shift
   DS_BASE=""; DS_HEAD="HEAD"
   while [[ $# -gt 0 ]]; do
+    # `shift 2` with only one argument left shifts NOTHING and returns non-zero,
+    # so the loop never advances and the hook spins forever. A hook that hangs
+    # is worse than one that fails: it blocks the session that invoked it. Take
+    # the value only when there is one, and always consume at least one word.
     case "$1" in
-      --base) DS_BASE="${2:-}"; shift 2 ;;
-      --head) DS_HEAD="${2:-}"; shift 2 ;;
+      --base) DS_BASE="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
+      --head) DS_HEAD="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
       *) shift ;;
     esac
   done
@@ -83,8 +87,8 @@ if [[ "${1:-}" == "context" ]]; then
       CTX_PHASE="" CTX_SPEC_ID=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
-          --phase)   CTX_PHASE="${2:-}";   shift 2 ;;
-          --spec-id) CTX_SPEC_ID="${2:-}"; shift 2 ;;
+          --phase)   CTX_PHASE="${2:-}";   shift; [[ $# -gt 0 ]] && shift ;;
+          --spec-id) CTX_SPEC_ID="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
           *) shift ;;
         esac
       done
@@ -176,7 +180,12 @@ case "$EVT" in
     MARKER="$STATE/agent-$AGENT_ID.start"
     if [[ -n "$AGENT_ID" && -f "$MARKER" ]]; then
       START_MS="$(cut -d' ' -f1 "$MARKER" 2>/dev/null)"
-      [[ "$START_MS" =~ ^[0-9]+$ ]] && DUR=$(( $(obs_now_ms) - START_MS ))
+      # 10# forces base 10. Without it bash reads a leading-zero literal as
+      # octal, and "08" raises an arithmetic error — which does NOT exit
+      # nonzero, it makes bash abandon the rest of this branch and jump to the
+      # final exit 0. The agent_stop event this hook exists to record was
+      # silently lost and the marker left orphaned. Measured 2026-08-11.
+      [[ "$START_MS" =~ ^[0-9]+$ ]] && DUR=$(( $(obs_now_ms) - 10#$START_MS ))
       rm -f "$MARKER" 2>/dev/null
     fi
 

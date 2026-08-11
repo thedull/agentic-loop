@@ -1,0 +1,18 @@
+{
+  "id": "observe-safety-002-trailing-phase-flag-does-not-hang",
+  "target": "the same defect on context set --phase",
+  "kind": "bash-unit",
+  "cmd": "AGENTIC_OBSERVE=1 bash \"$PLUGIN_ROOT/scripts/observe.sh\" context set --phase >/dev/null 2>&1 & P=$!; sleep 3; if kill -0 $P 2>/dev/null; then kill -9 $P 2>/dev/null; echo HUNG; else wait $P; echo \"EXITED:$?\"; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXITED:"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

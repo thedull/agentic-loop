@@ -1,0 +1,21 @@
+{
+  "id": "observe-safety-004-malformed-marker-does-not-lose-the-event",
+  "target": "a malformed start marker must not cost the event. The regex accepts 08, bash reads a leading-zero literal as octal, and the arithmetic error makes bash skip the rest of the branch straight to exit 0 — so the agent_stop event is never emitted and the marker is never cleaned up",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability/state; printf \"08 x\\n\" > .agentic/observability/state/agent-z.start; printf %s '{\"hook_event_name\":\"SubagentStop\",\"agent_type\":\"loop-reviewer\",\"agent_id\":\"z\",\"session_id\":\"s\",\"last_assistant_message\":\"{}\"}' | AGENTIC_OBSERVE=1 bash \"$PLUGIN_ROOT/scripts/observe.sh\" hook SubagentStop >/dev/null 2>&1; echo \"EXIT:$?\"; jq -c 'select(.event==\"agent_stop\") | {got: true}' .agentic/observability/events-*.jsonl 2>/dev/null | tail -1; if [ -f .agentic/observability/state/agent-z.start ]; then echo MARKER_ORPHANED; else echo MARKER_CLEANED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:0",
+        "{\"got\":true}",
+        "MARKER_CLEANED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  },
+  "_note": "The review claimed this exits nonzero. It does not — verified rc=0. The real symptom is worse in a different way: bash abandons the branch, so the event the hook exists to record is silently lost and the marker file is left behind. Asserting the reported symptom would have tested the wrong thing."
+}
