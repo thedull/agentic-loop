@@ -1,0 +1,25 @@
+{
+  "id": "tracker-sm-006-supersede-citation-needs-the-default-branch",
+  "target": "supersede applies either way by design, but a citation only unblocks dependents when it verifiably landed. The base fell back to symbolic-ref HEAD, so on a feature branch a commit unique to that branch verified as landed and silently unblocked everything downstream",
+  "kind": "bash-unit",
+  "cmd": "git init -q r && cd r && git config user.email t@t && git config user.name t && git commit -q --allow-empty -m base && git branch -M main && git checkout -q -b feature && git commit -q --allow-empty -m \"only on feature\" && SHA=$(git rev-parse HEAD) && mkdir -p specs && bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 925 queued && FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" supersede specs/925-t.md tester \"$SHA\" \"landed elsewhere\" 2>&1 | grep -i \"default branch\" || echo NO_WARNING",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "does not verifiably land on the default branch"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "NO_WARNING"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  },
+  "_note": "Asserts the WARNING, not the status: supersede deliberately applies and reports non-verification on stderr rather than refusing. An earlier version asserted the status and would have been testing a behaviour the design never had."
+}

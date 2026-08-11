@@ -1,0 +1,19 @@
+{
+  "id": "tracker-sm-003-the-linear-flow-still-works",
+  "target": "true-negative: every legal forward edge must still work, or the restriction is a wall",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 922 building; OK=1; for s in built reviewing pr-open done; do FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/922-t.md $s >/dev/null 2>&1 || OK=0; done; echo \"final=$(grep '^status:' specs/922-t.md | head -1) ok=$OK\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "status: done",
+        "ok=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
