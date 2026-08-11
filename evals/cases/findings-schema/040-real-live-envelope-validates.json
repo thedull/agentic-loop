@@ -1,0 +1,22 @@
+{
+  "id": "findings-schema-040-real-live-envelope-validates",
+  "target": "the actual sol/openrouter adversary envelope from 2026-08-10 — a production response, kept as a regression fixture so hardening cannot quietly start rejecting real Sol output",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/live-sol-openrouter-review.json\" >/dev/null && echo LIVE_ENVELOPE_VALID",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "LIVE_ENVELOPE_VALID"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter, --effort max, $0.066349)",
+    "date": "2026-08-10"
+  }
+}

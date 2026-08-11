@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-035-false-does-not-satisfy-artifacts",
+  "target": "jq's // treats false as null, so \"artifacts\": false was substituted with [] and passed the array check",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/false-artifacts.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-038-artifacts-must-be-strings",
+  "target": "artifacts[] is read as filenames downstream, so a number there fails far from its cause",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/artifacts-non-string.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-036-false-does-not-satisfy-confidence",
+  "target": "same // coercion on the confidence enum",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/false-confidence.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}

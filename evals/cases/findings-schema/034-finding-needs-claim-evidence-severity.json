@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-034-finding-needs-claim-evidence-severity",
+  "target": "a finding carrying only a location and a searched scope validated the citation while ignoring the claim it was meant to support",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/finding-without-claim.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}
