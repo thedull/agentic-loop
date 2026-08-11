@@ -1,0 +1,21 @@
+{
+  "id": "sol-transport-029-reasoning-exhausted-cap-degrades-honestly",
+  "target": "the observed live failure — cap consumed entirely by hidden reasoning, empty message, still billed — must degrade to an honest partial envelope, never a silent success",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-reasoning-exhausted.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >out 2>err; echo \"EXIT:$?\"; cat err; jq -r \".status + \\\" \\\" + .confidence_ordinal\" out",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "truncated",
+        "partial",
+        "low",
+        "EXIT:0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live smoke test 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

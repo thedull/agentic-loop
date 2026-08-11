@@ -169,11 +169,22 @@ fi
 # scales with agent count (max_concurrent_subagents: 3), so a flat assumption
 # would systematically understate the single most expensive path — exactly the
 # call this gate exists to catch.
+#
+# These numbers budget for HIDDEN REASONING, not just visible text, because Sol
+# bills reasoning as output (see the header) and — on the chat/completions
+# transport — spends it against max_tokens BEFORE emitting a single visible
+# character. Measured live 2026-08-10: a cap of 2000 produced 2000 billed output
+# tokens and an EMPTY message. The whole budget went to reasoning, the envelope
+# never started, and the call was a total loss that still cost $0.074.
+#
+# That is the same failure the Ollama tier documents for 4B-class models, which
+# "spend their whole budget inside <think> and return an empty result" — the
+# difference here is only the price.
 case "$EFFORT" in
-  standard) ASSUMED_OUT=2000 ;;
-  max)      ASSUMED_OUT=6000 ;;
-  ultra)    ASSUMED_OUT=18000 ;;
-  *)        ASSUMED_OUT=2000 ;;
+  standard) ASSUMED_OUT=8000 ;;
+  max)      ASSUMED_OUT=16000 ;;
+  ultra)    ASSUMED_OUT=32000 ;;
+  *)        ASSUMED_OUT=8000 ;;
 esac
 preflight_gate "$WORKER_NAME" "$MODEL" "$SYSTEM_PROMPT$TASK_PROMPT" "$ASSUMED_OUT"
 
@@ -195,6 +206,11 @@ if [[ "$VIA" == "openrouter" ]]; then
   # estimate. That is what makes the estimate an upper bound rather than a
   # guess, and it is why --effort now changes what the call can actually spend
   # instead of only changing a printed figure.
+  #
+  # Note the asymmetry, which is real and not an oversight: on THIS transport
+  # the assumed output is a hard cap, so the estimate is a ceiling. On the
+  # direct Responses API path no max_tokens is sent, so there the same number is
+  # an expectation the model may exceed.
   REQUEST="$(jq -n \
     --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" \
     --argjson max_tokens "$ASSUMED_OUT" '{

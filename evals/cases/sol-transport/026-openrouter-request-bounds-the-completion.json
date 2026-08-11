@@ -2,7 +2,7 @@
   "id": "sol-transport-026-openrouter-request-bounds-the-completion",
   "target": "call_sol.sh — the OpenRouter request bounds max_tokens; without it OpenRouter reserves credit against the provider ceiling and a credit-limited key is rejected outright (observed live 2026-08-10)",
   "kind": "bash-unit",
-  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -e '.max_tokens == 2000' \"$D\"",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -e '.max_tokens == 8000' \"$D\"",
   "checks": [
     {
       "type": "exit_code",

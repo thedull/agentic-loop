@@ -1,0 +1,15 @@
+{
+  "choices": [
+    {
+      "message": {
+        "content": ""
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1200,
+    "completion_tokens": 8000,
+    "cost": 0.0731
+  }
+}
