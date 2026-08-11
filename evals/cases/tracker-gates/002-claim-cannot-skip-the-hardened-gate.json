@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-002-claim-cannot-skip-the-hardened-gate",
+  "target": "the same hole reaches pr-open on a hardened spec without a hardened review report",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 901 reviewing hardened; if FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim reviewing pr-open who >/dev/null 2>&1; then echo BYPASSED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

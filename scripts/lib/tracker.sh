@@ -445,8 +445,31 @@ unclaimable until the expand half is \`done\`.
 SPLITEOF
 }
 
+# The ONLY transitions claim may perform. claim writes the status field
+# directly, deliberately bypassing tracker_advance so it can be atomic under the
+# lock — which also means it bypasses every refusal gate advance enforces. With
+# arbitrary from/to that was a hole you could drive a spec through: `claim queued
+# specd` reached specd without spec_check or the irreversibility classifier, and
+# `claim reviewing pr-open` reached pr-open without a hardened review report.
+#
+# These two edges are the only ones any caller uses (skills/build/SKILL.md and
+# skills/review/SKILL.md), and neither has a gate on it, so restricting to them
+# closes the hole without narrowing anything real. Everything else goes through
+# advance, where the gates live.
+_TRACKER_CLAIM_EDGES="specd:building built:reviewing"
+
 tracker_claim() {
   local from="$1" to="$2" actor="$3" target="" f
+  local _edge_ok=0 _e
+  for _e in $_TRACKER_CLAIM_EDGES; do
+    [[ "$from:$to" == "$_e" ]] && _edge_ok=1
+  done
+  if [[ $_edge_ok -ne 1 ]]; then
+    echo "tracker: claim will not move '$from' -> '$to'." >&2
+    echo "        claim is limited to: ${_TRACKER_CLAIM_EDGES// /, } — the transitions with no refusal gate on them." >&2
+    echo "        Every other transition must go through 'advance', which is where the gates are enforced." >&2
+    return 2
+  fi
   local -a skipped=() profile_skipped=()
   _tracker_valid_status "$from" || _tracker_die "unknown status '$from'"
   _tracker_valid_status "$to"   || _tracker_die "unknown status '$to'"
@@ -530,7 +553,18 @@ tracker_advance() {
   # verifiers. Prose telling a stage to run a checker is not a gate.
   if [[ "${2:-}" == "pr-open" && -f "${1:-}" ]]; then
     local _pf _rep _root
-    _pf="$(tracker_profile "$1" 2>/dev/null || true)"
+    local _pfrc=0
+    _pf="$(tracker_profile "$1" 2>/dev/null)" || _pfrc=$?
+    # Key on the EXIT CODE, not on stdout. tracker_profile prints NOTHING when
+    # it fails (exit 6 hardened-without-payload, exit 5 dark, exit 2 invalid),
+    # so the old `$_pf == "hardened"` test was false for every failure and a
+    # hardened spec whose profile could not be resolved sailed to pr-open with
+    # no security review at all. Refusing here is the whole point of the field.
+    if [[ $_pfrc -ne 0 ]]; then
+      echo "tracker: cannot resolve the profile of $(basename "$1") (tracker_profile exit $_pfrc)." >&2
+      echo "        Refusing to advance to pr-open rather than treating an unresolvable profile as standard." >&2
+      return 2
+    fi
     if [[ "$_pf" == "hardened" ]]; then
       _root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
       _rep="${HARDENED_REPORT:-.agentic/artifacts/$(_tracker_field "$1" id)/hardened-review.md}"
@@ -556,11 +590,24 @@ tracker_advance() {
     # Self-consistency is a GATE, not advice. A spec that contradicts itself on
     # a decidable fact must not reach specd, and prose in skills/spec only binds
     # an agent that reads it.
-    local _root_sc _sc=0
+    local _root_sc _sc=0 _checker
     _root_sc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    if [[ -x "$_root_sc/lib/spec_check.sh" ]]; then
-      "$_root_sc/lib/spec_check.sh" "$1" >/dev/null 2>&1 || _sc=$?
-      if [[ $_sc -eq 2 ]]; then
+    # Test seam, same spirit as TRACKER_AGENTS_DIR. Unset in every normal run.
+    _checker="${TRACKER_SPEC_CHECK:-$_root_sc/lib/spec_check.sh}"
+    # A missing or non-executable checker used to be skipped in silence. A gate
+    # that disappears when its tool goes missing is not a gate — and a broken
+    # install is exactly when you least want specs waved through.
+    if [[ ! -x "$_checker" ]]; then
+      echo "tracker: cannot run spec_check ($_checker is missing or not executable)." >&2
+      echo "        Refusing to advance to specd rather than skipping the check." >&2
+      return 2
+    fi
+    if [[ -x "$_checker" ]]; then
+      "$_checker" "$1" >/dev/null 2>&1 || _sc=$?
+      # Anything nonzero refuses. Only exit 2 used to, so a checker that
+      # crashed, hit a syntax error, or was killed reported "fine" by default —
+      # fail-open in the one place spec 014 exists to close.
+      if [[ $_sc -ne 0 ]]; then
         echo "tracker: $(basename "$1") contradicts itself — run scripts/lib/spec_check.sh for the detail" >&2
         return 2
       fi

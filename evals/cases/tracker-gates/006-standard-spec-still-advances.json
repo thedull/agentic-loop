@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-006-standard-spec-still-advances",
+  "target": "the true-negative direction: a normal standard spec must still move, or the fixes above are just a brick wall",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 905 reviewing; if FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/905-t.md pr-open >/dev/null 2>&1; then echo ADVANCED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "ADVANCED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

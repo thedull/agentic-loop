@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-004-missing-spec-check-refuses",
+  "target": "an absent or non-executable checker was skipped in silence — a gate that vanishes when its tool goes missing is not a gate",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 903 queued; if TRACKER_SPEC_CHECK=$PWD/definitely-not-here.sh FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/903-t.md specd >/dev/null 2>&1; then echo ADVANCED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

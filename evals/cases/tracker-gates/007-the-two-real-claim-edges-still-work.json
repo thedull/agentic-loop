@@ -1,0 +1,19 @@
+{
+  "id": "tracker-gates-007-the-two-real-claim-edges-still-work",
+  "target": "true-negative: the two edges the build and review skills actually use must keep working, or the restriction is a brick wall",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 910 specd; bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 911 built; A=REFUSED; B=REFUSED; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim specd building build-loop >/dev/null 2>&1 && A=OK; FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim built reviewing review-loop >/dev/null 2>&1 && B=OK; echo \"specd-building=$A built-reviewing=$B\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "specd-building=OK",
+        "built-reviewing=OK"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-11"
+  }
+}
