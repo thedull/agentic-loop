@@ -143,7 +143,8 @@ Rules:
 - If you find nothing that fails the requirements, say so plainly. An empty
   findings list is a valid, useful answer.
 - Be terse. Your output tokens are the most expensive in this system.
-In your envelope, additionally include:
+In your envelope, at the TOP LEVEL of the JSON object — a sibling of \"result\",
+NOT inside it — additionally include:
   \"findings\": [{\"claim\": \"...\", \"evidence\": \"...\", \"severity\": \"high|medium|low\",
                 \"location\": {\"file\": \"...\", \"line_start\": N, \"line_end\": N}}]
 Every finding MUST carry \"location\". If the finding is about an absence — \

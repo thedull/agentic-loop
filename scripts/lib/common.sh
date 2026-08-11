@@ -230,7 +230,24 @@ finalize_envelope() {
   echo "$parsed" | jq --arg worker "$worker" \
       --argjson artifacts "$artifacts_json" \
       --argjson in "$in_tok" --argjson out "$out_tok" --argjson cost "$cost" '
-    .worker = $worker
+    # Findings have ONE home: the top level of the envelope. Every declaration
+    # already says so — envelope_instructions, agents/reviewer.md, the response
+    # schema in call_sol.sh — but models legitimately read otherwise, because
+    # envelope_instructions also says `result` holds "content per the OUTPUT
+    # SPEC" and every adversary brief sets output_spec to "findings". The first
+    # live adversary call answered with result.findings and three separate
+    # readers saw nothing: the validator (fixed in #18), observe.sh
+    # findings_count, and the comprehension metric built on it.
+    #
+    # Normalising HERE, at the one boundary every worker passes through, is why
+    # this is a fix rather than a fourth patch: downstream readers get one shape
+    # and never need to know the model drifted.
+    (if (((.findings // []) | length) == 0)
+        and ((.result | type) == "object")
+        and ((.result.findings | type) == "array")
+       then .findings = .result.findings | .result |= del(.findings)
+       else . end)
+    | .worker = $worker
     | .artifacts = ((.artifacts // []) + $artifacts | unique)
     | .key_decisions //= [] | .caveats //= [] | .assumptions //= []
     | .confidence_ordinal //= "medium" | .status //= "ok"

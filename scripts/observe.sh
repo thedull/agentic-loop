@@ -243,10 +243,31 @@ case "$EVT" in
     # chars below — a verbose but complete review would silently read as null.
     # null means "no parseable envelope"; 0 means "a clean review". Opposite
     # signals, never collapsed.
-    FINDINGS="$(printf '%s' "$INPUT" \
-      | jq -r '.last_assistant_message // ""' 2>/dev/null \
-      | sed -e 's/^[^{]*//' -e 's/[^}]*$//' \
-      | jq -e 'if (.findings|type) == "array" then (.findings|length) else empty end' 2>/dev/null \
+    # Two separate defects lived here, both found on 2026-08-11 by reviewing a
+    # real reviewer envelope rather than a hand-written one:
+    #
+    #   1. The old `sed -e 's/^[^{]*//' -e 's/[^}]*$//'` runs PER LINE. On a
+    #      pretty-printed envelope it deletes content on every line and the
+    #      count silently became null. finalize_envelope emits pretty JSON by
+    #      default, so this was the common case, not the edge case.
+    #   2. It read only a top-level `.findings`. A Task-tool subagent's message
+    #      never passes through finalize_envelope, so nothing normalises it, and
+    #      a reviewer that answers with result.findings — which the live model
+    #      did — counted as null.
+    #
+    # null still means "no parseable envelope" and 0 still means "a clean
+    # review". Opposite signals, never collapsed.
+    MSG="$(printf '%s' "$INPUT" | jq -r '.last_assistant_message // ""' 2>/dev/null)"
+    CAND=""
+    if [[ "$MSG" == *"{"* && "$MSG" == *"}"* ]]; then
+      CAND="{${MSG#*\{}"          # drop any prose before the first brace
+      CAND="${CAND%\}*}}"          # drop any prose after the last brace
+    fi
+    FINDINGS="$(printf '%s' "$CAND" \
+      | jq -e 'if (.findings|type) == "array" then (.findings|length)
+               elif ((.result|type) == "object") and ((.result.findings|type) == "array")
+                 then (.result.findings|length)
+               else empty end' 2>/dev/null \
         | tail -1)"
     # Guard the value itself. Two JSON objects in one message make jq stream two
     # results, and a multi-line value breaks --argjson below — which takes the

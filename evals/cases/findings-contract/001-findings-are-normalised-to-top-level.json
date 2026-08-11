@@ -1,0 +1,18 @@
+{
+  "id": "findings-contract-001-findings-are-normalised-to-top-level",
+  "target": "a model that answers with findings under result — which is what the live model actually did — must still yield a top-level findings array, or every downstream reader sees zero",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/findings/contract-brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/findings/or-findings-under-result.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter 2>/dev/null | jq -e '(.findings|length) == 1' >/dev/null && echo NORMALISED",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "NORMALISED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
