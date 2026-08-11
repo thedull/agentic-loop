@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-037-false-does-not-satisfy-findings",
+  "target": "same // coercion on findings — the most damaging one, since it disabled every finding rule at once",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/false-findings.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}

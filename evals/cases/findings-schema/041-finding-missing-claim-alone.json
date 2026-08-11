@@ -1,0 +1,23 @@
+{
+  "id": "findings-schema-041-finding-missing-claim-alone",
+  "target": "a finding with evidence, severity and a location but NO claim is refused",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/finding-missing-claim-only.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "claim"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "mutation testing 2026-08-10",
+    "date": "2026-08-10"
+  },
+  "_note": "Isolates ONE missing field. The first version of case 034 omitted claim, evidence AND severity at once, so the severity check alone kept it refused and deleting the claim/evidence requirement went undetected."
+}

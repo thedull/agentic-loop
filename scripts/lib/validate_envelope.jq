@@ -12,6 +12,16 @@ def ffail($i; msg): fail("finding " + ($i | tostring) + ": " + msg);
 # an allowlist of worker names is defeated by renaming the worker.
 def check_finding($i; $f):
   if ($f | type) != "object" then ffail($i; "must be an object") else . end
+  # The documented finding shape is claim + evidence + severity + location. Only
+  # location was ever enforced, so a finding carrying nothing but a location and
+  # a searched scope passed — validating the citation while ignoring the claim
+  # it was supposed to support.
+  | (if (($f.claim | type) == "string") and ($f.claim | test("\\S"))
+       then . else ffail($i; "claim must be a non-empty string") end)
+  | (if (($f.evidence | type) == "string") and ($f.evidence | test("\\S"))
+       then . else ffail($i; "evidence must be a non-empty string") end)
+  | (if ($f.severity as $sv | ["high","medium","low"] | index($sv)) != null
+       then . else ffail($i; "severity must be high|medium|low") end)
   | if ($f | has("location")) then . else
       ffail($i; "must carry a location object {file, line_start, line_end}, or location: null together with a non-empty searched scope")
     end
@@ -63,15 +73,35 @@ def check_finding($i; $f):
     then fail("status must be one of ok|partial|error|blocked|needs_escalation|needs_input") else . end
 | if ($e.summary | type) != "string" then fail("summary must be a string") else . end
 | if ($e | has("result")) | not then fail("result field is required (may be null on error)") else . end
-| if (($e.artifacts // []) | type) != "array" then fail("artifacts must be an array of paths") else . end
-| if (($e.key_decisions // []) | type) != "array" then fail("key_decisions must be an array") else . end
-| if (($e.caveats // []) | type) != "array" then fail("caveats must be an array") else . end
-| if (($e.assumptions // []) | type) != "array" then fail("assumptions must be an array") else . end
-| if (($e.confidence_ordinal // "medium") as $c | ["high","medium","low"] | index($c)) == null
+| if ($e.artifacts != null) and (($e.artifacts | type) != "array") then fail("artifacts must be an array of paths") else . end
+# "array of paths" was enforced only as far as "array". artifacts[] is read as
+# filenames downstream (finalize_envelope writes them, the runner's
+# artifact_exists check stats them), so a number in there is a defect that
+# surfaces far from its cause.
+| if (($e.artifacts // []) | map(select(type != "string")) | length) > 0
+    then fail("artifacts must contain only strings (paths)") else . end
+| if ((($e.key_decisions // []) + ($e.caveats // []) + ($e.assumptions // []))
+       | map(select(type != "string")) | length) > 0
+    then fail("key_decisions, caveats and assumptions must contain only strings") else . end
+| if ($e.key_decisions != null) and (($e.key_decisions | type) != "array") then fail("key_decisions must be an array") else . end
+| if ($e.caveats != null) and (($e.caveats | type) != "array") then fail("caveats must be an array") else . end
+| if ($e.assumptions != null) and (($e.assumptions | type) != "array") then fail("assumptions must be an array") else . end
+| if ($e.confidence_ordinal != null)
+     and ((["high","medium","low"] | index($e.confidence_ordinal)) == null)
     then fail("confidence_ordinal must be high|medium|low") else . end
-| if (($e.usage // {}) | type) != "object" then fail("usage must be an object") else . end
-| if (($e.findings // []) | type) != "array" then fail("findings must be an array") else . end
+| if ($e.usage != null) and (($e.usage | type) != "object") then fail("usage must be an object") else . end
+| if ($e.findings != null) and (($e.findings | type) != "array") then fail("findings must be an array") else . end
+| if (($e.result | type) == "object") and ($e.result.findings != null)
+     and (($e.result.findings | type) != "array")
+    then fail("result.findings must be an array") else . end
+# Findings are validated WHEREVER THEY LIVE. The first live adversary call put
+# them under `result` — reasonably, since envelope_instructions says result holds
+# the content named by the output spec, and that spec said "findings" — and every
+# rule here silently did not apply. A gate that inspects one location while the
+# producer writes to another is not a gate; it is a coincidence that held until
+# the first real response.
+| (($e.findings // []) + (if ($e.result | type) == "object" then ($e.result.findings // []) else [] end)) as $all_findings
 # Absent or empty findings is the shape every non-adversary worker emits, and it
 # stays untouched: the comprehension below iterates zero times.
-| ([ ($e.findings // []) | to_entries[] | check_finding(.key + 1; .value) ] | length) as $_checked
+| ([ $all_findings | to_entries[] | check_finding(.key + 1; .value) ] | length) as $_checked
 | $e

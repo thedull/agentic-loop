@@ -1,0 +1,16 @@
+{
+  "id": "findings-schema-033-findings-under-result-are-validated",
+  "target": "the FIRST live adversary call put its findings under .result, where none of these rules applied — a gate that inspects one location while the producer writes to another is a coincidence, not a gate",
+  "kind": "bash-unit",
+  "cmd": "jq -e -f \"$PLUGIN_ROOT/scripts/lib/validate_envelope.jq\" < \"$FIXTURES/findings/findings-under-result.json\" 2>&1",
+  "checks": [
+    {
+      "type": "exit_code",
+      "nonzero": true
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-10 (sol via openrouter)",
+    "date": "2026-08-10"
+  }
+}
