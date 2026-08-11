@@ -1,0 +1,20 @@
+{
+  "id": "evalrunner-121-must-find-accepts-a-leading-dash-needle",
+  "target": "a needle starting with a dash is read by grep as an option and can never match, so any case asserting on a flag name is unusable",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/syn\ncat > c/syn/s.json <<'CASEEOF'\n{\"id\": \"syn-2\", \"kind\": \"bash-unit\", \"target\": \"synthetic\", \"checks\": [{\"type\": \"must_find\", \"strings\": [\"--via requires a value\"]}], \"cmd\": \"echo '--via requires a value'\"}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite syn >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 0"
+    }
+  ],
+  "provenance": {
+    "source": "three silent-pass traps hit on 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

@@ -158,9 +158,26 @@ run_case() {
                  | jq -r "$(jq -r '.paths_from' <<<"$check") // [] | .[]" 2>/dev/null)
         [[ $all -eq 1 ]] || ok=0 ;;
       must_find)
+        # -F literal, and case-SENSITIVE on purpose. With -i, "UNPRICED x"
+        # satisfies a needle of "priced x", so a case asserting success passes on
+        # exactly the failure it exists to catch. That trap was hit twice on
+        # 2026-08-11 before it was fixed here.
+        # `--` terminates the option list: without it a needle beginning with a
+        # dash is parsed by grep as a flag and can never match, which made any
+        # assertion on a flag name silently unusable.
         local needle
         while IFS= read -r needle; do
-          printf '%s' "$output" | grep -qiF "$needle" || ok=0
+          printf '%s' "$output" | grep -qF -- "$needle" || ok=0
+        done < <(jq -r '.strings[]' <<<"$check") ;;
+      must_not_find)
+        # The primitive whose absence caused those traps. Asserting that a
+        # FAILURE marker is absent is what those cases actually needed; asserting
+        # a success marker is present is what they did instead, and a success
+        # marker that happens to be a substring of the failure marker makes the
+        # two indistinguishable.
+        local nneedle
+        while IFS= read -r nneedle; do
+          printf '%s' "$output" | grep -qF -- "$nneedle" && ok=0
         done < <(jq -r '.strings[]' <<<"$check") ;;
       tier_expect)
         printf '%s' "$output" | jq -e \

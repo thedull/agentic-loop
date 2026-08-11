@@ -1,0 +1,27 @@
+{
+  "id": "evalrunner-123-must-not-find-passes-when-absent",
+  "target": "and it passes when the string genuinely is not there",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/syn\ncat > c/syn/s.json <<'CASEEOF'\n{\"id\": \"syn-4\", \"kind\": \"bash-unit\", \"target\": \"synthetic\", \"checks\": [{\"type\": \"must_not_find\", \"strings\": [\"FORBIDDEN\"]}], \"cmd\": \"echo all clear\"}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite syn > run.out 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 0"
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "unknown check type"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "three silent-pass traps hit on 2026-08-11",
+    "date": "2026-08-11"
+  },
+  "_note": "Also asserts the runner did not merely SKIP must_not_find as an unknown type — without that, this case passed before the feature existed, which is the same vacuous-pass shape it is meant to test."
+}

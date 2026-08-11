@@ -61,6 +61,22 @@ into itself. Leave it unset in normal runs.
     { "type": "exit_code", "equals": 0 },            // or "nonzero": true
     { "type": "artifact_exists", "paths_from": ".artifacts" },
     { "type": "must_find", "strings": ["injection"] },
+
+`must_find` matches **case-sensitively** and literally. That is deliberate: with
+case folding, output of `UNPRICED x` satisfies a needle of `priced x`, so a case
+asserting success passes on precisely the failure it exists to catch. Two cases
+were written that way on 2026-08-11 before the runner was fixed.
+
+Needles beginning with `-` are fine — the runner passes `--` to grep. Without it
+such a needle is read as a grep option and can never match, which quietly makes
+any assertion on a flag name unusable.
+
+`must_not_find` asserts a string is ABSENT. Reach for it whenever the failure
+mode has a marker of its own: asserting `refused-x` is absent is stronger than
+asserting `allowed-x` is present, because one is not a substring of the other by
+accident. Choosing markers that are not substrings of one another is still worth
+doing.
+
     { "type": "tier_expect", "path": ".result.subtasks[].tier", "allowed": ["ollama","haiku"] },
     { "type": "judge", "rubric": "rubrics/reviewer-findings.md", "min_score": 3 }
   ],

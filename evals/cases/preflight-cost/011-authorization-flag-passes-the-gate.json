@@ -8,7 +8,7 @@
       "type": "must_find",
       "strings": [
         "EXIT:2",
-        "authorized"
+        "AUTHORIZED"
       ]
     }
   ],
@@ -16,5 +16,5 @@
     "source": "hand",
     "date": "2026-08-10"
   },
-  "_note": "--authorize-cost is an UNKNOWN FLAG before this spec, which also exits 2. Requiring the line to say 'authorized' is what makes exit 2 mean 'passed the gate' rather than 'rejected the flag'."
+  "_note": "--authorize-cost is an UNKNOWN FLAG before this spec, which also exits 2. Requiring the line to say 'authorized' is what makes exit 2 mean 'passed the gate' rather than 'rejected the flag'. must_find is case-sensitive as of 2026-08-11; this needle now matches the literal casing the code emits."
 }
