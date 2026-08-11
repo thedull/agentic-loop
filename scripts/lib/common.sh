@@ -267,6 +267,8 @@ PREFLIGHT_BYTES_PER_TOKEN=4   # documented heuristic; see preflight_estimate_tok
 # per-shim constants in call_sol.sh / call_fable.sh.
 preflight_price() {
   case "$1" in
+    gpt-5.6-sol-pro|openai/gpt-5.6-sol-pro) echo "5 30" ;;
+    openai/gpt-5.6-sol-pro:batch)   echo "2.50 15" ;;
     gpt-5.6-sol|openai/gpt-5.6-sol) echo "5 30" ;;
     openai/gpt-5.6-sol:batch)       echo "2.50 15" ;;
     claude-fable-5)                 echo "10 50" ;;

@@ -34,7 +34,23 @@ source "$SCRIPT_DIR/lib/common.sh"
 # always built as "sol"; finalize_envelope overrides .worker afterwards.
 PROMPT_WORKER="sol"
 WORKER_NAME="sol"
-MODEL="gpt-5.6-sol"
+# The frontier cross-family tier — the counterpart to Fable on the Claude side,
+# so it runs the Pro variant. On OpenRouter, Pro and plain are the SAME list
+# price ($5/$30 per 1M, 1.05M context, 128k max output, verified 2026-08-10);
+# Pro costs more per CALL only by spending more reasoning tokens, not a higher
+# rate. There is no cheaper-but-equal option being passed up here.
+#
+# Both ids are overridable from ./.env, following the same pattern as the
+# OpenRouter aliases and for the same reason: a superseded model id is a
+# well-formed string that no offline test can catch (spec 019).
+#
+# VERIFICATION STATUS, stated because the two differ and it matters:
+#   openai/gpt-5.6-sol-pro  VERIFIED present in the OpenRouter catalog 2026-08-10
+#   gpt-5.6-sol-pro         NOT VERIFIED — the direct OpenAI path needs an
+#                           OPENAI_API_KEY to check, and none is configured
+#                           here. If OpenAI names it differently, set
+#                           OPENAI_MODEL_SOL in ./.env rather than editing this.
+MODEL=""   # resolved after load_env — see below
 # Pricing as of 2026-07-12 (recalibrate from the OpenAI usage dashboard).
 # Used ONLY by the direct transport — OpenRouter reports what it actually
 # billed, and a figure it did not report is null, never one of these.
@@ -42,6 +58,11 @@ PRICE_IN_PER_M=5
 PRICE_OUT_PER_M=30
 
 load_env
+
+# Resolved AFTER load_env, not before: ./.env is what sets these, and reading
+# them earlier would silently ignore every override. That exact ordering bug
+# was found in doctor.sh's alias check during spec 019's review.
+MODEL="${OPENAI_MODEL_SOL:-gpt-5.6-sol-pro}"
 
 parse_brief "$@"
 
@@ -86,7 +107,7 @@ case "$VIA" in
     ;;
   openrouter)
     WORKER_NAME="sol/openrouter"   # obs_tier_from_worker's sol* glob still maps
-    MODEL="openai/gpt-5.6-sol"     # this to the sol tier — obs.sh is untouched
+    MODEL="${OPENROUTER_MODEL_SOL:-openai/gpt-5.6-sol-pro}"  # sol* glob still maps
     ENDPOINT="https://openrouter.ai/api/v1/chat/completions"
     ;;
   *)
