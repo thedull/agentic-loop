@@ -1,0 +1,18 @@
+{
+  "id": "sol-transport-028-truncated-response-is-announced",
+  "target": "a response cut off at the cap says so — truncation is the accepted cost of capping and must not surface as a mystery 'partial' envelope",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-truncated.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter 2>err >/dev/null; cat err",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "truncated"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live smoke test 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

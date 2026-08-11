@@ -1,0 +1,18 @@
+{
+  "id": "sol-transport-027-max-tokens-tracks-the-estimated-assumption",
+  "target": "the cap IS the figure preflight_gate assumed, so the printed estimate is an upper bound and --effort changes what the call can actually spend",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter --effort standard >/dev/null 2>&1; S=$(jq -r '.max_tokens' \"$D\"); D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter --effort max >/dev/null 2>&1; M=$(jq -r '.max_tokens' \"$D\"); echo \"standard=$S max=$M\"; [ \"$S\" = 2000 ] && [ \"$M\" = 6000 ] && echo CAP_TRACKS_EFFORT",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "CAP_TRACKS_EFFORT"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live smoke test 2026-08-10",
+    "date": "2026-08-10"
+  }
+}

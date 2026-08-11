@@ -185,9 +185,21 @@ case "$VIA" in
 esac
 
 if [[ "$VIA" == "openrouter" ]]; then
+  # max_tokens is REQUIRED here in practice, even though the Responses API path
+  # does fine without it. OpenRouter reserves credit against the provider's
+  # default completion ceiling (65536 for this model) when the request does not
+  # bound it, so an unbounded call is rejected outright on any key whose limit
+  # is below that — for a review that would have used ~2000 tokens.
+  #
+  # The bound is the SAME number preflight_gate assumed when it printed the
+  # estimate. That is what makes the estimate an upper bound rather than a
+  # guess, and it is why --effort now changes what the call can actually spend
+  # instead of only changing a printed figure.
   REQUEST="$(jq -n \
-    --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" '{
+    --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" \
+    --argjson max_tokens "$ASSUMED_OUT" '{
       model: $model,
+      max_tokens: $max_tokens,
       messages: [
         {role: "system", content: $system},
         {role: "user", content: $task}
@@ -298,6 +310,9 @@ if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
 fi
 
 if [[ "$VIA" == "openrouter" ]]; then
+  if [[ "$(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty')" == "length" ]]; then
+    echo "preflight: WARNING — the response hit the max_tokens cap ($ASSUMED_OUT) and was truncated. The envelope below is likely to be incomplete or non-JSON. Retry with a higher --effort, which raises the cap." >&2
+  fi
   MODEL_TEXT="$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')"
   IN_TOK="$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')"
   OUT_TOK="$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')"
