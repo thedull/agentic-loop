@@ -1,0 +1,20 @@
+{
+  "id": "evalrunner-120-must-find-is-case-sensitive",
+  "target": "must_find must be case-SENSITIVE: 'UNPRICED' contains 'priced' under case folding, so a case asserting success passed on exactly the failure it existed to catch. Hit twice on 2026-08-11",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/syn\ncat > c/syn/s.json <<'CASEEOF'\n{\"id\": \"syn-1\", \"kind\": \"bash-unit\", \"target\": \"synthetic\", \"checks\": [{\"type\": \"must_find\", \"strings\": [\"priced\"]}], \"cmd\": \"echo UNPRICED\"}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite syn >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 1"
+    }
+  ],
+  "provenance": {
+    "source": "three silent-pass traps hit on 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

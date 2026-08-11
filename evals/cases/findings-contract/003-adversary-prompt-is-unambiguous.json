@@ -7,12 +7,13 @@
     {
       "type": "must_find",
       "strings": [
-        "top level"
+        "TOP LEVEL"
       ]
     }
   ],
   "provenance": {
     "source": "live adversary review 2026-08-11",
     "date": "2026-08-11"
-  }
+  },
+  "_note": "must_find is case-sensitive as of 2026-08-11; this needle now matches the literal casing the code emits."
 }

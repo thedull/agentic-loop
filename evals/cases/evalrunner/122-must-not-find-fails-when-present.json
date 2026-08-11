@@ -1,0 +1,20 @@
+{
+  "id": "evalrunner-122-must-not-find-fails-when-present",
+  "target": "must_not_find is the primitive whose absence caused the traps: asserting a failure marker is ABSENT is what these cases actually needed",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p c/syn\ncat > c/syn/s.json <<'CASEEOF'\n{\"id\": \"syn-3\", \"kind\": \"bash-unit\", \"target\": \"synthetic\", \"checks\": [{\"type\": \"must_not_find\", \"strings\": [\"FORBIDDEN\"]}], \"cmd\": \"echo hello FORBIDDEN world\"}\nCASEEOF\nEVAL_CASES_DIR=\"$PWD/c\" \"$PLUGIN_ROOT/evals/run_eval.sh\" --suite syn >/dev/null 2>&1; printf '{\"code\":%s}' $?",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "jq",
+      "expr": ".code == 1"
+    }
+  ],
+  "provenance": {
+    "source": "three silent-pass traps hit on 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
