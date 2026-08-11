@@ -100,9 +100,25 @@ emit_error() {
 }
 
 # validate_envelope — read envelope on stdin; echo it if valid, else exit 4.
+# The documented <=100 word summary limit, surfaced as a WARNING and never as a
+# refusal. It is the only stylistic rule in a validator that is otherwise all
+# structure and types, and refusing here would discard a complete answer that has
+# already been paid for — on a metered tier that is real money destroyed to
+# enforce prose length. Reported so drift is visible; the envelope still ships.
+_warn_long_summary() {
+  local words
+  words="$(printf '%s' "$1" | jq -r '.summary // ""' 2>/dev/null | wc -w | tr -d ' ')"
+  [[ "$words" =~ ^[0-9]+$ ]] || return 0
+  if [[ "$words" -gt 100 ]]; then
+    echo "envelope: summary is ${words} words; the contract is <=100 (see envelope_instructions above and agents/reviewer.md). Not refused — the call is already paid for — but the evening digest is built from these." >&2
+  fi
+  return 0
+}
+
 validate_envelope() {
   local env_json
   env_json="$(cat)"
+  _warn_long_summary "$env_json"
   if echo "$env_json" | jq -e -f "$VALIDATOR" >/dev/null 2>&2; then
     echo "$env_json" | obs_shim_tap
   else
