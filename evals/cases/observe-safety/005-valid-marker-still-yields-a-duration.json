@@ -1,0 +1,18 @@
+{
+  "id": "observe-safety-005-valid-marker-still-yields-a-duration",
+  "target": "true-negative: a well-formed marker must still produce a real duration, or the octal fix has simply disabled timing",
+  "kind": "bash-unit",
+  "cmd": "mkdir -p .agentic/observability/state; printf '%s x\\n' \"$(( $(date +%s) * 1000 - 1500 ))\" > .agentic/observability/state/agent-y.start; printf '%s' '{\"hook_event_name\":\"SubagentStop\",\"agent_type\":\"loop-reviewer\",\"agent_id\":\"y\",\"session_id\":\"s\",\"last_assistant_message\":\"{}\"}' | AGENTIC_OBSERVE=1 bash \"$PLUGIN_ROOT/scripts/observe.sh\" hook SubagentStop >/dev/null 2>&1; jq -c 'select(.event==\"agent_stop\") | {d: (.duration_ms != null)}' .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "{\"d\":true}"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
