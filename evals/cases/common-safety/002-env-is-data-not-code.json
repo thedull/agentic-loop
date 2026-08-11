@@ -1,0 +1,18 @@
+{
+  "id": "common-safety-002-env-is-data-not-code",
+  "target": ".env is a credentials file, not a script: sourcing it runs arbitrary shell from a file that arrives with scaffolded projects",
+  "kind": "bash-unit",
+  "cmd": "printf 'OPENROUTER_API_KEY=k\\ntouch EXECUTED\\n' > .env; printf '%s' '{\"objective\":\"x\"}' | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; if [ -f EXECUTED ]; then echo CODE_RAN; else echo TREATED_AS_DATA; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "TREATED_AS_DATA"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

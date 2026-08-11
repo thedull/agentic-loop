@@ -41,15 +41,36 @@ command -v jq >/dev/null 2>&1 || die_tool_missing jq
 command -v curl >/dev/null 2>&1 || die_tool_missing curl
 
 # --- .env loading ------------------------------------------------------------
-# Reads KEY=value lines from ./.env (project cwd). Does NOT export to children
-# beyond this process. Ignores comments and blank lines.
+# Reads KEY=value lines from ./.env (project cwd). Ignores comments and blank
+# lines. Values are set in THIS process only and deliberately not exported, so
+# no child process — subagent, eval sandbox, hook — inherits a credential.
+#
+# Parsed as DATA, never sourced. `source ./.env` ran the file as shell, which
+# broke two contracts at once: a stray `echo` landed on stdout ahead of the
+# envelope (stdout is supposed to carry exactly one envelope and nothing else),
+# and any command in the file executed with the shim's privileges — from a file
+# that ships with scaffolded projects. Both reproduced 2026-08-11.
+#
+# The old comment claimed it did "NOT export to children"; `set -a` did exactly
+# that. The comment is now true because the code changed, not the wording.
 load_env() {
-  if [[ -f ./.env ]]; then
-    set -a
-    # shellcheck disable=SC1091
-    source ./.env
-    set +a
-  fi
+  [[ -f ./.env ]] || return 0
+  local line k v
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"                                  # tolerate CRLF
+    [[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
+    line="${line#"${line%%[![:space:]]*}"}"                # ltrim
+    [[ "$line" == export[[:space:]]* ]] && line="${line#export}" &&       line="${line#"${line%%[![:space:]]*}"}"
+    [[ "$line" == *=* ]] || continue
+    k="${line%%=*}"; v="${line#*=}"
+    k="${k%"${k##*[![:space:]]}"}"                         # rtrim the key
+    [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue     # ignore junk lines
+    # Strip one matching pair of surrounding quotes, the common .env idiom.
+    if [[ "$v" == \"*\" && ${#v} -ge 2 ]]; then v="${v:1:${#v}-2}"
+    elif [[ "$v" == \'*\' && ${#v} -ge 2 ]]; then v="${v:1:${#v}-2}"; fi
+    printf -v "$k" '%s' "$v"                               # set, do NOT export
+  done < ./.env
+  return 0
 }
 
 # require_key VAR_NAME worker_label — fail with a structured error envelope if unset.
@@ -104,6 +125,14 @@ parse_brief() {
     local brief
     brief="$(cat)"
     if [[ -n "$brief" ]]; then
+      # Validate BEFORE destructuring. These assignments run under the shims'
+      # `set -e`, so a parse failure aborted the process mid-way and stdout
+      # stayed empty — no envelope at all, from a library whose contract is that
+      # every failure path emits a parseable status:"error" one.
+      if ! printf '%s' "$brief" | jq -e 'type == "object"' >/dev/null 2>&1; then
+        emit_error "${WORKER_NAME:-unknown}" "the brief on stdin is not a JSON object. Pass a JSON brief, or use --objective and the other flags."
+        exit 2
+      fi
       OBJECTIVE="$(echo "$brief" | jq -r '.objective // empty')"
       USER_INTENT="$(echo "$brief" | jq -r '.user_intent_verbatim // empty')"
       OUTPUT_SPEC="$(echo "$brief" | jq -r '.output_spec // empty')"
@@ -116,6 +145,17 @@ parse_brief() {
   fi
 
   while [[ $# -gt 0 ]]; do
+    # Every value-taking flag is checked for its value first. Reading $2 when it
+    # does not exist aborts under `set -u` with a raw bash message and no
+    # envelope — the same defect found the same day in tracker.sh's claim edges
+    # and observe.sh's argument loops. Three occurrences of one habit.
+    case "$1" in
+      --objective|--user-intent|--input-path|--boundary|--output-spec|--effort-budget|--artifact)
+        if [[ $# -lt 2 ]]; then
+          emit_error "${WORKER_NAME:-unknown}" "$1 requires a value (nothing followed it)"
+          exit 2
+        fi ;;
+    esac
     case "$1" in
       --objective)     OBJECTIVE="$2"; shift 2 ;;
       --user-intent)   USER_INTENT="$2"; shift 2 ;;
@@ -350,14 +390,22 @@ emit_blocked() {
 # would be a false assurance in the one place designed to be believed.
 preflight_gate() {
   local worker="$1" model="$2" text="$3" assumed_out="$4"
-  local in_tok cost_str price p_in p_out priced=1 authorized=0 thr raw
+  local in_tok cost_str cost_exact price p_in p_out priced=1 authorized=0 thr raw
 
   in_tok="$(preflight_estimate_tokens "$text")"
 
   if price="$(preflight_price "$model")"; then
     p_in="${price% *}"; p_out="${price#* }"
+    # Two figures on purpose: a rounded one to PRINT, and the exact one to
+    # COMPARE. Rounding before the comparison lets an estimate below 0.00005
+    # read as 0.0000 and slip under a smaller threshold. Not reachable with
+    # today's price table and the 2000-token assumed-output floor — the cheapest
+    # possible estimate is ~0.00056 — but the gate should not depend on that
+    # staying true.
     cost_str="$(awk -v i="$in_tok" -v o="$assumed_out" -v pi="$p_in" -v po="$p_out" \
       'BEGIN{printf "%.4f", (i*pi + o*po)/1000000}')"
+    cost_exact="$(awk -v i="$in_tok" -v o="$assumed_out" -v pi="$p_in" -v po="$p_out" \
+      'BEGIN{printf "%.12f", (i*pi + o*po)/1000000}')"
   else
     priced=0; cost_str=""; p_in="?"; p_out="?"
   fi
@@ -414,7 +462,7 @@ preflight_gate() {
 
   [[ "$thr" == "off" ]] && return 0
 
-  if [[ "$(awk -v c="$cost_str" -v t="$thr" 'BEGIN{print (c+0 >= t+0) ? 1 : 0}')" == "1" ]]; then
+  if [[ "$(awk -v c="${cost_exact:-$cost_str}" -v t="$thr" 'BEGIN{print (c+0 >= t+0) ? 1 : 0}')" == "1" ]]; then
     emit_blocked "$worker" "refusing: estimated ${cost_str} USD is at or above the threshold ${thr} USD, and this call was not explicitly authorized. Nothing was sent. Pass --authorize-cost (or FACTORY_COST_AUTHORIZED=1) to make the spend a decision, or raise FACTORY_COST_THRESHOLD_USD."
     exit $PREFLIGHT_EXIT_REFUSED
   fi

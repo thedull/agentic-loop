@@ -1,0 +1,18 @@
+{
+  "id": "common-safety-006-normal-env-forms-still-load",
+  "target": "true-negative: comments, blank lines, export prefixes and quoted values must all still load, or the parser is a regression dressed as a fix",
+  "kind": "bash-unit",
+  "cmd": "printf '# a comment\\n\\nexport OPENROUTER_MODEL_SOL=\"openai/gpt-5.6-sol\"\\nOPENROUTER_API_KEY=k\\n' > .env; D=\"$PWD/req.json\"; printf '%s' '{\"objective\":\"x\"}' | SOL_REQUEST_DUMP=\"$D\" MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -r .model \"$D\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "openai/gpt-5.6-sol"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
