@@ -1,0 +1,21 @@
+{
+  "id": "sol-transport-032-pro-and-batch-are-priced",
+  "target": "both Pro variants are in the committed price table, or spec 018 refuses the new default outright",
+  "kind": "bash-unit",
+  "cmd": "source \"$PLUGIN_ROOT/scripts/lib/common.sh\" 2>/dev/null; for m in openai/gpt-5.6-sol-pro openai/gpt-5.6-sol-pro:batch gpt-5.6-sol-pro; do if preflight_price \"$m\" >/dev/null 2>&1; then echo \"haveprice<$m>\"; else echo \"nolisting<$m>\"; fi; done",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "haveprice<openai/gpt-5.6-sol-pro>",
+        "haveprice<openai/gpt-5.6-sol-pro:batch>",
+        "haveprice<gpt-5.6-sol-pro>"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Markers are 'haveprice'/'nolisting', NOT 'priced'/'UNPRICED': must_find runs grep -qiF, which is case-insensitive, so 'UNPRICED <id>' satisfies a needle of 'priced <id>' and the case passes on exactly the failure it exists to catch. This is the second time that trap has been hit in this repo; neither marker is a substring of the other under any case folding."
+}

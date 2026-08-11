@@ -1,0 +1,18 @@
+{
+  "id": "sol-transport-030-sol-defaults-to-the-pro-variant",
+  "target": "the frontier cross-family tier runs the Pro variant by default — same list price as plain Sol, so nothing cheaper-but-equal is being passed up",
+  "kind": "bash-unit",
+  "cmd": "D=\"$PWD/req.json\"; cat \"$FIXTURES/sol-transport/brief.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" SOL_REQUEST_DUMP=\"$D\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter >/dev/null 2>&1; jq -r .model \"$D\"",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "openai/gpt-5.6-sol-pro"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  }
+}
