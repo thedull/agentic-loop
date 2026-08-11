@@ -277,6 +277,7 @@ preflight_price() {
     minimax/minimax-m3)             echo "0.30 1.20" ;;
     deepseek/deepseek-v4-flash)     echo "0.14 0.28" ;;
     deepseek/deepseek-v4-pro)       echo "0.435 0.87" ;;
+    xiaomi/mimo-v2.5)               echo "0.14 0.28" ;;
     xiaomi/mimo-v2.5-pro)           echo "0.435 0.87" ;;
     *) return 1 ;;
   esac

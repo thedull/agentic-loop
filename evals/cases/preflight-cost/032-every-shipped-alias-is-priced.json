@@ -1,0 +1,21 @@
+{
+  "id": "preflight-cost-032-every-shipped-alias-is-priced",
+  "target": "every alias call_openrouter.sh ships must have a committed price — an unpriced default means the bulk tier refuses out of the box",
+  "kind": "bash-unit",
+  "cmd": "for A in kimi minimax mimo; do OUT=$(cat \"$FIXTURES/preflight/brief-small.json\" | env -u MOCK_RESPONSE_FILE -u OPENROUTER_API_KEY bash \"$PLUGIN_ROOT/scripts/call_openrouter.sh\" --model \"$A\" 2>/dev/null); S=$(echo \"$OUT\" | jq -r .status); if [ \"$S\" = \"blocked\" ]; then echo \"refused-$A\"; else echo \"allowed-$A\"; fi; done",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "allowed-kimi",
+        "allowed-minimax",
+        "allowed-mimo"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-10"
+  },
+  "_note": "Markers are 'allowed-' / 'refused-', deliberately NOT 'priced'/'UNPRICED': must_find runs grep -qiF, which is case-INSENSITIVE, so 'UNPRICED:mimo' would satisfy a needle of 'priced:mimo' and the case would pass on exactly the failure it exists to catch. Neither marker is a substring of the other in any case folding."
+}
