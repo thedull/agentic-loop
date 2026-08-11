@@ -1,0 +1,15 @@
+{
+  "choices": [
+    {
+      "message": {
+        "content": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"reviewed the candidate\",\"result\":\"no requirement gaps found\",\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"medium\",\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"est_cost_usd\":0},\"findings\":[]}"
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1200,
+    "completion_tokens": 400,
+    "cost": 0.0731
+  }
+}

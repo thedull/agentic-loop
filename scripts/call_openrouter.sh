@@ -63,8 +63,15 @@ preflight_gate "$WORKER_NAME" "$MODEL" "$SYSTEM_PROMPT$TASK_PROMPT" 2000
 # After the gate: an unpriced or oversized call is refused before it needs a key.
 require_key OPENROUTER_API_KEY "openrouter"
 
-REQUEST="$(jq -n --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" '{
+# Same bound, same reason as call_sol.sh's OpenRouter path: without max_tokens
+# OpenRouter reserves credit against the model's full completion ceiling and
+# rejects the call on a credit-limited key. 2000 is the figure preflight_gate
+# assumed for this tier, so the printed estimate is an upper bound.
+BULK_MAX_TOKENS=2000
+REQUEST="$(jq -n --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" \
+  --argjson max_tokens "$BULK_MAX_TOKENS" '{
   model: $model,
+  max_tokens: $max_tokens,
   messages: [
     {role: "system", content: $system},
     {role: "user", content: $task}
@@ -85,6 +92,9 @@ if echo "$RESPONSE" | jq -e '.error != null' >/dev/null 2>&1; then
   exit 5
 fi
 
+if [[ "$(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty')" == "length" ]]; then
+  echo "preflight: WARNING — the response hit the max_tokens cap ($BULK_MAX_TOKENS) and was truncated; the envelope below is likely incomplete." >&2
+fi
 MODEL_TEXT="$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')"
 IN_TOK="$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')"
 OUT_TOK="$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')"
