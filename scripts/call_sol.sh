@@ -223,15 +223,18 @@ if [[ "$VIA" == "openrouter" ]]; then
   # bound it, so an unbounded call is rejected outright on any key whose limit
   # is below that — for a review that would have used ~2000 tokens.
   #
-  # The bound is the SAME number preflight_gate assumed when it printed the
-  # estimate. That is what makes the estimate an upper bound rather than a
-  # guess, and it is why --effort now changes what the call can actually spend
+  # The cap is the SAME number preflight_gate assumed when it printed the
+  # estimate, which is why --effort now changes what a call can actually spend
   # instead of only changing a printed figure.
   #
-  # Note the asymmetry, which is real and not an oversight: on THIS transport
-  # the assumed output is a hard cap, so the estimate is a ceiling. On the
-  # direct Responses API path no max_tokens is sent, so there the same number is
-  # an expectation the model may exceed.
+  # It bounds OUTPUT ONLY. An earlier version of this comment claimed the
+  # estimate was therefore an upper bound on cost; that was wrong, and a live
+  # run disproved it — gpt-5.6-sol-pro billed 9.5x the estimated INPUT because a
+  # multi-pass model re-bills context per pass, and nothing here caps that. Had
+  # output also hit the cap, the real cost would have exceeded the estimate.
+  #
+  # A second asymmetry, unchanged: the direct Responses path sends no max_tokens
+  # at all, so there even the output figure is only an expectation.
   REQUEST="$(jq -n \
     --arg model "$MODEL" --arg system "$SYSTEM_PROMPT" --arg task "$TASK_PROMPT" \
     --argjson max_tokens "$ASSUMED_OUT" '{

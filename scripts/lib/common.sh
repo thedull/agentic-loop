@@ -316,6 +316,21 @@ emit_blocked() {
 # preflight_gate WORKER MODEL PROMPT_TEXT ASSUMED_OUT_TOKENS
 # Prints the estimate to stderr (never stdout — that belongs to the envelope),
 # then either returns 0 or refuses with exit 7.
+#
+# HOW MUCH THIS NUMBER IS WORTH, stated precisely because the whole point of the
+# line is to be trusted:
+#   output — bounded on the OpenRouter transport, where ASSUMED_OUT is sent as
+#            max_tokens. An expectation on the direct Responses path, which
+#            sends no cap.
+#   input  — an ESTIMATE, never a bound, on every transport. Measured
+#            2026-08-10: openai/gpt-5.6-sol-pro billed 18,759 input tokens on a
+#            prompt this heuristic put at 1,983 — 9.5x over — because a
+#            multi-pass model re-bills context on each internal pass. The call
+#            still came in under its estimate, but only because output landed
+#            below the cap; had output hit the cap the true cost ($0.574) would
+#            have EXCEEDED the printed estimate ($0.490).
+# So this is a useful forecast and a hard gate, but calling it an upper bound
+# would be a false assurance in the one place designed to be believed.
 preflight_gate() {
   local worker="$1" model="$2" text="$3" assumed_out="$4"
   local in_tok cost_str price p_in p_out priced=1 authorized=0 thr raw
@@ -359,8 +374,9 @@ preflight_gate() {
   local line="preflight: estimated cost "
   if [[ $priced -eq 1 ]]; then line+="${cost_str} USD"; else line+="UNKNOWN (no committed price)"; fi
   line+=" for ${model} — estimate only, never recorded as a cost."
-  line+=" Method: ${in_tok} input tokens by bytes/${PREFLIGHT_BYTES_PER_TOKEN} heuristic"
-  line+=" + assumed output ${assumed_out} tokens (assumed, not measured)"
+  line+=" Method: input ESTIMATED at ${in_tok} tokens by bytes/${PREFLIGHT_BYTES_PER_TOKEN}"
+  line+=" (not capped — a multi-pass model re-bills context and can exceed this)"
+  line+=" + output assumed ${assumed_out} tokens"
   line+=" at ${p_in}/${p_out} USD per 1M. threshold ${thr} USD"
   [[ $authorized -eq 1 ]] && line+=" — AUTHORIZED explicitly, gate bypassed"
   printf '%s\n' "$line" >&2
