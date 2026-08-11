@@ -1,0 +1,14 @@
+{
+  "choices": [
+    {
+      "message": {
+        "content": "{\"worker\":\"placeholder\",\"status\":\"ok\",\"summary\":\"s\",\"result\":{\"findings\":[{\"claim\":\"c\",\"evidence\":\"e\",\"severity\":\"high\",\"location\":{\"file\":\"a.sh\",\"line_start\":1,\"line_end\":2}}]},\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"high\",\"usage\":{}}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 10,
+    "cost": 0.001
+  }
+}

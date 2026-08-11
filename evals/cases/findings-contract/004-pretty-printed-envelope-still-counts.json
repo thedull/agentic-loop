@@ -1,0 +1,18 @@
+{
+  "id": "findings-contract-004-pretty-printed-envelope-still-counts",
+  "target": "a PRETTY-PRINTED envelope must count: the old per-line sed deleted content on every line, and finalize_envelope emits pretty JSON by default, so this was the common case",
+  "kind": "bash-unit",
+  "cmd": "jq . \"$FIXTURES/findings/live-sol-openrouter-review.json\" > msg.json; printf %s \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"agent_id\\\":\\\"a\\\",\\\"session_id\\\":\\\"s\\\",\\\"last_assistant_message\\\":$(jq -Rs . < msg.json)}\" > h.json; AGENTIC_OBSERVE=1 bash \"$PLUGIN_ROOT/scripts/observe.sh\" hook SubagentStop < h.json; jq -c \"select(.event==\\\"agent_stop\\\") | {c: .detail.findings_count}\" .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "{\"c\":4}"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "verification of the live review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

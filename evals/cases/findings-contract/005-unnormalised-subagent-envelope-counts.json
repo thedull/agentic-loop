@@ -1,0 +1,18 @@
+{
+  "id": "findings-contract-005-unnormalised-subagent-envelope-counts",
+  "target": "a Task-tool subagent envelope never passes through finalize_envelope, so nothing normalises it — observe.sh must read result.findings itself",
+  "kind": "bash-unit",
+  "cmd": "jq -n '{worker:\"sonnet\",status:\"ok\",summary:\"s\",result:{findings:[{claim:\"c\",evidence:\"e\",severity:\"high\"},{claim:\"d\",evidence:\"e\",severity:\"low\"}]},artifacts:[],key_decisions:[],caveats:[],assumptions:[],confidence_ordinal:\"high\",usage:{}}' > msg.json; printf %s \"{\\\"hook_event_name\\\":\\\"SubagentStop\\\",\\\"agent_type\\\":\\\"loop-reviewer\\\",\\\"agent_id\\\":\\\"a\\\",\\\"session_id\\\":\\\"s\\\",\\\"last_assistant_message\\\":$(jq -Rs . < msg.json)}\" > h.json; AGENTIC_OBSERVE=1 bash \"$PLUGIN_ROOT/scripts/observe.sh\" hook SubagentStop < h.json; jq -c \"select(.event==\\\"agent_stop\\\") | {c: .detail.findings_count}\" .agentic/observability/events-*.jsonl | tail -1",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "{\"c\":2}"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "verification of the live review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
