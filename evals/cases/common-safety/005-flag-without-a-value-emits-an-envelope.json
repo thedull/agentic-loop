@@ -1,0 +1,18 @@
+{
+  "id": "common-safety-005-flag-without-a-value-emits-an-envelope",
+  "target": "the same unguarded-$2 defect found tonight in tracker.sh and observe.sh: under set -u a trailing flag aborts with an unbound-variable message and no envelope at all",
+  "kind": "bash-unit",
+  "cmd": "printf 'OPENROUTER_API_KEY=k\\n' > .env; MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter --objective < /dev/null > o.txt 2>/dev/null; echo \"EXIT:$?\"; if jq -e '.status == \"error\"' o.txt >/dev/null 2>&1; then echo ERROR_ENVELOPE; else echo NO_ENVELOPE; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "ERROR_ENVELOPE"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
