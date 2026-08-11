@@ -1,0 +1,20 @@
+{
+  "id": "preflight-cost-033-line-does-not-claim-an-upper-bound",
+  "target": "the printed line must not promise a ceiling it cannot deliver: output is capped on this transport, input is an estimate that a multi-pass model can and did exceed by 9.5x (measured 2026-08-10)",
+  "kind": "bash-unit",
+  "cmd": "cat \"$FIXTURES/preflight/brief-small.json\" | MOCK_RESPONSE_FILE=\"$FIXTURES/sol-transport/openrouter-with-cost.json\" bash \"$PLUGIN_ROOT/scripts/call_sol.sh\" --mode adversary --via openrouter 2>&1 >/dev/null | head -1",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "input ESTIMATED",
+        "not capped"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live Pro comparison 2026-08-10 — 18759 actual input vs 1983 estimated",
+    "date": "2026-08-10"
+  },
+  "_note": "This asserts wording, which is normally a weak kind of test. It is the right kind here because the wording IS the deliverable: the line exists to be believed, and the defect was that it invited a stronger belief than the number supports."
+}
