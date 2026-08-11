@@ -1,0 +1,19 @@
+{
+  "id": "tracker-gates-005-unresolvable-profile-refuses-pr-open",
+  "target": "the hardened gate compared the STDOUT of tracker_profile, which prints nothing when it fails — so a hardened spec whose profile cannot be resolved reached pr-open with no security review at all",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 904 reviewing hardened; mkdir -p empty-agents; if TRACKER_AGENTS_DIR=$PWD/empty-agents FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/904-t.md pr-open >/dev/null 2>&1; then echo ADVANCED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  },
+  "_note": "Uses the existing TRACKER_AGENTS_DIR seam pointed at an EMPTY directory, which is what makes tracker_profile exit 6 with empty stdout. An earlier version of this case left the real agents/ dir in place, so profile resolved fine and the case passed for a reason unrelated to the defect."
+}

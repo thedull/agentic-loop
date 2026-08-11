@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-003-spec-check-failure-other-than-2-refuses",
+  "target": "only exit 2 refused; every other nonzero — a crashed or erroring checker — advanced the spec anyway, so spec 014's gate was fail-open",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 902 queued; printf '#!/bin/sh\\nexit 3\\n' > fake_spec_check.sh; chmod +x fake_spec_check.sh; if TRACKER_SPEC_CHECK=$PWD/fake_spec_check.sh FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/902-t.md specd >/dev/null 2>&1; then echo ADVANCED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

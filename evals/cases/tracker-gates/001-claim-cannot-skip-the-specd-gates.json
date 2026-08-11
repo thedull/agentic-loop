@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-001-claim-cannot-skip-the-specd-gates",
+  "target": "claim takes arbitrary from/to, so 'claim queued specd' reaches specd without spec_check or the irreversibility classifier — the gates advance enforces",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 900 queued; if FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" claim queued specd who >/dev/null 2>&1; then echo BYPASSED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "live adversary review 2026-08-11",
+    "date": "2026-08-11"
+  }
+}

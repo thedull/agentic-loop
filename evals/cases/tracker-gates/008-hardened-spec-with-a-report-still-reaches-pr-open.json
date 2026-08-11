@@ -1,0 +1,18 @@
+{
+  "id": "tracker-gates-008-hardened-spec-with-a-report-still-reaches-pr-open",
+  "target": "true-negative on the profile fix: with the real agents/ payload present the profile resolves, so the gate must fall through to its normal report requirement rather than refusing on resolution",
+  "kind": "bash-unit",
+  "cmd": "bash \"$FIXTURES/tracker-gates/mkspec.sh\" specs 912 reviewing hardened; if FACTORY_SPECS_DIR=$PWD/specs bash \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" advance specs/912-t.md pr-open >/dev/null 2>&1; then echo ADVANCED; else echo REFUSED; fi",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "REFUSED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-11"
+  }
+}
