@@ -44,12 +44,17 @@ WORKER_NAME="sol"
 # OpenRouter aliases and for the same reason: a superseded model id is a
 # well-formed string that no offline test can catch (spec 019).
 #
-# VERIFICATION STATUS, stated because the two differ and it matters:
-#   openai/gpt-5.6-sol-pro  VERIFIED present in the OpenRouter catalog 2026-08-10
-#   gpt-5.6-sol-pro         NOT VERIFIED — the direct OpenAI path needs an
-#                           OPENAI_API_KEY to check, and none is configured
-#                           here. If OpenAI names it differently, set
-#                           OPENAI_MODEL_SOL in ./.env rather than editing this.
+# THE TRANSPORTS REACH DIFFERENT MODELS. This is not a preference, it is what
+# the two providers actually offer, verified against both APIs on 2026-08-11:
+#   direct OpenAI  GET /v1/models lists exactly gpt-5.6-luna, gpt-5.6-sol and
+#                  gpt-5.6-terra. There is NO -pro variant. Asking for one
+#                  returns "The requested model 'gpt-5.6-sol-pro' does not
+#                  exist" — which is precisely how this was found, after the id
+#                  shipped as a documented guess.
+#   OpenRouter     carries openai/gpt-5.6-sol-pro (and :batch), at the SAME list
+#                  price as plain sol.
+# So each transport defaults to the best model it can actually reach, and
+# `--via` changes the model tier as well as the bill. Both are overridable.
 MODEL=""   # resolved after load_env — see below
 # Pricing as of 2026-07-12 (recalibrate from the OpenAI usage dashboard).
 # Used ONLY by the direct transport — OpenRouter reports what it actually
@@ -62,7 +67,7 @@ load_env
 # Resolved AFTER load_env, not before: ./.env is what sets these, and reading
 # them earlier would silently ignore every override. That exact ordering bug
 # was found in doctor.sh's alias check during spec 019's review.
-MODEL="${OPENAI_MODEL_SOL:-gpt-5.6-sol-pro}"
+MODEL="${OPENAI_MODEL_SOL:-gpt-5.6-sol}"
 
 parse_brief "$@"
 
@@ -103,12 +108,15 @@ done
 # quietly use the other one.
 case "$VIA" in
   openai)
-    ENDPOINT="https://api.openai.com/v1/responses"
+    # Test seam: point the transport at an unreachable local port so the curl
+    # branch — which every mocked run skips entirely — can be exercised without
+    # spending anything. Unset in every normal run.
+    ENDPOINT="${SOL_API_ENDPOINT:-https://api.openai.com/v1/responses}"
     ;;
   openrouter)
     WORKER_NAME="sol/openrouter"   # obs_tier_from_worker's sol* glob still maps
     MODEL="${OPENROUTER_MODEL_SOL:-openai/gpt-5.6-sol-pro}"  # sol* glob still maps
-    ENDPOINT="https://openrouter.ai/api/v1/chat/completions"
+    ENDPOINT="${SOL_API_ENDPOINT:-https://openrouter.ai/api/v1/chat/completions}"
     ;;
   *)
     emit_error "$WORKER_NAME" "--via must be openai|openrouter (got '$VIA')"
@@ -307,6 +315,14 @@ if [[ "$MODE" == "adversary" ]]; then
   fi
 fi
 
+# Expanded below as ${BETA_HEADER[@]+"${BETA_HEADER[@]}"}, never as
+# "${BETA_HEADER[@]}". On bash 3.2 — which is what macOS ships, and what this
+# repo runs on — expanding an EMPTY array under `set -u` is an unbound variable,
+# so the plain form killed the shim before curl on every non-ultra direct call.
+# The default transport of the most expensive tier had therefore never worked
+# here, and no test could see it: MOCK_RESPONSE_FILE short-circuits above the
+# curl block, so all 69 mocked call_sol cases skip this line entirely.
+# evals/run_eval.sh:91 already used the safe idiom; it just never made it here.
 BETA_HEADER=()
 if [[ $MULTI_AGENT -eq 1 ]]; then
   REQUEST="$(echo "$REQUEST" | jq '. + {multi_agent: {enabled: true, max_concurrent_subagents: 3}}')"
@@ -333,7 +349,7 @@ else
   RESPONSE="$(curl -sS --max-time 900 "$ENDPOINT" \
     -H "content-type: application/json" \
     -H "Authorization: Bearer $OPENAI_API_KEY" \
-    "${BETA_HEADER[@]}" \
+    ${BETA_HEADER[@]+"${BETA_HEADER[@]}"} \
     -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the OpenAI API"; exit 5; }
 fi
 

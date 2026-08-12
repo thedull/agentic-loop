@@ -1,0 +1,26 @@
+{
+  "id": "live-transport-004-fable-no-fallback-reaches-curl",
+  "target": "call_fable.sh has the identical empty-BETA_HEADER defect: with --no-fallback the array is empty, and on bash 3.2 that is an unbound variable that kills the shim before curl. Also unreachable by any mocked case",
+  "kind": "bash-unit",
+  "cmd": "printf \"FABLE_KEY=k\\n\" > .env; printf %s \"{\\\"objective\\\":\\\"x\\\"}\" | env -u MOCK_RESPONSE_FILE FABLE_API_ENDPOINT=http://127.0.0.1:9/unreachable FACTORY_COST_THRESHOLD_USD=off bash \"$PLUGIN_ROOT/scripts/call_fable.sh\" --no-fallback > o.json 2>e.txt; echo \"EXIT:$?\"; grep -o \"unbound variable\" e.txt || echo NO_CRASH; jq -e \".status == \\\"error\\\"\" o.json >/dev/null 2>&1 && echo ERROR_ENVELOPE || echo NO_ENVELOPE",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:5",
+        "NO_CRASH",
+        "ERROR_ENVELOPE"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "unbound variable"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "swept for the same pattern after the call_sol.sh find, 2026-08-11",
+    "date": "2026-08-11"
+  }
+}
