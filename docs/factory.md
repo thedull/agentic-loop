@@ -89,6 +89,23 @@ The state machine lives in `factory/specs/*.md` frontmatter, enforced by
 calls — build and review each check it before touching the queue. If you
 remember one thing about where cost control lives, it's that line.
 
+**The EDGES are enforced, not just the states.** `advance` refuses any
+transition that isn't in the diagram above: `queued -> done` and
+`done -> queued` are both rejected, along with everything else that skips a
+stage. Until 2026-08-11 it validated only that the destination was a *valid
+status* and then wrote it — so a spec could jump straight past `specd` and
+every refusal gate attached to it. The off-ramps stay out of the edge table
+because `shelve`, `supersede` and `restore` write bookkeeping that `advance`
+does not. `TRACKER_FORCE_LIVE=1` overrides the check for the cases where you
+genuinely mean it: a test fixture resetting state, or a human unpicking a
+mistake.
+
+**`claimed_by` is advisory.** It looks like a lock and is not one — `advance`
+takes no actor argument, so nothing compares a caller against it. One loop at
+a time is safe because the `mkdir` lock makes each write atomic. Two
+concurrent loops are not: the loser's work is overwritten rather than
+refused. See `docs/hardening-2026-08.md` §8 for what enforcing it would cost.
+
 ## The spec stage
 
 `/agentic-loop:spec "idea"` is the one interactive step. Every question it
@@ -147,6 +164,15 @@ to catch a spec flaw, before a build is wasted on it.
 moves the oldest `specd` item to `building` under a `mkdir` lock. Whoever
 holds the claim is the sole writer of that file until it advances again.
 Empty queue → log `build idle: no specd items` and stop, no polling.
+
+`claim` accepts only two transitions — `specd -> building` and
+`built -> reviewing` — because it writes the status field directly (that is
+what makes it atomic) and therefore bypasses every gate `advance` enforces.
+Those two edges are precisely the ones with no gate on them. With arbitrary
+from/to it was a hole you could drive a spec through: `claim queued specd`
+reached `specd` with no `spec_check` and no irreversibility classification,
+and `claim reviewing pr-open` reached `pr-open` with no hardened review
+report. Both were verified working before the restriction landed.
 
 **Worktree isolation.** Build happens on a dedicated `git worktree`, branch
 `claude/idea-<slug>` — never the main checkout. A prior `blocked` attempt
@@ -436,8 +462,12 @@ shelve that spec too. It never rewires anything you didn't choose.
 
 **`superseded` is checked, not believed.** It requires a citation — a
 commit-ish or a spec id — and dependents are unblocked only if that citation
-verifies: a commit must be an ancestor of the default branch tip, a spec id
-must itself be `done`. An unverifiable claim is still recorded (it may be
+verifies: a commit must be an ancestor of the **default** branch tip — resolved
+from `origin/HEAD`, then a local `main` or `master`, and never from whatever
+branch happens to be checked out — a spec id must itself be `done`. That
+distinction is not pedantic: the base used to fall back to the current branch,
+so on a feature branch a commit unique to that branch verified as landed and
+unblocked every dependent while never having reached anywhere shared. An unverifiable claim is still recorded (it may be
 true, just not provable from here) but unblocks nobody, and shows up as
 `stalled:` in `report`. This is the same fail-closed posture as an unknown
 dependency id, and for the same reason: a spec marked superseded when the

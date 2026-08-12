@@ -52,8 +52,8 @@ before overwriting the latter. `./scripts/doctor.sh` reports the drift.
 |---|---|
 | `agents/` (plugin-wide) | `loop-planner` (sonnet — decomposition into 6-field briefs), `loop-worker-cheap` (haiku — mechanical), `loop-consolidator` (sonnet — merge + disagreement detection), `loop-reviewer` (sonnet — fresh-context blind review), `loop-frontier` + `loop-reviewer-frontier` (fable — subscription-covered frontier tier, only while your plan includes Fable) |
 | `scripts/call_fable.sh` | Fable 5 via Claude API (`FABLE_KEY` — never `ANTHROPIC_API_KEY`) |
-| `scripts/call_sol.sh` | Sol/GPT-5.6 via OpenAI Responses API; `--mode adversary\|reviser`, `--effort standard\|max\|ultra` (ultra = multi-agent beta) |
-| `scripts/call_openrouter.sh` | Kimi/MiniMax/MiMo or any OpenRouter model |
+| `scripts/call_sol.sh` | Sol/GPT-5.6 **Pro**, two transports: `--via openai` (Responses API, default) or `--via openrouter` (`--batch` available there, never automatic). `--mode adversary\|reviser`, `--effort standard\|max\|ultra` (ultra is direct-transport only — it needs the multi-agent beta, which OpenRouter has no equivalent for, so it refuses rather than silently downgrading) |
+| `scripts/call_openrouter.sh` | Kimi/MiniMax/MiMo or any OpenRouter model — a model with no entry in the committed price table **refuses** rather than billing blind |
 | `scripts/call_ollama.sh` | free local mechanical worker (default `qwen3.5:4b`) |
 | `scripts/run_headless.sh` | gated `claude -p` loop wrapper — read its billing warning |
 | `scripts/doctor.sh` | preflight: billing-trap check, keys, tools, envelope self-test, scaffold-drift + factory checks |
@@ -121,7 +121,12 @@ factories essay and his 24-skill catalog, versus what we actually built (four
 gaps, a ranked adoption backlog, and a specified-but-unbuilt dark merge lane) ·
 tier economics: [`docs/codex-subscription.md`](docs/codex-subscription.md) —
 whether a ChatGPT subscription can fund Sol via OpenAI's Codex plugin, and why
-an unmetered Sol quietly voids a safety rule this repo states in seven places
+an unmetered Sol quietly voids a safety rule this repo states in seven places ·
+what the first real cross-family review found:
+[`docs/hardening-2026-08.md`](docs/hardening-2026-08.md) — seventeen PRs, 22
+defects in our own core (three of them safety gates that had never once fired),
+the two failures no mocked test could reach, and the three recurring mistakes
+behind most of them
 
 ## Observability & evals (opt-in)
 
@@ -197,10 +202,19 @@ harnesses, and the 2025–2026 multi-agent literature (July 2026 review):
 |---|---|
 | Interactive orchestrator + native subagents | Max subscription (shared 5-hour/weekly caps) |
 | `call_fable.sh` | Claude API, metered (`FABLE_KEY`) |
-| `call_sol.sh` | OpenAI, metered — output 6x input; reasoning bills as output |
+| `call_sol.sh` | OpenAI **or** OpenRouter, metered either way — output 6x input, and reasoning bills as output, which is why the `--effort` caps budget for thinking and not just visible text |
 | `call_openrouter.sh` | OpenRouter balance |
 | `call_ollama.sh` | free |
 | `run_headless.sh` | **different meter than interactive** — read the script's warning |
+
+Every metered shim now prints an estimated cost to stderr **before** it sends
+anything, and refuses above `FACTORY_COST_THRESHOLD_USD` (default `$1.00`)
+unless the call carries `--authorize-cost`. The estimate is a forecast, not a
+ceiling: `max_tokens` bounds output, nothing bounds a multi-pass model
+re-billing its input, and measured runs came in up to 26% over. It is never
+written to `usage.est_cost_usd`, which stays reserved for what a provider
+actually reported. Details and the measurements:
+[`docs/hardening-2026-08.md`](docs/hardening-2026-08.md) §6.
 
 Never set `ANTHROPIC_API_KEY` in your environment or `.env`: it silently flips
 the interactive session from subscription to API billing. `doctor.sh` checks.
