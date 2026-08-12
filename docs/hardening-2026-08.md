@@ -25,6 +25,7 @@ you next run the loop.
 | Whether Sol — flat or Pro — is worth paying for | §6, then the raw envelopes in `docs/field-reports/2026-08-11-sol-reviews/` |
 | What behaves differently now | §7 |
 | What is deliberately still broken | §8 |
+| The direct OpenAI transport, tested after the fact | §11 |
 
 §5 is the one to read if you read only one. The individual defects are less
 interesting than the fact that three of them were the *same mistake* in
@@ -491,8 +492,9 @@ is consistent with "Pro is somewhat better" and equally consistent with "both ar
 comfortably above this task's difficulty". A file that separated them sharply
 would be better evidence; this one did not.
 
-The economics are the clearer half. Pro is the default because it is the frontier
-tier and — importantly — **the same list price** ($5/$30 per 1M, verified in the
+The economics are the clearer half. Pro is the default **on OpenRouter, which is
+the only transport that carries it** (§11) — and it is the frontier tier at
+— importantly — **the same list price** ($5/$30 per 1M, verified in the
 catalog the same day). It costs more per *call* purely by spending more reasoning
 tokens: 8.4× the input and 4.8× the output on this run, not a higher rate.
 `OPENROUTER_MODEL_SOL` in `.env` reverts it with no code change.
@@ -607,10 +609,15 @@ arbitrary JSON with no marker distinguishing a provider-reported figure from an
 estimate. True, and today the only callers are the shims themselves, which pass
 provider figures. A design pass, not a patch.
 
-**The direct OpenAI model id `gpt-5.6-sol-pro` is unverified.** Checking it needs
-an `OPENAI_API_KEY` and none was configured. `openai/gpt-5.6-sol-pro` **is**
-verified present in the OpenRouter catalog. If OpenAI names it differently, set
-`OPENAI_MODEL_SOL` in `.env` — that is why the override exists.
+**~~The direct OpenAI model id is unverified.~~ RESOLVED 2026-08-11 — and it was
+wrong.** `gpt-5.6-sol-pro` **does not exist on the OpenAI API**. `GET /v1/models`
+lists exactly `gpt-5.6-luna`, `gpt-5.6-sol` and `gpt-5.6-terra`; there is no
+`-pro` variant at all. The direct transport now defaults to `gpt-5.6-sol`.
+
+This changes a framing used elsewhere in this document: **the two transports do
+not reach the same model.** `--via` selects a model tier as well as a bill, and
+"same model, different pipe" is only true if you override one of them. Each side
+now defaults to the best model it can actually reach. See §11.
 
 **No eval exercises a genuine accept-but-never-respond hang.** The probe case
 uses `127.0.0.1:9`, which fails via connection-refused in milliseconds. The
@@ -684,3 +691,78 @@ caught by 22 cases; a threshold of 0 warning on every call was caught by one.
 **Volatile facts to re-verify before trusting them:** every price and context
 length in §2 and §6, the `gpt-5.6-sol-pro` ids, and the claim that Pro and plain
 Sol share a list price.
+
+---
+
+## 11. Addendum — the direct transport, tested (2026-08-11)
+
+§8 listed the direct OpenAI model id as unverified. Testing it cost **$0.008**
+and returned three findings, two of which were defects that made the default
+path unusable.
+
+### The default transport had never worked on this machine
+
+```
+./scripts/call_sol.sh: line 337: BETA_HEADER[@]: unbound variable
+```
+
+`call_sol.sh` expanded an **empty** `BETA_HEADER` array as `"${BETA_HEADER[@]}"`.
+Under `set -u` on **bash 3.2** — which is what macOS ships and what this repo
+runs on — that is an unbound variable, so the shim died *before* curl on every
+non-`ultra` direct call. `ultra` was unaffected, because it populates the array.
+
+**No mocked test could have caught it.** `MOCK_RESPONSE_FILE` short-circuits
+above the curl block, so all 69 mocked `call_sol` cases skip that line entirely.
+The safe idiom was already in this repo at `evals/run_eval.sh:91`; it had simply
+never reached the shims.
+
+Sweeping for the same shape found it a second time in **`call_fable.sh`**, where
+`--no-fallback` leaves the array empty. **Two of the three metered shims were
+dead on their default path**, both invisible for the same reason. The other three
+candidate sites turned out to be properly guarded.
+
+Both are fixed with `${BETA_HEADER[@]+"${BETA_HEADER[@]}"}`, and an
+`SOL_API_ENDPOINT` / `FABLE_API_ENDPOINT` seam lets an eval drive the curl branch
+against an unreachable local port — so the path that no test could reach now has
+five.
+
+### `gpt-5.6-sol-pro` does not exist on OpenAI
+
+With the crash fixed, the call reached the API and answered the question it was
+bought to answer:
+
+```
+OpenAI API error: The requested model 'gpt-5.6-sol-pro' does not exist.
+```
+
+`GET /v1/models` lists exactly **`gpt-5.6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`**.
+No `-pro` variant. The id had shipped in #19 as a documented guess with an
+override provided precisely because it was a guess — and the guess was wrong.
+
+**The transports therefore reach different model tiers**, which is a real
+correction to how #19 was described: `--via` changes the model as well as the
+bill. Each side now defaults to the best model it can actually reach —
+`gpt-5.6-sol` direct, `openai/gpt-5.6-sol-pro` on OpenRouter — and both remain
+overridable.
+
+### What the working call showed
+
+`exit 0`, `status: ok`, `result: "ok"`, **$0.008 billed**.
+
+- **The Responses API accepted our `text.format` json_schema** — `json_schema`,
+  name `adversary_envelope`, requiring `claim`/`evidence`/`severity`/`location`.
+  Spec 016's request-side optimisation is real on this transport, not just
+  OpenRouter's.
+- **bytes/4 was 13% under** on input (633 estimated, 725 actual) — consistent
+  with the ~11% seen on OpenRouter, so the heuristic is stable across providers.
+- **The estimate was 30× the actual cost** ($0.2432 vs $0.008), because the
+  assumed-output term dominates any trivial call. That is the gate erring in the
+  safe direction, but it means the printed number says little about a small call.
+
+### Still not tested
+
+`--effort ultra` — the one capability exclusive to this transport, and the one
+code path in the system with **no `max_tokens` ceiling**. Case 002 proves it
+reaches curl without crashing; nothing proves the beta header is transmitted or
+that the account has multi-agent access. Testing it means an uncapped call, so
+the honest prerequisite is bounding the direct transport first.

@@ -1,0 +1,19 @@
+{
+  "id": "live-transport-005-fable-with-fallback-still-sends-the-header",
+  "target": "true-negative: the fallback path POPULATES the array, so the fix must not drop the beta header it carries",
+  "kind": "bash-unit",
+  "cmd": "printf \"FABLE_KEY=k\\n\" > .env; printf %s \"{\\\"objective\\\":\\\"x\\\"}\" | env -u MOCK_RESPONSE_FILE FABLE_API_ENDPOINT=http://127.0.0.1:9/unreachable FACTORY_COST_THRESHOLD_USD=off bash \"$PLUGIN_ROOT/scripts/call_fable.sh\" > o.json 2>e.txt; echo \"EXIT:$?\"; grep -o \"unbound variable\" e.txt || echo NO_CRASH",
+  "checks": [
+    {
+      "type": "must_find",
+      "strings": [
+        "EXIT:5",
+        "NO_CRASH"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-08-11"
+  }
+}

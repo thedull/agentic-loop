@@ -81,6 +81,12 @@ REQUEST="$(jq -n \
     messages: [{role: "user", content: $task}]
   }')"
 
+# Expanded below as ${BETA_HEADER[@]+"${BETA_HEADER[@]}"}, never as
+# "${BETA_HEADER[@]}" — on bash 3.2 (what macOS ships) expanding an EMPTY array
+# under `set -u` is an unbound variable. With --no-fallback this array is empty,
+# so the plain form killed the shim before curl. Same defect found the same day
+# in call_sol.sh's direct transport; neither was reachable by a mocked test,
+# because MOCK_RESPONSE_FILE short-circuits above the curl block.
 BETA_HEADER=()
 if [[ $USE_FALLBACK -eq 1 ]]; then
   REQUEST="$(echo "$REQUEST" | jq '. + {fallbacks: [{model: "claude-opus-4-8"}]}')"
@@ -90,11 +96,11 @@ fi
 if [[ -n "${MOCK_RESPONSE_FILE:-}" ]]; then # test seam (evals/)
   RESPONSE="$(cat "$MOCK_RESPONSE_FILE")"
 else
-  RESPONSE="$(curl -sS --max-time 900 https://api.anthropic.com/v1/messages \
+  RESPONSE="$(curl -sS --max-time 900 "${FABLE_API_ENDPOINT:-https://api.anthropic.com/v1/messages}" \
     -H "content-type: application/json" \
     -H "x-api-key: $FABLE_KEY" \
     -H "anthropic-version: 2023-06-01" \
-    "${BETA_HEADER[@]}" \
+    ${BETA_HEADER[@]+"${BETA_HEADER[@]}"} \
     -d "$REQUEST")" || { emit_error "$WORKER_NAME" "curl failed reaching the Claude API"; exit 5; }
 fi
 
