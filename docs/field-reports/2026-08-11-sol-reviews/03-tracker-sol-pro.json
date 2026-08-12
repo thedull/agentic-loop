@@ -1,0 +1,92 @@
+{
+  "worker": "sol/openrouter",
+  "status": "ok",
+  "summary": "Found multiple soundness gaps: arbitrary and gate-bypassing transitions, a race that reverses gated statuses, unenforced claim ownership, incomplete spec_check failure handling, hardened-review bypass, and unsafe default-branch verification.",
+  "result": {
+    "findings": [
+      {
+        "claim": "The declared state machine is not enforced; advance permits any valid status to transition directly to any other valid status.",
+        "evidence": "tracker_advance validates only that the destination appears in VALID_STATUSES, then unconditionally writes it. For example, `advance <queued-file> done` or `advance <built-file> queued` succeeds despite neither being a declared edge.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 625,
+          "line_end": 644
+        }
+      },
+      {
+        "claim": "claim can bypass all refusal gates by choosing gated workflow destinations directly.",
+        "evidence": "tracker_claim accepts arbitrary valid FROM and TO values and directly executes `_tracker_set_field \"$target\" status \"$to\"`. Thus `claim queued specd ...` skips spec_check and irreversibility checks, while `claim reviewing pr-open ...` skips hardened-report verification, because those checks exist only in tracker_advance.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 472,
+          "line_end": 538
+        }
+      },
+      {
+        "claim": "A concurrent shelve or supersede can be silently undone by advance despite the promised gated-status protection.",
+        "evidence": "tracker_advance reads and checks `cur` before acquiring tracker_lock. After acquiring the lock it rereads `prev` but does not reapply the gated-status check before writing. An advance that reads a normal status, waits while another invocation shelves the file, then acquires the lock will overwrite `shelved`.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 625,
+          "line_end": 644
+        }
+      },
+      {
+        "claim": "Claim ownership and the stated single-writer rule are not enforced.",
+        "evidence": "A claim records claimed_by, but mutating operations do not authenticate or compare an actor against it; tracker_advance does not even accept an actor argument. Any invocation can advance, shelve, supersede, restore, or rewire a claimed file.",
+        "severity": "high",
+        "location": null,
+        "searched": "tracker_claim, tracker_advance, tracker_shelve, tracker_restore, tracker_supersede, tracker_dep_drop, and tracker_dep_replace in scripts/lib/tracker.sh"
+      },
+      {
+        "claim": "The spec_check refusal gate is fail-open for failures other than exit 2 and when the checker is unavailable.",
+        "evidence": "The checker runs only when `-x`, and only `_sc -eq 2` causes refusal. Any other nonzero result proceeds to specd, while a missing or non-executable checker is silently skipped, contrary to blocking a spec that fails spec_check.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 592,
+          "line_end": 608
+        }
+      },
+      {
+        "claim": "A hardened spec can reach pr-open without a hardened report when profile resolution itself fails.",
+        "evidence": "The gate captures `_pf=\"$(tracker_profile \"$1\" 2>/dev/null || true)\"` and checks the report only when `_pf == hardened`. If the hardened payload is absent, tracker_profile returns 6 and emits no stdout, so `_pf` is empty and advance continues to pr-open without checking a report.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 563,
+          "line_end": 591
+        }
+      },
+      {
+        "claim": "Superseded citations can be incorrectly verified against a feature branch rather than the default branch.",
+        "evidence": "When origin/HEAD is unavailable, `_tracker_supersede_lands` falls back to the currently checked-out HEAD. In a repository checked out on a feature branch, a commit unique to that branch passes `merge-base --is-ancestor`, unblocking dependents even though it is not on the default branch.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/tracker.sh",
+          "line_start": 228,
+          "line_end": 235
+        }
+      }
+    ]
+  },
+  "artifacts": [],
+  "key_decisions": [
+    "Treated the documented transition graph and refusal gates as mandatory invariants, including for generic claim/advance entry points."
+  ],
+  "caveats": [
+    "Blind one-pass static review; external scripts and callers were unavailable."
+  ],
+  "assumptions": [
+    "spec_check failure means any nonzero exit unless explicitly documented otherwise."
+  ],
+  "confidence_ordinal": "high",
+  "usage": {
+    "input_tokens": 61179,
+    "output_tokens": 13432,
+    "est_cost_usd": 0.599757
+  }
+}

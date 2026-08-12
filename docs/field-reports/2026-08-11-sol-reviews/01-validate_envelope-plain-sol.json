@@ -1,0 +1,61 @@
+{
+  "worker": "sol/openrouter",
+  "status": "ok",
+  "summary": "The validator is unsound: it validates top-level findings instead of result.findings, omits required finding fields, and uses jq defaults that accept invalid envelope field types.",
+  "result": {
+    "findings": [
+      {
+        "claim": "Findings inside the required result field bypass all finding validation.",
+        "evidence": "For example, `{\"worker\":\"x\",\"status\":\"ok\",\"summary\":\"\",\"result\":{\"findings\":[{\"location\":7}]},\"artifacts\":[],\"key_decisions\":[],\"caveats\":[],\"assumptions\":[],\"confidence_ordinal\":\"high\",\"usage\":{}}` is accepted. The script only requires `result` to exist, then validates `$e.findings // []`; absent top-level findings become an empty array.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/validate_envelope.jq",
+          "line_start": 65,
+          "line_end": 76
+        }
+      },
+      {
+        "claim": "Top-level finding objects are accepted without the required claim, evidence, or ordinal severity fields.",
+        "evidence": "A top-level finding such as `{\"location\":null,\"searched\":\"scripts/lib\"}` passes `check_finding`, although it has no `claim`, `evidence`, or `severity`. The function examines only location/searched and top-level numeric values.",
+        "severity": "high",
+        "location": null,
+        "searched": "scripts/lib/validate_envelope.jq, especially the complete check_finding definition at lines 12-55"
+      },
+      {
+        "claim": "Several fields with required types accept boolean false because jq's `//` treats false like null and substitutes the default.",
+        "evidence": "Values such as `\"artifacts\":false`, `\"usage\":false`, `\"confidence_ordinal\":false`, and top-level `\"findings\":false` pass their checks as `[]`, `{}`, `\"medium\"`, and `[]` respectively, contradicting the declared array, object, enum, and array requirements.",
+        "severity": "medium",
+        "location": {
+          "file": "scripts/lib/validate_envelope.jq",
+          "line_start": 66,
+          "line_end": 76
+        }
+      },
+      {
+        "claim": "Array contents and usage fields are not validated against their declared element/value contracts.",
+        "evidence": "The script accepts `\"artifacts\":[1]`, non-string entries in `key_decisions`, `caveats`, and `assumptions`, and an arbitrary object such as `\"usage\":{\"input_tokens\":\"x\"}`. It checks only that these values are arrays or an object.",
+        "severity": "medium",
+        "location": {
+          "file": "scripts/lib/validate_envelope.jq",
+          "line_start": 66,
+          "line_end": 72
+        }
+      }
+    ]
+  },
+  "artifacts": [],
+  "key_decisions": [
+    "Treated findings as result content per the supplied output contract.",
+    "Used concrete accepted counterexamples rather than speculative edge cases."
+  ],
+  "caveats": [
+    "Review was limited to the supplied file and contract."
+  ],
+  "assumptions": [],
+  "confidence_ordinal": "high",
+  "usage": {
+    "input_tokens": 2231,
+    "output_tokens": 2174,
+    "est_cost_usd": 0.066349
+  }
+}
