@@ -1,0 +1,57 @@
+{
+  "worker": "sol/openrouter",
+  "status": "ok",
+  "summary": "One-pass blind review found three correctness gaps: malformed options can hang indefinitely, compliant reviewer envelopes do not yield finding counts, and corrupted duration markers can make the script exit nonzero. No direct stdout write was found in this file, but delegated library behavior was unavailable.",
+  "result": {
+    "findings": [
+      {
+        "claim": "A trailing option without a value causes an infinite loop rather than being swallowed.",
+        "evidence": "For `observe.sh diff-size --base`, `$#` is 1; `shift 2` fails and leaves the arguments unchanged, so the `while` repeats forever. The same defect exists for `context set --phase` and `--spec-id`.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/observe.sh",
+          "line_start": 48,
+          "line_end": 54
+        }
+      },
+      {
+        "claim": "Review-finding counts are not extracted from the required worker-envelope shape.",
+        "evidence": "The parser tests top-level `.findings`, but the required envelope places output under `result`, i.e. `{\"result\":{\"findings\":[]}}`. That valid clean-review input therefore produces `null`, not `0`.",
+        "severity": "medium",
+        "location": {
+          "file": "scripts/observe.sh",
+          "line_start": 245,
+          "line_end": 249
+        }
+      },
+      {
+        "claim": "A malformed or corrupted start marker can terminate the script nonzero despite the never-fatal contract.",
+        "evidence": "The regex accepts decimal-looking values such as `08`, but Bash arithmetic interprets leading-zero literals as octal. Evaluating `DUR=$(( now - 08 ))` raises an invalid-octal arithmetic error and exits the shell before the final `exit 0`.",
+        "severity": "medium",
+        "location": {
+          "file": "scripts/observe.sh",
+          "line_start": 172,
+          "line_end": 178
+        }
+      }
+    ]
+  },
+  "artifacts": [],
+  "key_decisions": [
+    "Treated indefinite blocking and nonzero shell termination as violations of the requirement that every failure path be swallowed.",
+    "Evaluated findings parsing against the supplied worker-envelope contract."
+  ],
+  "caveats": [
+    "scripts/lib/obs.sh was not provided, so append-only behavior, context persistence, and stdout/failure behavior of obs_event, obs_set_context, obs_clear_context, obs_enabled, obs_state_dir, obs_root, and obs_now_ms could not be verified."
+  ],
+  "assumptions": [
+    "Line numbers refer to the supplied scripts/observe.sh content.",
+    "Persistent state may be malformed or partially written; the stated every-failure-path contract does not exclude that case."
+  ],
+  "confidence_ordinal": "high",
+  "usage": {
+    "input_tokens": 29293,
+    "output_tokens": 11406,
+    "est_cost_usd": 0.447398
+  }
+}

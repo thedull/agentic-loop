@@ -22,7 +22,7 @@ you next run the loop.
 | Why the first live call broke twice | §3 |
 | The defects an adversary found in our own code | §4 |
 | **The most useful section** | §5 — the three recurring defect classes |
-| Whether Sol Pro is worth it | §6 |
+| Whether Sol — flat or Pro — is worth paying for | §6, then the raw envelopes in `docs/field-reports/2026-08-11-sol-reviews/` |
 | What behaves differently now | §7 |
 | What is deliberately still broken | §8 |
 
@@ -426,10 +426,49 @@ the Red Gate discipline.
 
 ## 6. Cost, models, and what the numbers actually showed
 
+**The raw envelopes for every review below are committed** at
+[`docs/field-reports/2026-08-11-sol-reviews/`](field-reports/2026-08-11-sol-reviews/)
+with a report of their own. They cost $2.22 and are not reproducible — the key
+has been revoked and the files reviewed have since been fixed. A claim about
+model quality with no artifact behind it is an anecdote.
+
+### Did the cross-family adversary earn its place?
+
+This is the question the whole tier ladder rests on, and this pass is the first
+real evidence either way.
+
+**19 findings reported across four files. 19 confirmed real. Zero false
+positives.** Every one reproduced in a sandbox or read directly in the source
+before being acted on.
+
+What makes that worth something is what the code had already survived: a suite
+green at 300+ tests, repeated blind review by Claude subagents during the specs
+that built these very files, and in three cases code written *that same day*
+under Red Gate discipline and mutation testing.
+
+**Three of the nineteen were safety gates that had never once fired.** Those are
+the findings that justify a *cross-family* adversary specifically, rather than
+one more Claude reviewer: they were invisible to us because the same reasoning
+that built each gate also wrote its tests.
+
+It was not uniformly precise. Three findings were imprecise in ways worth knowing
+(§4.5): one wrong mechanism with the right smell, one that missed the larger half
+of its own report, one real-but-unreachable. So **19/19 pointed at something
+real, roughly 16/19 were precise about it** — useful calibration if you are
+deciding how much verification to budget. The answer is "all of it, and it still
+pays".
+
+**Structured output held up too.** Spec 016's location contract met a real model
+for the first time here, and the model honoured it correctly on first use —
+including using the `null` + `searched` form *appropriately*, for a finding about
+something missing rather than something present. Nothing in the prompt spelled
+out which to choose. The gate did not fire (§4.1), but that was our plumbing, not
+the model: **the contract was right, the reader was looking in the wrong place.**
+
 ### Sol Pro versus plain Sol
 
-Run on identical input — the pre-hardening validator, pinned from git so the only
-variable was the model.
+Run on identical input — the pre-hardening validator, pinned out of git so the
+only variable was the model.
 
 | | plain Sol | Sol Pro |
 |---|---|---|
@@ -443,11 +482,20 @@ two high-severity defects. Pro *did* rank the `false`-coercion defect high where
 plain Sol said medium, and Pro was right — `"findings": false` disables every
 finding rule at once.
 
-On one sample that is weak evidence for a quality edge. Pro is the default
-because it is the frontier tier and — importantly — **the same list price**
-($5/$30 per 1M). It costs more per *call* only by spending more reasoning
-tokens, not a higher rate. `OPENROUTER_MODEL_SOL` in `.env` reverts it with no
-code change.
+Pro also **calibrated severity better**: it ranked the `false`-coercion defect
+*high* where plain Sol said *medium*, and Pro was right — `"findings": false`
+disables every finding rule at once.
+
+**This is one sample per model and should not carry more weight than that.** It
+is consistent with "Pro is somewhat better" and equally consistent with "both are
+comfortably above this task's difficulty". A file that separated them sharply
+would be better evidence; this one did not.
+
+The economics are the clearer half. Pro is the default because it is the frontier
+tier and — importantly — **the same list price** ($5/$30 per 1M, verified in the
+catalog the same day). It costs more per *call* purely by spending more reasoning
+tokens: 8.4× the input and 4.8× the output on this run, not a higher rate.
+`OPENROUTER_MODEL_SOL` in `.env` reverts it with no code change.
 
 ### The estimate is not a ceiling, and live data proved it
 
@@ -620,9 +668,11 @@ caught by 22 cases; a threshold of 0 warning on every call was caught by one.
 
 - Live catalog: `https://openrouter.ai/api/v1/models`, fetched 2026-08-10, 400
   models. Context lengths and prices in §2 and §6 are from that response.
-- Live adversary reviews: `openai/gpt-5.6-sol-pro` via OpenRouter,
-  `--effort max`, 2026-08-10 and 2026-08-11. The
-  `validate_envelope.jq` envelope is committed as
+- Live adversary reviews: `openai/gpt-5.6-sol-pro` via OpenRouter (the first
+  validator review used plain `openai/gpt-5.6-sol`), `--effort max`, 2026-08-10
+  and 2026-08-11. **All five envelopes are committed verbatim** at
+  [`docs/field-reports/2026-08-11-sol-reviews/`](field-reports/2026-08-11-sol-reviews/).
+  The `validate_envelope.jq` one is additionally committed as
   `evals/fixtures/findings/live-sol-openrouter-review.json` and asserted still
   valid by a regression case, so hardening cannot quietly start rejecting real
   Sol output.

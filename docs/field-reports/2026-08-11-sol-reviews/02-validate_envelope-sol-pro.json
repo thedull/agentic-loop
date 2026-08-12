@@ -1,0 +1,70 @@
+{
+  "worker": "sol/openrouter",
+  "status": "ok",
+  "summary": "The validator is not sound: it checks findings outside result, permits malformed findings, and accepts invalid false-valued or structurally incomplete envelope fields.",
+  "result": {
+    "findings": [
+      {
+        "claim": "Findings inside the required result payload are never validated; the script instead checks a top-level findings property not present in the envelope schema.",
+        "evidence": "Lines 73 and 76 read $e.findings, while line 65 treats result as opaque. Thus an envelope with result.findings containing {\"location\":42} and no top-level findings exits successfully.",
+        "severity": "high",
+        "location": {
+          "file": "/tmp/solcmp/validate_envelope.jq",
+          "line_start": 65,
+          "line_end": 76
+        }
+      },
+      {
+        "claim": "A finding need not contain claim, evidence, or ordinal severity.",
+        "evidence": "check_finding validates location/searched and rejects numeric top-level values, but never requires or type-checks claim, evidence, or severity. For example, {\"location\":null,\"searched\":\"validate_envelope.jq\"} passes as a finding.",
+        "severity": "high",
+        "location": null,
+        "searched": "/tmp/solcmp/validate_envelope.jq, check_finding definition at lines 13-55"
+      },
+      {
+        "claim": "Explicit false values bypass several declared type checks because jq's // operator treats false like absence.",
+        "evidence": "For example, \"findings\":false evaluates through ($e.findings // []) as [], and \"artifacts\":false similarly becomes []; both are accepted despite the corresponding errors saying those fields must be arrays. The same flaw affects key_decisions, caveats, assumptions, confidence_ordinal, and usage.",
+        "severity": "high",
+        "location": {
+          "file": "/tmp/solcmp/validate_envelope.jq",
+          "line_start": 66,
+          "line_end": 76
+        }
+      },
+      {
+        "claim": "Collection members and usage fields are not validated against their stated shapes.",
+        "evidence": "The script checks only that artifacts/key_decisions/caveats/assumptions are arrays and usage is an object. It therefore accepts artifacts such as [1], non-string decision entries, and usage such as {\"input_tokens\":\"not a number\"} or {}.",
+        "severity": "medium",
+        "location": {
+          "file": "/tmp/solcmp/validate_envelope.jq",
+          "line_start": 66,
+          "line_end": 72
+        }
+      },
+      {
+        "claim": "The summary length contract is unenforced.",
+        "evidence": "Line 64 checks only that summary is a string, so summaries exceeding the stated 100-word limit pass.",
+        "severity": "low",
+        "location": {
+          "file": "/tmp/solcmp/validate_envelope.jq",
+          "line_start": 64,
+          "line_end": 64
+        }
+      }
+    ]
+  },
+  "artifacts": [],
+  "key_decisions": [
+    "Treated the supplied envelope/output schema and validator comments as the stated contract."
+  ],
+  "caveats": [
+    "Review was limited to the supplied file and contract in one pass; no external callers or tests were available."
+  ],
+  "assumptions": [],
+  "confidence_ordinal": "high",
+  "usage": {
+    "input_tokens": 18759,
+    "output_tokens": 10447,
+    "est_cost_usd": 0.38991475
+  }
+}

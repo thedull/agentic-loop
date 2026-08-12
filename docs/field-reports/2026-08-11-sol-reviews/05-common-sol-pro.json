@@ -1,0 +1,128 @@
+{
+  "worker": "sol/openrouter",
+  "status": "ok",
+  "summary": "Found five correctness gaps: unsafe .env sourcing, inherited/exported credentials, unstructured parse failures, a rounded cost-gate comparison that can under-enforce tiny thresholds, and no provenance enforcement for finalized costs.",
+  "result": {
+    "findings": [
+      {
+        "claim": "Loading .env can echo credentials and add extra stdout, violating both stated contracts.",
+        "evidence": "load_env executes ./.env as shell code via `source ./.env`. A file containing `FACTORY_KEY=secret` followed by `echo \"$FACTORY_KEY\"` prints `secret` to stdout before the envelope.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/common.sh",
+          "line_start": 48,
+          "line_end": 55
+        }
+      },
+      {
+        "claim": "Credentials are neither restricted to ./.env nor kept unexported from child processes.",
+        "evidence": "`set -a` marks sourced variables for export and `set +a` does not undo that. If ./.env is absent, require_key still accepts an inherited exported value through `${!var:-}`. This contradicts the comments that keys come from ./.env, never the exported environment, and are not exported to children.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/common.sh",
+          "line_start": 46,
+          "line_end": 66
+        }
+      },
+      {
+        "claim": "Invalid delegation input can terminate without the required structured error envelope.",
+        "evidence": "The jq calls parsing stdin run under `set -e`; malformed JSON makes an assignment such as `OBJECTIVE=\"$(... | jq ...)\"` fail and exits before emit_error. Likewise a flag missing its value expands unset `$2` under `set -u`. Both paths produce no envelope on stdout.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/common.sh",
+          "line_start": 102,
+          "line_end": 129
+        }
+      },
+      {
+        "claim": "The cost gate can permit an estimate that is actually at or above the configured threshold.",
+        "evidence": "The computed estimate is rounded to four decimals with `printf \"%.4f\"` before comparison. For example, a raw estimate of 0.000049 USD becomes 0.0000; with threshold 0.00001, the comparison permits the call although the unrounded estimate exceeds the threshold.",
+        "severity": "high",
+        "location": {
+          "file": "scripts/lib/common.sh",
+          "line_start": 357,
+          "line_end": 418
+        }
+      },
+      {
+        "claim": "finalize_envelope cannot enforce that usage cost is provider-reported rather than an estimate.",
+        "evidence": "Its fifth positional argument is accepted as arbitrary JSON and unconditionally assigned to `usage.est_cost_usd`; there is no provenance indicator or check distinguishing provider cost from a preflight estimate.",
+        "severity": "medium",
+        "location": {
+          "file": "scripts/lib/common.sh",
+          "line_start": 205,
+          "line_end": 257
+        }
+      }
+    ]
+  },
+  "artifacts": [],
+  "key_decisions": [
+    "Treated executable .env contents and malformed briefs as concrete inputs covered by the absolute stdout/error contracts.",
+    "Judged the cost gate against its unrounded estimate because refusal is specified at or above the threshold."
+  ],
+  "caveats": [
+    "Only scripts/lib/common.sh was available; obs.sh, validate_envelope.jq, and caller behavior were not inspected."
+  ],
+  "assumptions": [
+    "Functions are invoked by shims while the file-level `set -euo pipefail` remains active."
+  ],
+  "confidence_ordinal": "high",
+  "usage": {
+    "input_tokens": 40783,
+    "output_tokens": 16430,
+    "est_cost_usd": 0.639584
+  },
+  "findings": [
+    {
+      "claim": "Loading .env can echo credentials and add extra stdout, violating both stated contracts.",
+      "evidence": "load_env executes ./.env as shell code via `source ./.env`. A file containing `FACTORY_KEY=secret` followed by `echo \"$FACTORY_KEY\"` prints `secret` to stdout before the envelope.",
+      "severity": "high",
+      "location": {
+        "file": "scripts/lib/common.sh",
+        "line_start": 48,
+        "line_end": 55
+      }
+    },
+    {
+      "claim": "Credentials are neither restricted to ./.env nor kept unexported from child processes.",
+      "evidence": "`set -a` marks sourced variables for export and `set +a` does not undo that. If ./.env is absent, require_key still accepts an inherited exported value through `${!var:-}`. This contradicts the comments that keys come from ./.env, never the exported environment, and are not exported to children.",
+      "severity": "high",
+      "location": {
+        "file": "scripts/lib/common.sh",
+        "line_start": 46,
+        "line_end": 66
+      }
+    },
+    {
+      "claim": "Invalid delegation input can terminate without the required structured error envelope.",
+      "evidence": "The jq calls parsing stdin run under `set -e`; malformed JSON makes an assignment such as `OBJECTIVE=\"$(... | jq ...)\"` fail and exits before emit_error. Likewise a flag missing its value expands unset `$2` under `set -u`. Both paths produce no envelope on stdout.",
+      "severity": "high",
+      "location": {
+        "file": "scripts/lib/common.sh",
+        "line_start": 102,
+        "line_end": 129
+      }
+    },
+    {
+      "claim": "The cost gate can permit an estimate that is actually at or above the configured threshold.",
+      "evidence": "The computed estimate is rounded to four decimals with `printf \"%.4f\"` before comparison. For example, a raw estimate of 0.000049 USD becomes 0.0000; with threshold 0.00001, the comparison permits the call although the unrounded estimate exceeds the threshold.",
+      "severity": "high",
+      "location": {
+        "file": "scripts/lib/common.sh",
+        "line_start": 357,
+        "line_end": 418
+      }
+    },
+    {
+      "claim": "finalize_envelope cannot enforce that usage cost is provider-reported rather than an estimate.",
+      "evidence": "Its fifth positional argument is accepted as arbitrary JSON and unconditionally assigned to `usage.est_cost_usd`; there is no provenance indicator or check distinguishing provider cost from a preflight estimate.",
+      "severity": "medium",
+      "location": {
+        "file": "scripts/lib/common.sh",
+        "line_start": 205,
+        "line_end": 257
+      }
+    }
+  ]
+}

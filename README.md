@@ -126,7 +126,12 @@ what the first real cross-family review found:
 [`docs/hardening-2026-08.md`](docs/hardening-2026-08.md) — seventeen PRs, 22
 defects in our own core (three of them safety gates that had never once fired),
 the two failures no mocked test could reach, and the three recurring mistakes
-behind most of them
+behind most of them · does a cross-family adversary earn its cost?
+[`docs/field-reports/2026-08-11-sol-reviews/`](docs/field-reports/2026-08-11-sol-reviews/)
+— all five raw GPT-5.6 Sol envelopes, verbatim and unreproducible: 19 findings,
+19 confirmed real, zero false positives, against code already green at 300+
+tests, plus where it was imprecise and how flat compares to Pro on identical
+input
 
 ## Observability & evals (opt-in)
 
