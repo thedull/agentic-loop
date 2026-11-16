@@ -1,0 +1,32 @@
+{
+  "id": "forge-328-a3-error-means-empty-stdout-and-nonzero",
+  "target": "forge.sh pr-create — API or gh failure exits non-zero, explains on stderr, and prints nothing on stdout",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nL=\"GET /api/v4/projects/grp%2Fproj/merge_requests?source_branch=feat&state=opened\"\nP=\"POST /api/v4/projects/grp%2Fproj/merge_requests\"\npc() { fx_run pr-create --head feat --base main --title T --body-file body.md; fx_show \"$1\"; }\nfx_http \"$L\" 200 '[]'\nfx_http \"$P\" 500 '{\"message\":\"boom\"}'; pc http500\necho \"posts500=$(fx_nmeth POST)\"\nfx_http \"$P\" 400 '{\"message\":\"bad\"}'; pc http400\nfx_http \"$L\" transport-error; pc transport\nfx_setremote https://github.com/o/r.git\nfx_gh pr_list 0 ''; fx_gh pr_create 1 'gh-said-boom'; pc gh\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "http500.out=[]",
+        "http500.nz=yes",
+        "500",
+        "http400.out=[]",
+        "http400.nz=yes",
+        "400",
+        "transport.out=[]",
+        "transport.nz=yes",
+        "gh.out=[]",
+        "gh.nz=yes",
+        "posts500=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

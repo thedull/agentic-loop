@@ -1,0 +1,27 @@
+{
+  "id": "forge-400-a10b-check-emits-ok-warn-fail-lines",
+  "target": "forge.sh check — one ok|warn|fail<TAB>message line per finding, exit 0 even with a failing finding",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nfx_run check; fx_show r\necho \"bad_lines=$(printf '%s\\n' \"$FX_OUT\" | grep -Evc $'^(ok|warn|fail)\\t.+')\"\n[[ -n \"$FX_OUT\" ]] && echo has_lines=yes || echo has_lines=no\nprintf '%s\\n' \"$FX_OUT\" | grep -qE $'^fail\\t' && echo has_fail=yes || echo has_fail=no\nprintf '%s\\n' \"$FX_OUT\" | grep -qi 'gitlab' && echo has_kind_finding=yes || echo has_kind_finding=no\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.rc=0",
+        "r.nz=no",
+        "bad_lines=0",
+        "has_lines=yes",
+        "has_fail=yes",
+        "has_kind_finding=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "forge-370-a7-pr-close-gitlab",
+  "target": "forge.sh pr-close (gitlab) — PUT state_event=close and the resulting state is printed",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nfx_http \"PUT $P\" 200 '{\"iid\":7,\"state\":\"closed\"}'\nfx_http \"GET $P\" 200 '{\"iid\":7,\"state\":\"closed\"}'\nfx_run pr-close \"$U\"; fx_show r\necho \"puts=$(fx_nmeth PUT)\"; fx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[CLOSED]",
+        "r.rc=0",
+        "PUT https://gitlab.example.test/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7 auth=present data=state_event=close",
+        "puts=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# curl shim for the forge suite. Answers from canned files, logs argv (never
+# stdin contents). See evals/fixtures/forge/setup.sh for the file formats.
+d="${FORGE_MOCK_DIR:?FORGE_MOCK_DIR not set}"
+mkdir -p "$d/http"
+SEP=$'\x1f'
+{
+  printf 'curl\t'
+  first=1
+  for a in "$@"; do
+    [[ $first -eq 1 ]] || printf '%s' "$SEP"
+    first=0
+    printf '%s' "$a"
+  done
+  printf '\n'
+} >> "$d/calls.log"
+
+method=""; url=""; outfile=""; wfmt=""; cfg_stdin=0; have_data=0
+datas=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -sS|-s|-S|--silent|--show-error) shift ;;
+    --max-time|-m) shift 2 ;;
+    -X|--request) method="$2"; shift 2 ;;
+    --data-urlencode)
+      have_data=1
+      v="$2"
+      if [[ "$v" == *@* && "${v%%@*}" != *=* ]]; then
+        name="${v%%@*}"; f="${v#*@}"
+        content="$(cat "$f" 2>/dev/null)"
+        content="${content//$'\n'/\\n}"
+        datas+=("$name=$content")
+      else
+        datas+=("$v")
+      fi
+      shift 2 ;;
+    --data|--data-raw|--data-binary|--data-urlencode=*|-d) have_data=1; shift 2 ;;
+    -K|--config) [[ "$2" == "-" ]] && cfg_stdin=1; shift 2 ;;
+    -o|--output) outfile="$2"; shift 2 ;;
+    -w|--write-out) wfmt="$2"; shift 2 ;;
+    http://*|https://*) url="$1"; shift ;;
+    *) shift ;;
+  esac
+done
+[[ -n "$method" ]] || { [[ $have_data -eq 1 ]] && method=POST || method=GET; }
+
+auth=absent; token=""
+if [[ $cfg_stdin -eq 1 ]]; then
+  cfg="$(cat)"
+  if grep -Eqi 'header *= *"(PRIVATE-TOKEN|Authorization):' <<<"$cfg"; then
+    auth=present
+    token="$(grep -Ei 'header *= *"(PRIVATE-TOKEN|Authorization):' <<<"$cfg" | head -1 \
+      | sed -E 's/^[^"]*"[A-Za-z-]+: *(Bearer +)?//; s/" *$//')"
+  fi
+fi
+
+data_joined=""
+for x in ${datas[@]+"${datas[@]}"}; do
+  data_joined="${data_joined:+$data_joined&}$x"
+done
+printf '%s %s auth=%s data=%s\n' "$method" "$url" "$auth" "$data_joined" >> "$d/requests.log"
+
+# Optional token-identity probe: records match|nomatch only, never the value.
+if [[ -n "${FORGE_MOCK_EXPECT_TOKEN:-}" ]]; then
+  if [[ "$token" == "$FORGE_MOCK_EXPECT_TOKEN" ]]; then echo match; else echo nomatch; fi >> "$d/token-match.log"
+fi
+
+path="${url#*://}"; path="/${path#*/}"
+[[ "$url" == *://*/* ]] || path="/"
+key="$method $path"
+fname="$(printf '%s' "$key" | tr -c 'A-Za-z0-9' '_')"
+resp="$d/http/$fname"
+[[ -f "$resp" ]] || exit 7
+first_line="$(head -1 "$resp")"
+[[ "$first_line" == "transport-error" ]] && exit 7
+status="${first_line#status: }"
+body="$(tail -n +2 "$resp")"
+if [[ -n "$outfile" ]]; then printf '%s\n' "$body" > "$outfile"; else printf '%s\n' "$body"; fi
+[[ "$wfmt" == *http_code* ]] && printf '%s' "$status"
+exit 0

@@ -1,0 +1,29 @@
+{
+  "id": "forge-338-a4-github-pr-state-only-configured-hosts",
+  "target": "forge.sh pr-state \u2014 a /pull/ URL on an undeclared host never reaches gh; github.com and a host declared via FORGE=github plus a matching remote do",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nfx_gh pr_view 0 MERGED\nfx_run pr-state https://ghe.example.test/o/r/pull/3; fx_show foreign\necho \"foreign_calls=$(fx_ncalls)\"; echo \"foreign_requests=$(fx_nreq)\"\nfx_reqs_clear\nfx_run pr-state https://github.com/o/r/pull/3; fx_show com\necho \"com_gh_views=$(fx_count gh pr view)\"\nfx_reqs_clear\nfx_setremote https://ghe.example.test/o/r.git\nexport FORGE=github\nfx_run pr-state https://ghe.example.test/o/r/pull/3; fx_show ghe\necho \"ghe_gh_views=$(fx_count gh pr view)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "foreign.out=[UNKNOWN]",
+        "foreign.rc=0",
+        "foreign_calls=0",
+        "foreign_requests=0",
+        "com.out=[MERGED]",
+        "com_gh_views=1",
+        "ghe.out=[MERGED]",
+        "ghe_gh_views=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

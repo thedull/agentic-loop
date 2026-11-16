@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# git shim for the forge suite: intercepts `push` only; everything else runs
+# the real git.
+SHIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+sub=""; skip=0; args=("$@"); i=0
+for a in "$@"; do
+  i=$((i+1))
+  if [[ $skip -eq 1 ]]; then skip=0; continue; fi
+  case "$a" in
+    -c|-C) skip=1 ;;
+    -*) ;;
+    *) sub="$a"; break ;;
+  esac
+done
+if [[ "$sub" == "push" ]]; then
+  d="${FORGE_MOCK_DIR:?FORGE_MOCK_DIR not set}"
+  SEP=$'\x1f'
+  {
+    printf 'git\t'
+    first=1
+    for a in "$@"; do
+      [[ $first -eq 1 ]] || printf '%s' "$SEP"
+      first=0
+      printf '%s' "$a"
+    done
+    printf '\n'
+  } >> "$d/calls.log"
+  n="${GIT_CONFIG_COUNT:-0}"
+  keys=""; has=no
+  for ((j = 0; j < n; j++)); do
+    kv="GIT_CONFIG_KEY_$j"; vv="GIT_CONFIG_VALUE_$j"
+    keys="${keys:+$keys,}${!kv:-}"
+    [[ -n "${!vv:-}" ]] && has=yes
+  done
+  rest=("${args[@]:$i}")
+  printf 'GIT_CONFIG_COUNT=%s keys=%s value_has_token=%s args=%s\n' "$n" "$keys" "$has" "${rest[*]}" >> "$d/git-push.log"
+  exit 0
+fi
+real=""
+IFS=: read -ra dirs <<<"$PATH"
+for p in "${dirs[@]}"; do
+  [[ -n "$p" && "$(cd "$p" 2>/dev/null && pwd)" == "$SHIM_DIR" ]] && continue
+  [[ -x "$p/git" ]] && { real="$p/git"; break; }
+done
+[[ -n "$real" ]] || { echo "git shim: real git not found" >&2; exit 127; }
+exec "$real" "$@"

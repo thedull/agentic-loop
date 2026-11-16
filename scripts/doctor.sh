@@ -79,6 +79,24 @@ fi
 
 command -v shellcheck >/dev/null 2>&1 && ok "shellcheck present (optional)" || true
 
+# Forge (spec 020). Deliberately BEFORE the `.env` load below: that load
+# exports every key, after which a FORGE set only in ./.env would look like an
+# environment value — breaking forge.sh's env > .env > config precedence and
+# its source reporting. forge.sh reads ./.env itself.
+echo
+echo "forge:"
+if [[ -x "$SCRIPT_DIR/lib/forge.sh" ]]; then
+  while IFS=$'\t' read -r lvl msg; do
+    case "$lvl" in
+      ok)   ok "$msg" ;;
+      warn) warn "$msg" ;;
+      fail) fail "$msg" ;;
+    esac
+  done < <("$SCRIPT_DIR/lib/forge.sh" check 2>/dev/null)
+else
+  warn "scripts/lib/forge.sh missing — PRs fall back to gh/pr: local; run /agentic-loop:update"
+fi
+
 echo
 echo "worker keys (./.env):"
 if [[ -f ./.env ]]; then

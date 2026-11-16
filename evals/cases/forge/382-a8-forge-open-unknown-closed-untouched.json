@@ -1,0 +1,26 @@
+{
+  "id": "forge-382-a8-forge-open-unknown-closed-untouched",
+  "target": "tracker.sh reconcile-done — OPEN, UNKNOWN (HTTP 500) and CLOSED leave the spec untouched; a MERGED one in the same run advances (control)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nmkdir -p factory/specs\nmkspec() { printf -- \"---\\nid: %s\\ntitle: t%s\\nstatus: pr-open\\nbranch: %s\\npr: %s\\n---\\n\" \"$1\" \"$1\" \"$2\" \"$3\" > \"factory/specs/$1-s.md\"; }\nst() { sed -n \"s/^status: //p\" \"factory/specs/$1-s.md\" | head -1; }\nmrpath() { echo \"/api/v4/projects/grp%2Fproj/merge_requests/$1\"; }\nmrurl() { echo \"https://gitlab.example.test/grp/proj/-/merge_requests/$1\"; }\nopenbranch() { git checkout -q -b \"$1\"; git commit -q --allow-empty -m \"w-$1\"; git checkout -q main; }\nmergedbranch() { openbranch \"$1\"; git merge -q --no-ff --no-edit \"$1\"; }\nrecon() { \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" reconcile-done tester >/dev/null 2>&1; }\nfor n in 1 2 3 4; do openbranch claude/idea-$n; mkspec 00$n claude/idea-$n \"$(mrurl $n)\"; done\nfx_http \"GET $(mrpath 1)\" 200 '{\"state\":\"opened\"}'\nfx_http \"GET $(mrpath 2)\" 500 '{\"state\":\"merged\"}'\nfx_http \"GET $(mrpath 3)\" 200 '{\"state\":\"closed\"}'\nfx_http \"GET $(mrpath 4)\" 200 '{\"state\":\"merged\"}'\nrecon\nfor n in 1 2 3 4; do echo \"s$n=$(st 00$n)\"; done\necho \"reqs=$(fx_nreq)\"\n[[ -x \"$F\" ]] || FX_MISSING=127; fx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "s1=pr-open",
+        "s2=pr-open",
+        "s3=pr-open",
+        "s4=done",
+        "reqs=4"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "forge-344-a5-url-authority-tricks-no-request",
+  "target": "forge.sh pr-state \u2014 URLs whose authority is disguised (fragment-@, backslash-@, userinfo, trailing-dot host) are UNKNOWN with no request (control: the plain configured URL makes one)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/proj/-/merge_requests/7\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'\nt() { fx_run pr-state \"$2\"; echo \"$1=$FX_OUT rc=$FX_RC reqs=$(fx_nreq)\"; }\nt fragment 'https://evil.example.test#@gitlab.example.test/grp/proj/-/merge_requests/7'\nt backslash 'https://evil.example.test\\@gitlab.example.test/grp/proj/-/merge_requests/7'\nt userinfo 'https://user@evil.example.test/grp/proj/-/merge_requests/7'\nt trailingdot 'https://gitlab.example.test./grp/proj/-/merge_requests/7'\necho \"requests_before=$(fx_nreq)\"\nt control \"$U\"\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "fragment=UNKNOWN rc=0 reqs=0",
+        "backslash=UNKNOWN rc=0 reqs=0",
+        "userinfo=UNKNOWN rc=0 reqs=0",
+        "trailingdot=UNKNOWN rc=0 reqs=0",
+        "requests_before=0",
+        "control=MERGED rc=0 reqs=1"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "evil.example.test/api",
+        "gitlab.example.test./api"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

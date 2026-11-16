@@ -1,0 +1,27 @@
+{
+  "id": "forge-327-a3-none-prints-local",
+  "target": "forge.sh pr-create (none) — prints local and exits 0 with no forge call (control: a pr-state in the same run does reach the transport)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE=none FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST /api/v4/projects/grp%2Fproj/merge_requests\" 201 '{\"iid\":3,\"web_url\":\"https://gitlab.example.test/grp/proj/-/merge_requests/3\"}'\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests/7\" 200 '{\"state\":\"merged\"}'\nfx_gh pr_list 0 ''; fx_gh pr_create 0 'https://github.com/o/r/pull/1'\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show r\necho \"requests_before=$(fx_nreq)\"; echo \"calls_before=$(fx_ncalls)\"\nfx_run pr-state https://gitlab.example.test/grp/proj/-/merge_requests/7\necho \"control=$FX_OUT\"; echo \"requests_after=$(fx_nreq)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[local]",
+        "r.rc=0",
+        "requests_before=0",
+        "calls_before=0",
+        "control=MERGED",
+        "requests_after=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

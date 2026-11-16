@@ -1,0 +1,24 @@
+{
+  "id": "forge-413-a10b-none-with-remote-warns-naming-host",
+  "target": "doctor.sh forge section — kind none with a remote warns naming the host and how to declare the forge",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://git.example.test/o/r.git\nfx_doctor\nfx_sec_has warn_host '\\[WARN\\].*git\\.example\\.test'\nfx_sec_has mentions_declare '\\[WARN\\].*FORGE'\nfx_sec_has fail '\\[FAIL\\]'\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "warn_host=yes",
+        "mentions_declare=yes",
+        "fail=no"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "forge-334-a4-gitlab-deep-project-path",
+  "target": "forge.sh pr-state (gitlab) — the project path is everything before /-/merge_requests/, at any depth, URL-encoded",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/a%2Fb%2Fc%2Fd/merge_requests/12\" 200 '{\"state\":\"merged\"}'\nfx_run pr-state https://gitlab.example.test/a/b/c/d/-/merge_requests/12; fx_show r\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[MERGED]",
+        "GET https://gitlab.example.test/api/v4/projects/a%2Fb%2Fc%2Fd/merge_requests/12 auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

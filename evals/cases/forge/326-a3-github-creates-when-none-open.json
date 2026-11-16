@@ -1,0 +1,29 @@
+{
+  "id": "forge-326-a3-github-creates-when-none-open",
+  "target": "forge.sh pr-create (github) — looks up first, then gh pr create with the same head, base, title and body file; prints the URL gh reports",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote git@github.com:o/r.git\nfx_gh pr_list 0 ''\nfx_gh pr_create 0 'https://github.com/o/r/pull/8'\nfx_run pr-create --head feat --base main --title \"My title\" --body-file body.md; fx_show r\necho \"creates=$(fx_count gh pr create)\"; echo \"lists=$(fx_count gh pr list)\"\nfx_calls_text\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[https://github.com/o/r/pull/8]",
+        "r.rc=0",
+        "creates=1",
+        "lists=1",
+        "--head feat",
+        "--base main",
+        "--title My title",
+        "--body-file body.md"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

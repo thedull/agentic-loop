@@ -1,0 +1,26 @@
+{
+  "id": "forge-407-a10b-github-auth-fail-then-ok",
+  "target": "doctor.sh forge section (github) — failed gh auth status is [FAIL]; an authenticated gh is [ok] with nothing failing",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://github.com/o/r.git\nfx_gh auth_status 1 \"not logged in\"\nfx_doctor\nfx_sec_has bad_fail '\\[FAIL\\]'\nfx_gh auth_status 0 \"Logged in\"\nfx_doctor\nfx_sec_has good_fail '\\[FAIL\\]'\nfx_sec_has good_warn '\\[WARN\\]'\n[[ \"$(fx_sec_count '\\[ok\\]')\" -ge 2 ]] && echo good_ok_multi=yes || echo good_ok_multi=no\necho \"auth_calls=$(fx_count gh auth status)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "bad_fail=yes",
+        "good_fail=no",
+        "good_warn=no",
+        "good_ok_multi=yes",
+        "auth_calls=2"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

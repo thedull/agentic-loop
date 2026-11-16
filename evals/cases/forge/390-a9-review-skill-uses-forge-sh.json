@@ -1,0 +1,27 @@
+{
+  "id": "forge-390-a9-review-skill-uses-forge-sh",
+  "target": "skills/review/SKILL.md step 9 — pushes and opens through forge.sh push / pr-create, records the printed value, keeps pr: local, says PR/MR, no git push -u origin",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nR=\"$PLUGIN_ROOT/skills/review/SKILL.md\"\nfx_has \"$R\" 'scripts/lib/forge.sh push' names_push\nfx_has \"$R\" 'pr-create' names_prcreate\nfx_has \"$R\" 'git push -u origin' stale_push\nfx_has \"$R\" 'pr: local' keeps_local\nfx_has \"$R\" 'PR/MR' says_prmr\nfx_has \"$R\" 'pr:' records_pr",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "names_push=yes",
+        "names_prcreate=yes",
+        "stale_push=no",
+        "keeps_local=yes",
+        "says_prmr=yes",
+        "records_pr=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

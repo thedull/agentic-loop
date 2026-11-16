@@ -1,0 +1,24 @@
+{
+  "id": "forge-414-a10b-no-remote-reports-pr-local",
+  "target": "doctor.sh forge section — no remote reports that PRs will be recorded as pr: local",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_doctor\ngrep -q '^forge:' .doctor.out && echo header=yes || echo header=no\nfx_sec_has says_local 'pr: local'\nfx_sec_has fail '\\[FAIL\\]'\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "says_local=yes",
+        "fail=no",
+        "header=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

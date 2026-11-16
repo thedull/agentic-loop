@@ -1,0 +1,24 @@
+{
+  "id": "forge-353-a5b-forge-sh-is-self-contained",
+  "target": "forge.sh — reads ./.env itself: sources no other library, and works when it is the only file present (tracker.sh only sources obs.sh)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nif [[ -f \"$F\" ]]; then echo \"sourced_libs=$(grep -cE '^[[:space:]]*(source|\\.)[[:space:]].*(common|obs|tracker|workflow)\\.sh' \"$F\")\"; fi\nmkdir -p iso/scripts/lib; cp \"$F\" iso/scripts/lib/forge.sh 2>/dev/null\nF=\"$PWD/iso/scripts/lib/forge.sh\"\nprintf 'FORGE_TOKEN=glpat-FAKE-not-a-real-token-0007\\n' > .env\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests/7\" 200 '{\"state\":\"merged\"}'\nfx_run pr-state https://gitlab.example.test/grp/proj/-/merge_requests/7\necho \"iso_out=$FX_OUT\"\necho \"iso_auth=$(tail -1 \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null | grep -o 'auth=[a-z]*' | cut -d= -f2)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "sourced_libs=0",
+        "iso_auth=present",
+        "iso_out=MERGED"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

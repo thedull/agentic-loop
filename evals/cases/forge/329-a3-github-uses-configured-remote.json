@@ -1,0 +1,28 @@
+{
+  "id": "forge-329-a3-github-uses-configured-remote",
+  "target": "forge.sh pr-create (github) \u2014 gh is pointed at the configured remote's repo (--repo), not whatever gh infers from origin",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/me/fork.git origin\nfx_remote https://github.com/acme/widgets.git upstream\nexport FORGE_REMOTE=upstream\nfx_gh pr_list 0 ''\nfx_gh pr_create 0 'https://github.com/acme/widgets/pull/9'\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show r\necho \"lists=$(fx_count gh pr list)\"; echo \"creates=$(fx_count gh pr create)\"\nfx_calls_text\necho \"list_acme=$(fx_calls_text | grep -E '^gh[[:space:]]+pr list' | grep -c 'acme/widgets')\"\necho \"create_acme=$(fx_calls_text | grep -E '^gh[[:space:]]+pr create' | grep -c 'acme/widgets')\"\necho \"fork_mentions=$(fx_calls_text | grep -c 'me/fork')\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[https://github.com/acme/widgets/pull/9]",
+        "r.rc=0",
+        "lists=1",
+        "creates=1",
+        "list_acme=1",
+        "create_acme=1",
+        "fork_mentions=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

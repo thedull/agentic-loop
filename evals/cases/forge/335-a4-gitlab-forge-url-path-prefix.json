@@ -1,0 +1,23 @@
+{
+  "id": "forge-335-a4-gitlab-forge-url-path-prefix",
+  "target": "forge.sh pr-state (gitlab) — an instance under a sub-path: base is FORGE_URL and the project path is the remainder",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/gl/g/p.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001 FORGE_URL=https://gitlab.example.test/gl\nfx_http \"GET /gl/api/v4/projects/g%2Fp/merge_requests/4\" 200 '{\"state\":\"opened\"}'\nfx_run pr-state https://gitlab.example.test/gl/g/p/-/merge_requests/4; fx_show r\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[OPEN]",
+        "GET https://gitlab.example.test/gl/api/v4/projects/g%2Fp/merge_requests/4 auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

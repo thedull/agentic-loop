@@ -1,0 +1,22 @@
+{
+  "id": "forge-420-a11-scaffold-manifest-row",
+  "target": "scripts/lib/scaffold.sh manifest — has a row for scripts/lib/forge.sh",
+  "kind": "bash-unit",
+  "cmd": "n=$(grep -cE $'^scripts/lib/forge\\\\.sh\\tscripts/lib/forge\\\\.sh\\t' \"$PLUGIN_ROOT/scripts/lib/scaffold.sh\")\necho \"manifest_row=$n\"",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "manifest_row=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

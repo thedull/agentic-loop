@@ -1,0 +1,35 @@
+{
+  "id": "forge-330-a4-gitlab-state-mapping",
+  "target": "forge.sh pr-state (gitlab) — opened/merged/closed map, locked and anything else are UNKNOWN",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nst() { fx_http \"GET $P\" 200 \"{\\\"state\\\":\\\"$1\\\"}\"; fx_run pr-state \"$U\"; echo \"$1->$FX_OUT rc=$FX_RC\"; }\nst opened; st merged; st closed; st locked; st draft\nfx_http \"GET $P\" 200 '{\"state\":\"\"}'; fx_run pr-state \"$U\"; echo \"empty->$FX_OUT rc=$FX_RC\"\necho \"reqs=$(fx_nreq)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "opened->OPEN rc=0",
+        "merged->MERGED rc=0",
+        "closed->CLOSED rc=0",
+        "locked->UNKNOWN rc=0",
+        "draft->UNKNOWN rc=0",
+        "empty->UNKNOWN rc=0",
+        "reqs=6"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "locked->CLOSED",
+        "locked->OPEN"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

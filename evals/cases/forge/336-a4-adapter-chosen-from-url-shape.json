@@ -1,0 +1,24 @@
+{
+  "id": "forge-336-a4-adapter-chosen-from-url-shape",
+  "target": "forge.sh pr-state — the adapter comes from the URL, not the repo's kind: a github-kind repo still reads a recorded GitLab MR",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nexport FORGE=github FORGE_URL=https://gitlab.example.test FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests/7\" 200 '{\"state\":\"merged\"}'\nfx_run kind; echo \"kind=$FX_OUT\"\nfx_run pr-state https://gitlab.example.test/grp/proj/-/merge_requests/7; fx_show r\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[MERGED]",
+        "GET https://gitlab.example.test/api/v4/projects/grp%2Fproj/merge_requests/7 auth=present",
+        "kind=github"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

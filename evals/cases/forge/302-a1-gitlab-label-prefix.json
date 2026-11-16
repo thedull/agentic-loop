@@ -1,0 +1,27 @@
+{
+  "id": "forge-302-a1-gitlab-label-prefix",
+  "target": "forge.sh kind — any host label starting with gitlab (case-insensitive) is gitlab, in every URL form",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/o/r.git\nk() { fx_setremote \"$2\"; fx_run kind; echo \"$1=$FX_OUT\"; }\nk plain https://gitlab.example.test/o/r.git\nk mixed https://GitLab-EE.corp.example.test/o/r.git\nk scp git@gitlab.example.test:o/r.git\nk sshport ssh://git@GITLAB.example.test:2222/o/r.git\nk sublabel https://code.gitlab-eu.example.test/o/r.git\nk dash https://gitlab-ee.example.test/o/r.git\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "plain=gitlab",
+        "mixed=gitlab",
+        "scp=gitlab",
+        "sshport=gitlab",
+        "sublabel=gitlab",
+        "dash=gitlab"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

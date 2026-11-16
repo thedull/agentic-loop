@@ -1,0 +1,23 @@
+{
+  "id": "forge-423-a11-config-skill-documents-forge-keys",
+  "target": "skills/config/SKILL.md — documents forge.kind and forge.remote",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nC=\"$PLUGIN_ROOT/skills/config/SKILL.md\"\nfx_has \"$C\" 'forge.kind' forge_kind\nfx_has \"$C\" 'forge.remote' forge_remote",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "forge_kind=yes",
+        "forge_remote=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

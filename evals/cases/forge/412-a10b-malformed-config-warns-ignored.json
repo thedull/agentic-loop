@@ -1,0 +1,24 @@
+{
+  "id": "forge-412-a10b-malformed-config-warns-ignored",
+  "target": "doctor.sh and forge.sh check — a malformed .agentic/config.json yields a warn saying the forge config was ignored",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/user\" 200 '{\"username\":\"x\"}'\nmkdir -p .agentic; printf '{not json' > .agentic/config.json\nfx_run check; fx_show check\nprintf '%s\\n' \"$FX_OUT\" | grep -E $'^warn\\t' | grep -qi 'config.*ignored\\|ignored.*config' && echo check_warn=yes || echo check_warn=no\nfx_doctor\nprintf '%s\\n' \"$FX_SEC\" | grep -F '[WARN]' | grep -qi 'config.*ignored\\|ignored.*config' && echo doctor_warn=yes || echo doctor_warn=no\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "check_warn=yes",
+        "doctor_warn=yes",
+        "check.rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

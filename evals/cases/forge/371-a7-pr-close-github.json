@@ -1,0 +1,25 @@
+{
+  "id": "forge-371-a7-pr-close-github",
+  "target": "forge.sh pr-close (github) — runs gh pr close on the URL and prints the resulting state",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nfx_gh pr_close 0 ''\nfx_gh pr_view 0 CLOSED\nfx_run pr-close https://github.com/o/r/pull/3; fx_show r\necho \"closes=$(fx_count gh pr close)\"\nfx_calls_text\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[CLOSED]",
+        "r.rc=0",
+        "closes=1",
+        "pr close https://github.com/o/r/pull/3"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

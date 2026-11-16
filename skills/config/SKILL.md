@@ -41,6 +41,7 @@ writer of that file. Invocations:
 | `guards` | Clean-code + test quality-gate criteria are added to the reviewer's blind-review checklist | guard-skills (criteria content; plugin optional) |
 | `summarize` | The report renderer fills summary-less nodes via local Ollama (free) | ollama running locally |
 | `bench` | The review stage keeps one persistent, freshness-merged git-worktree checkout per open PR (`../<repo>-benches/<slug>`) so evening review can actually run the app, not just read a diff | none |
+| `forge` | Declares which forge the project uses — `forge.kind` (`github`\|`gitlab`\|`none`) overrides auto-detection from the remote URL (a `FORGE` in env/`.env` wins over it), `forge.remote` (default `origin`) names the git remote. `scripts/lib/forge.sh` routes push / PR-MR create / state / close through it; `none` → `pr: local`. Tokens (`FORGE_TOKEN`, `GITLAB_TOKEN`) belong in `./.env`, never `config.json`. Reviewers are deliberately not a setting — assignment is project policy (CLAUDE.md/AGENTS.md) | `gh` for GitHub; a GitLab token for GitLab |
 
 ## Config file shape
 
@@ -52,6 +53,7 @@ writer of that file. Invocations:
   "guards":        { "enabled": false },
   "summarize":     { "enabled": false },
   "bench":         { "enabled": false, "dir": "../<repo>-benches", "setup_cmd": "" },
+  "forge":         { "kind": "", "remote": "origin" },
   "_meta":         { "updated": "<iso date>" }
 }
 ```
@@ -76,7 +78,7 @@ writer of that file. Invocations:
    pure status read — report "no config, all features off" instead).
 2. **status**: print a short table — feature, enabled, dependency state
    (installed / missing / declined). Detect dependencies cheaply:
-   `observability`, `bench`, and base `grill` have none (native — nothing to
+   `observability`, `bench`, `forge`, and base `grill` have none (native — nothing to
    detect); `grill` with
    `deep: true` → grep `claude plugin list` for `mattpocock-skills` (missing =
    native-uncapped fallback, not an error); `summarize` →

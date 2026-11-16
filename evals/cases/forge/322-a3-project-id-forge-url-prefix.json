@@ -1,0 +1,24 @@
+{
+  "id": "forge-322-a3-project-id-forge-url-prefix",
+  "target": "forge.sh pr-create (gitlab) — FORGE_URL path prefix is stripped from an https remote path when it matches",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/gl/g/s/p.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001 FORGE_URL=https://gitlab.example.test/gl\nfor pid in g%2Fs%2Fp other%2Fp; do\n  fx_http \"GET /gl/api/v4/projects/$pid/merge_requests?source_branch=feat&state=opened\" 200 '[]'\n  fx_http \"POST /gl/api/v4/projects/$pid/merge_requests\" 201 '{\"iid\":5,\"web_url\":\"https://gitlab.example.test/gl/x/-/merge_requests/5\"}'\ndone\nfor spec in \"prefixed|https://gitlab.example.test/gl/g/s/p.git\" \"unprefixed|https://gitlab.example.test/other/p.git\" \"scp|git@gitlab.example.test:g/s/p.git\"; do\n  fx_setremote \"${spec#*|}\"; fx_reqs_clear\n  fx_run pr-create --head feat --base main --title T --body-file body.md\n  echo \"${spec%%|*} $(grep '^POST ' \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null)\"\ndone\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "prefixed POST https://gitlab.example.test/gl/api/v4/projects/g%2Fs%2Fp/merge_requests",
+        "unprefixed POST https://gitlab.example.test/gl/api/v4/projects/other%2Fp/merge_requests",
+        "scp POST https://gitlab.example.test/gl/api/v4/projects/g%2Fs%2Fp/merge_requests"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

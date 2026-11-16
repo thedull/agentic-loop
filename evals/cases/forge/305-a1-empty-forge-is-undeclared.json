@@ -1,0 +1,25 @@
+{
+  "id": "forge-305-a1-empty-forge-is-undeclared",
+  "target": "forge.sh kind — FORGE= (empty) in env or ./.env counts as not declared, not invalid",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nfx_config '{\"forge\":{\"kind\":\"gitlab\"}}'\nk() { fx_run kind; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nexport FORGE=; k envempty\nunset FORGE; printf 'FORGE=\\n' > .env\nk dotenvempty\nrm -rf .agentic; printf 'FORGE=gitlab\\n' > .env; export FORGE=\nk envempty_dotenv\nunset FORGE; printf 'FORGE=\\n' > .env; fx_setremote https://example.test/o/r.git\nk bothempty\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "envempty=gitlab rc=0",
+        "dotenvempty=gitlab rc=0",
+        "envempty_dotenv=gitlab rc=0",
+        "bothempty=none rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

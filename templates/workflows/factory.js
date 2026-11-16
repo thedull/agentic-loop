@@ -130,7 +130,8 @@ const REVIEW_PROMPT = (specPath, branch) =>
    "review" (skills/review/SKILL.md) to the letter: claim built->reviewing,
    blind fresh-context review of spec + diff only, findings typed
    layer:spec|test|impl, bounded revision (hard cap 2), conditional browser
-   verification, push branch + open a PR whose body includes the mandatory
+   verification, push branch (scripts/lib/forge.sh push) + open a PR/MR
+   (scripts/lib/forge.sh pr-create) whose body includes the mandatory
    test plan (checkable steps + what could NOT be verified), advance to
    pr-open, append the digest entry to .agentic/STATUS.md.
    Never merge; never call metered tiers — record needs_escalation

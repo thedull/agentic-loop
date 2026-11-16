@@ -133,9 +133,10 @@ them.
    Read `branch` and `pr` from the spec (they survive a shelve untouched, on
    purpose, so a restore is exact).
 
-   - **Open PR** — say it is still open and ask whether to close it.
-     Closing a PR is public and needs explicit confirmation; never run
-     `gh pr close` unprompted, and never as part of an unattended loop.
+   - **Open PR/MR** — say it is still open and ask whether to close it.
+     Closing a PR/MR is public and needs explicit confirmation; close it
+     with `scripts/lib/forge.sh pr-close <url>`, never unprompted, and never
+     as part of an unattended loop.
    - **Branch** — leave it. It costs nothing and a restore needs it.
    - **Bench** — nothing to do. `bench.sh reconcile` retires benches for
      shelved and superseded specs on the next factory iteration.

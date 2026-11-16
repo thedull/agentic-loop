@@ -1,0 +1,27 @@
+{
+  "id": "forge-351-a5b-token-never-in-argv-or-on-disk",
+  "target": "forge.sh — across pr-create, pr-state, pr-close and an https push the token is in no argv log and no file created in the sandbox, TMPDIR or /tmp (control: auth=present and the git env carried it)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nTOK=glpat-FAKE-not-a-real-token-0001\nexport FORGE_TOKEN=$TOK\nB=\"/api/v4/projects/grp%2Fproj/merge_requests\"\nfx_http \"GET $B?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST $B\" 201 '{\"iid\":3,\"web_url\":\"https://gitlab.example.test/grp/proj/-/merge_requests/3\"}'\nfx_http \"GET $B/3\" 200 '{\"state\":\"opened\"}'\nfx_http \"PUT $B/3\" 200 '{\"state\":\"closed\"}'\nU=https://gitlab.example.test/grp/proj/-/merge_requests/3\nleaks=0; rcs=0\nchk() { [[ $FX_RC -eq 0 ]] || rcs=$FX_RC; if printf '%s%s' \"$FX_OUT\" \"$FX_ERR\" | grep -qF -- \"$TOK\"; then leaks=$((leaks+1)); fi; }\nfx_run pr-create --head feat --base main --title T --body-file body.md; chk\nfx_run pr-state \"$U\"; chk\nfx_run pr-close \"$U\"; chk\nfx_run push feat; chk\nn=$(grep -c 'auth=present' \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null); [[ ${n:-0} -ge 3 ]] && echo auth_ok=yes || echo auth_ok=no\necho \"auth_absent=$(grep -c 'auth=absent' \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null)\"\ntail -1 \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null | grep -o 'value_has_token=[a-z]*'\necho \"leaks_in_output=$leaks\"; echo \"all.rc=$rcs\"\nfx_tokscan \"$TOK\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "tokscan=clean",
+        "auth_ok=yes",
+        "auth_absent=0",
+        "value_has_token=yes",
+        "leaks_in_output=0",
+        "all.rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

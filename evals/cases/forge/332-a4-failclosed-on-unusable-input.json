@@ -1,0 +1,31 @@
+{
+  "id": "forge-332-a4-failclosed-on-unusable-input",
+  "target": "forge.sh pr-state — local, empty, non-https, unparseable URLs and a missing credential print UNKNOWN, exit 0 and make no request (control: a valid call reaches the transport)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'\nt() { fx_run pr-state \"$2\"; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nt local local\nt empty \"\"\nt http http://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nt garbage \"not a url at all\"\nt bare https://gitlab.example.test/\nt notmr https://gitlab.example.test/grp/sub/proj/issues/7\nunset FORGE_TOKEN; t notoken \"$U\"\necho \"reqs_before_control=$(fx_nreq)\"\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001; t control \"$U\"\necho \"reqs_after=$(fx_nreq)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "local=UNKNOWN rc=0",
+        "empty=UNKNOWN rc=0",
+        "http=UNKNOWN rc=0",
+        "garbage=UNKNOWN rc=0",
+        "bare=UNKNOWN rc=0",
+        "notmr=UNKNOWN rc=0",
+        "notoken=UNKNOWN rc=0",
+        "reqs_before_control=0",
+        "control=MERGED rc=0",
+        "reqs_after=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

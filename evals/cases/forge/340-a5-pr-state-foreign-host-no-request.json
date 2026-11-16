@@ -1,0 +1,35 @@
+{
+  "id": "forge-340-a5-pr-state-foreign-host-no-request",
+  "target": "forge.sh pr-state — a pr: URL whose scheme/host/port differ from the configured instance makes no request (control: the matching URL does)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'\nt() { fx_run pr-state \"$2\"; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nt foreign https://evil.example.test/grp/sub/proj/-/merge_requests/7\nt otherport https://gitlab.example.test:9999/grp/sub/proj/-/merge_requests/7\nt subdomain https://ci.gitlab.example.test/grp/sub/proj/-/merge_requests/7\necho \"requests_before=$(fx_nreq)\"\nt control \"$U\"\necho \"requests_after=$(fx_nreq)\"; fx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "foreign=UNKNOWN rc=0",
+        "otherport=UNKNOWN rc=0",
+        "subdomain=UNKNOWN rc=0",
+        "requests_before=0",
+        "control=MERGED rc=0",
+        "requests_after=1",
+        "GET https://gitlab.example.test/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7 auth=present"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "evil.example.test/api",
+        ":9999/api"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

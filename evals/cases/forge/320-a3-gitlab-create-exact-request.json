@@ -1,0 +1,30 @@
+{
+  "id": "forge-320-a3-gitlab-create-exact-request",
+  "target": "forge.sh pr-create (gitlab) — one create request with source, target, title and description from the body file; prints only the web URL",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nPID=grp%2Fsub%2Fproj\nfx_http \"GET /api/v4/projects/$PID/merge_requests?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST /api/v4/projects/$PID/merge_requests\" 201 '{\"iid\":5,\"web_url\":\"https://gitlab.example.test/grp/sub/proj/-/merge_requests/5\"}'\nfx_run pr-create --head feat --base main --title \"My title\" --body-file body.md; fx_show r\necho \"stdout_lines=$(printf '%s\\n' \"$FX_OUT\" | wc -l | tr -d ' ')\"\necho \"posts=$(fx_nmeth POST)\"\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[https://gitlab.example.test/grp/sub/proj/-/merge_requests/5]",
+        "r.rc=0",
+        "stdout_lines=1",
+        "posts=1",
+        "POST https://gitlab.example.test/api/v4/projects/grp%2Fsub%2Fproj/merge_requests auth=present",
+        "source_branch=feat",
+        "target_branch=main",
+        "title=My title",
+        "description=body line one\\nbody line two"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "forge-337-a4-missing-gh-fails-closed",
+  "target": "forge.sh pr-state — a /pull/ URL with gh absent from PATH prints UNKNOWN and exits 0 (control: a gitlab MR on the same PATH still reaches the transport)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests/7\" 200 '{\"state\":\"merged\"}'\nfx_gh pr_view 0 MERGED\nfx_nogh\ncommand -v gh >/dev/null 2>&1 && echo \"gh-still-on-path\"\nfx_run pr-state https://github.com/o/r/pull/3; echo \"nogh=$FX_OUT rc=$FX_RC\"\necho \"gh_calls=$(fx_count gh pr)\"\nfx_run pr-state https://gitlab.example.test/grp/proj/-/merge_requests/7; echo \"control=$FX_OUT rc=$FX_RC\"\necho \"reqs=$(fx_nreq)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "nogh=UNKNOWN rc=0",
+        "gh_calls=0",
+        "control=MERGED rc=0",
+        "reqs=1"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "gh-still-on-path"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

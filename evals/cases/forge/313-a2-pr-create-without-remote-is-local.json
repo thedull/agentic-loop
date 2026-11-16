@@ -1,0 +1,28 @@
+{
+  "id": "forge-313-a2-pr-create-without-remote-is-local",
+  "target": "forge.sh pr-create — no usable remote prints local, exits 0, makes no forge call (control: with a remote it does)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST /api/v4/projects/grp%2Fproj/merge_requests\" 201 '{\"iid\":3,\"web_url\":\"https://gitlab.example.test/grp/proj/-/merge_requests/3\"}'\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show noremote\nexport FORGE=gitlab; fx_run pr-create --head feat --base main --title T --body-file body.md; fx_show declared; unset FORGE\necho \"calls_before=$(fx_ncalls)\"\nfx_remote https://gitlab.example.test/grp/proj.git\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show control\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "noremote.out=[local]",
+        "noremote.rc=0",
+        "declared.out=[local]",
+        "declared.rc=0",
+        "calls_before=0",
+        "control.out=[https://gitlab.example.test/grp/proj/-/merge_requests/3]",
+        "POST https://gitlab.example.test/api/v4/projects/grp%2Fproj/merge_requests auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

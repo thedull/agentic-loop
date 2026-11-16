@@ -82,7 +82,7 @@ PLUGIN_ROOT="$(cd "<this skill's base directory>/../.." && pwd)"
    ```bash
    mkdir -p scripts/lib .agentic/artifacts .claude
    mkdir -p factory/specs .claude/workflows        # factory
-   cp -R "$PLUGIN_ROOT/scripts/." scripts/
+   cp -R "$PLUGIN_ROOT/scripts/." scripts/      # includes scripts/lib/forge.sh
    cp "$PLUGIN_ROOT/templates/.env.example" .env.example
    cp "$PLUGIN_ROOT/templates/LEARNINGS.md" LEARNINGS.md
    cp "$PLUGIN_ROOT/templates/PROJECT_README.md" AGENTIC_LOOP.md

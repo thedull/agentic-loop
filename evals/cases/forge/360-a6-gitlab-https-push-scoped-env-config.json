@@ -1,0 +1,28 @@
+{
+  "id": "forge-360-a6-gitlab-https-push-scoped-env-config",
+  "target": "forge.sh push — gitlab over https authenticates via GIT_CONFIG_* scoped to the remote URL, never argv or disk",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nTOK=glpat-FAKE-not-a-real-token-0001\nexport FORGE_TOKEN=$TOK\nfx_run push claude/idea-x; fx_show r\ncat \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null\nfx_reqs_clear\nfx_setremote https://gitlab.example.test:8443/grp/proj.git\nfx_run push claude/idea-x; fx_show port\necho \"port_keys=$(tail -1 \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null | grep -o 'keys=[^ ]*' | sed 's/^keys=//')\"\nfx_calls_text\nfx_tokscan \"$TOK\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.rc=0",
+        "value_has_token=yes",
+        "args=-u origin claude/idea-x",
+        "http.https://gitlab.example.test",
+        "port_keys=http.https://gitlab.example.test:8443",
+        "tokscan=clean",
+        "port.rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

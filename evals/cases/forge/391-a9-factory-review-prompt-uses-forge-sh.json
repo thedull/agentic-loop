@@ -1,0 +1,26 @@
+{
+  "id": "forge-391-a9-factory-review-prompt-uses-forge-sh",
+  "target": "templates/workflows/factory.js review-prompt region — names forge.sh push and pr-create, says PR/MR, keeps the pr-open handoff",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nJ=\"$PLUGIN_ROOT/templates/workflows/factory.js\"\nsed -n '/@agentic-loop:begin region=review-prompt/,/@agentic-loop:end region=review-prompt/p' \"$J\" > region.txt\nfx_has region.txt 'REVIEW_PROMPT' region_found\nfx_has region.txt 'forge.sh push' names_push\nfx_has region.txt 'pr-create' names_prcreate\nfx_has region.txt 'git push -u origin' stale_push\nfx_has region.txt 'PR/MR' says_prmr",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "region_found=yes",
+        "names_push=yes",
+        "names_prcreate=yes",
+        "stale_push=no",
+        "says_prmr=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

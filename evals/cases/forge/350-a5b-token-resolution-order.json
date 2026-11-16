@@ -1,0 +1,33 @@
+{
+  "id": "forge-350-a5b-token-resolution-order",
+  "target": "forge.sh — token order: FORGE_TOKEN env, FORGE_TOKEN .env, GITLAB_TOKEN env, GITLAB_TOKEN .env; first non-empty wins",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nT1=glpat-FAKE-not-a-real-token-0001; T2=glpat-FAKE-not-a-real-token-0002\nT3=glpat-FAKE-not-a-real-token-0003; T4=glpat-FAKE-not-a-real-token-0004\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'\nstep() { fx_reqs_clear; export FORGE_MOCK_EXPECT_TOKEN=\"$1\"; fx_run pr-state \"$U\"; echo \"$2: $(tail -1 \"$FORGE_MOCK_DIR/token-match.log\" 2>/dev/null || echo nolog) out=$FX_OUT\"; }\nprintf 'FORGE_TOKEN=%s\\nGITLAB_TOKEN=%s\\n' $T2 $T4 > .env\nexport FORGE_TOKEN=$T1 GITLAB_TOKEN=$T3\nstep $T1 all\nunset FORGE_TOKEN\nstep $T2 dotenvforge\nprintf 'GITLAB_TOKEN=%s\\n' $T4 > .env\nstep $T3 envgitlab\nunset GITLAB_TOKEN\nstep $T4 dotenvgitlab\nexport FORGE_TOKEN=\nstep $T4 emptyenv\nunset FORGE_TOKEN; printf 'FORGE_TOKEN=\\nGITLAB_TOKEN=%s\\n' $T4 > .env\nstep $T4 emptydotenv\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "all: match out=MERGED",
+        "dotenvforge: match out=MERGED",
+        "envgitlab: match out=MERGED",
+        "dotenvgitlab: match out=MERGED",
+        "emptyenv: match out=MERGED",
+        "emptydotenv: match out=MERGED"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "nomatch"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

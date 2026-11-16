@@ -1,0 +1,26 @@
+{
+  "id": "forge-365-a6-push-preserves-caller-git-config-env",
+  "target": "forge.sh push \u2014 the injected header is appended to a caller's GIT_CONFIG_* environment instead of replacing it",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nexport GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.example GIT_CONFIG_VALUE_0=1\nfx_run push feat; fx_show r\nL=\"$(tail -1 \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null)\"\necho \"count=$(printf '%s' \"$L\" | grep -o 'GIT_CONFIG_COUNT=[0-9]*')\"\nif printf '%s' \"$L\" | grep -o 'keys=[^ ]*' | grep -qF 'core.example'; then echo keeps-caller-key=yes; else echo keeps-caller-key=no; fi\nif printf '%s' \"$L\" | grep -o 'keys=[^ ]*' | grep -qF 'http.https://gitlab.example.test/.extraheader'; then echo has-inject-key=yes; else echo has-inject-key=no; fi\necho \"pushes=$(fx_count git push)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.rc=0",
+        "pushes=1",
+        "count=GIT_CONFIG_COUNT=2",
+        "keeps-caller-key=yes",
+        "has-inject-key=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

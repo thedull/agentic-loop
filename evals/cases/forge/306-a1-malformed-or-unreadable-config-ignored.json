@@ -1,0 +1,25 @@
+{
+  "id": "forge-306-a1-malformed-or-unreadable-config-ignored",
+  "target": "forge.sh kind — absent, malformed or unreadable .agentic/config.json is no config and resolution continues",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/o/r.git\nk() { fx_run kind; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nk absent\nmkdir -p .agentic; printf '{not json at all' > .agentic/config.json\nk malformed\nrm .agentic/config.json; mkdir .agentic/config.json\nk directory\nrmdir .agentic/config.json; printf '{\"forge\":{\"kind\":' > .agentic/config.json\nk truncated\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "absent=gitlab rc=0",
+        "malformed=gitlab rc=0",
+        "directory=gitlab rc=0",
+        "truncated=gitlab rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}
