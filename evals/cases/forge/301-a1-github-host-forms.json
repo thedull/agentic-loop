@@ -1,0 +1,27 @@
+{
+  "id": "forge-301-a1-github-host-forms",
+  "target": "forge.sh kind — github.com / www.github.com in https, scp and ssh forms, case-insensitive",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nk() { fx_setremote \"$2\"; fx_run kind; echo \"$1=$FX_OUT\"; }\nk https https://github.com/o/r.git\nk www https://www.github.com/o/r\nk scp git@github.com:o/r.git\nk ssh ssh://git@github.com/o/r.git\nk upper https://GitHub.COM/o/r.git\nk wwwscp git@www.github.com:o/r.git\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "https=github",
+        "www=github",
+        "scp=github",
+        "ssh=github",
+        "upper=github",
+        "wwwscp=github"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

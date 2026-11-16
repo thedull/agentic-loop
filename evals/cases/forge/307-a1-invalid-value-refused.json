@@ -1,0 +1,30 @@
+{
+  "id": "forge-307-a1-invalid-value-refused",
+  "target": "forge.sh kind — a declared value outside github|gitlab|none exits non-zero, names it on stderr, prints nothing on stdout, never falls back",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nexport FORGE=bogusforge; fx_run kind; fx_show env; unset FORGE\nprintf 'FORGE=weirdenv\\n' > .env; fx_run kind; fx_show dotenv; rm .env\nfx_config '{\"forge\":{\"kind\":\"cfgweird\"}}'; fx_run kind; fx_show cfg; rm -rf .agentic\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "env.out=[]",
+        "env.nz=yes",
+        "bogusforge",
+        "dotenv.out=[]",
+        "dotenv.nz=yes",
+        "weirdenv",
+        "cfg.out=[]",
+        "cfg.nz=yes",
+        "cfgweird"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

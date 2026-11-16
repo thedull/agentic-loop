@@ -1,0 +1,24 @@
+{
+  "id": "forge-323-a5b-base-url-forge-url-over-remote",
+  "target": "forge.sh pr-create (gitlab) — FORGE_URL is the API base when set, and nothing is sent to the remote's host instead",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001 FORGE_URL=https://gl.example.test:9443\nfx_http \"GET /api/v4/projects/grp%2Fproj/merge_requests?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST /api/v4/projects/grp%2Fproj/merge_requests\" 201 '{\"iid\":2,\"web_url\":\"https://gl.example.test:9443/grp/proj/-/merge_requests/2\"}'\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show r\necho \"foreign_requests=$(fx_reqs | grep -c 'https://gitlab.example.test')\"\nfx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "POST https://gl.example.test:9443/api/v4/projects/grp%2Fproj/merge_requests auth=present",
+        "r.rc=0",
+        "foreign_requests=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

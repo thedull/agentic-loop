@@ -1,0 +1,28 @@
+{
+  "id": "forge-341-a5-pr-close-foreign-host-refused",
+  "target": "forge.sh pr-close — a foreign-host URL exits non-zero naming the mismatch and makes no request (control: the matching URL sends the PUT)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nfx_http \"PUT $P\" 200 '{\"state\":\"closed\"}'\nfx_run pr-close https://evil.example.test/grp/sub/proj/-/merge_requests/7; fx_show foreign\nif printf '%s' \"$FX_ERR\" | grep -Eqi 'mismatch|differ|does not match|not the configured|foreign|configured'; then echo mismatch-named=yes; else echo mismatch-named=no; fi\necho \"puts_before=$(fx_nmeth PUT)\"\nfx_run pr-close \"$U\"; fx_show control\necho \"puts_after=$(fx_nmeth PUT)\"; fx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "foreign.nz=yes",
+        "foreign.out=[]",
+        "mismatch-named=yes",
+        "puts_before=0",
+        "control.rc=0",
+        "puts_after=1",
+        "PUT https://gitlab.example.test/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7 auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

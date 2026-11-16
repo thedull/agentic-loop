@@ -1,0 +1,24 @@
+{
+  "id": "forge-408-a10b-gitlab-token-missing-is-fail",
+  "target": "doctor.sh forge section (gitlab) — a missing token is a [FAIL] naming the token",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://gitlab.example.test/grp/proj.git\nfx_http \"GET /api/v4/user\" 200 '{\"username\":\"x\"}'\nfx_doctor\nfx_sec_has fail_lines '\\[FAIL\\]'\nfx_sec_has mentions_token '\\[FAIL\\].*[Tt][Oo][Kk][Ee][Nn]'\necho \"user_requests=$(fx_reqs | grep -c 'auth=present')\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "fail_lines=yes",
+        "mentions_token=yes",
+        "user_requests=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

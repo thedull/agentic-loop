@@ -1,0 +1,36 @@
+{
+  "id": "forge-303-a1-gitlab-near-misses",
+  "target": "forge.sh kind — notgitlab hosts and gitlab only in the path do not match the gitlab rule",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://example.test/o/r.git\nk() { fx_setremote \"$2\"; fx_run kind; echo \"$1=$FX_OUT\"; }\nk notgitlab https://notgitlab.example.test/o/r.git\nk midlabel https://my-gitlab.example.test/o/r.git\nk subnot https://ci.notgitlab.example.test/o/r.git\nk pathonly https://example.test/gitlab/r.git\nk githubpath https://github.com/gitlab/gitlab.git\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "notgitlab=none",
+        "midlabel=none",
+        "subnot=none",
+        "pathonly=none",
+        "githubpath=github"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "notgitlab=gitlab",
+        "midlabel=gitlab",
+        "subnot=gitlab",
+        "pathonly=gitlab",
+        "githubpath=gitlab"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

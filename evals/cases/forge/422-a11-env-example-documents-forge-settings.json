@@ -1,0 +1,26 @@
+{
+  "id": "forge-422-a11-env-example-documents-forge-settings",
+  "target": "templates/.env.example — documents FORGE, FORGE_URL, FORGE_REMOTE, FORGE_TOKEN and GITLAB_TOKEN",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nE=\"$PLUGIN_ROOT/templates/.env.example\"\nfor v in FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN; do\n  if grep -qE \"^#? *$v=\" \"$E\"; then echo \"$v=yes\"; else echo \"$v=no\"; fi\ndone",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "FORGE=yes",
+        "FORGE_URL=yes",
+        "FORGE_REMOTE=yes",
+        "FORGE_TOKEN=yes",
+        "GITLAB_TOKEN=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

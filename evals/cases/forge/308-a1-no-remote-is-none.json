@@ -1,0 +1,23 @@
+{
+  "id": "forge-308-a1-no-remote-is-none",
+  "target": "forge.sh kind — no remote configured prints none",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_run kind; echo \"noremote=$FX_OUT rc=$FX_RC\"\nexport FORGE=gitlab; fx_run kind; echo \"declared=$FX_OUT rc=$FX_RC\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "noremote=none rc=0",
+        "declared=gitlab rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

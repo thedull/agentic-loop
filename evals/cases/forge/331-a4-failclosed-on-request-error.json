@@ -1,0 +1,33 @@
+{
+  "id": "forge-331-a4-failclosed-on-request-error",
+  "target": "forge.sh pr-state (gitlab) — HTTP errors, transport errors and unusable bodies print UNKNOWN and exit 0, never MERGED (mutation target)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nt() { fx_run pr-state \"$U\"; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nfx_http \"GET $P\" 404 '{\"message\":\"404 Not found\"}'; t e404\nfx_http \"GET $P\" 500 '{\"message\":\"boom\"}'; t e500\nfx_http \"GET $P\" 401 '{\"message\":\"401 Unauthorized\"}'; t e401\nfx_http \"GET $P\" 403 '{\"message\":\"403 Forbidden\"}'; t e403\nfx_http \"GET $P\" 404 '{\"state\":\"merged\"}'; t e404merged\nfx_http \"GET $P\" 500 '{\"state\":\"merged\"}'; t e500merged\nfx_http \"GET $P\" transport-error; t transport\nfx_http \"GET $P\" 200 'not json at all'; t notjson\nfx_http \"GET $P\" 200 '{}'; t empty\nfx_http \"GET $P\" 200 '{\"state\":null}'; t nullstate\necho \"reqs_before_control=$(fx_nreq)\"\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'; t control\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "e404=UNKNOWN rc=0",
+        "e500=UNKNOWN rc=0",
+        "e401=UNKNOWN rc=0",
+        "e403=UNKNOWN rc=0",
+        "e404merged=UNKNOWN rc=0",
+        "e500merged=UNKNOWN rc=0",
+        "transport=UNKNOWN rc=0",
+        "notjson=UNKNOWN rc=0",
+        "empty=UNKNOWN rc=0",
+        "nullstate=UNKNOWN rc=0",
+        "reqs_before_control=10",
+        "control=MERGED rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

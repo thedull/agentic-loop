@@ -1,0 +1,27 @@
+{
+  "id": "forge-352-a5b-token-from-dotenv-never-leaks",
+  "target": "forge.sh — a token that exists only in ./.env (FORGE_TOKEN, then GITLAB_TOKEN) is used but appears in no argv log and no file other than .env",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nB=\"/api/v4/projects/grp%2Fproj/merge_requests\"\nfx_http \"GET $B?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST $B\" 201 '{\"iid\":3,\"web_url\":\"https://gitlab.example.test/grp/proj/-/merge_requests/3\"}'\nrun1() { # LABEL ENVLINE TOKEN\n  fx_reqs_clear; printf '%s\\n' \"$2\" > .env; export FORGE_MOCK_EXPECT_TOKEN=\"$3\"\n  fx_run pr-create --head feat --base main --title T --body-file body.md\n  echo \"$1_auth=$(tail -1 \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null | grep -o 'auth=[a-z]*' | cut -d= -f2)\"\n  echo \"$1_match=$(tail -1 \"$FORGE_MOCK_DIR/token-match.log\" 2>/dev/null)\"\n  echo \"$1_$(fx_tokscan \"$3\")\"\n}\nrun1 forge \"FORGE_TOKEN=glpat-FAKE-not-a-real-token-0005\" glpat-FAKE-not-a-real-token-0005\nrun1 gitlab \"GITLAB_TOKEN=glpat-FAKE-not-a-real-token-0006\" glpat-FAKE-not-a-real-token-0006\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "forge_tokscan=clean",
+        "gitlab_tokscan=clean",
+        "forge_auth=present",
+        "gitlab_auth=present",
+        "forge_match=match",
+        "gitlab_match=match"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

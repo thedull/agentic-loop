@@ -1,0 +1,25 @@
+{
+  "id": "forge-381-a8-forge-merged-advances-to-done",
+  "target": "tracker.sh reconcile-done — a non-ancestor spec whose https pr: forge.sh reports MERGED advances to done",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nmkdir -p factory/specs\nmkspec() { printf -- \"---\\nid: %s\\ntitle: t%s\\nstatus: pr-open\\nbranch: %s\\npr: %s\\n---\\n\" \"$1\" \"$1\" \"$2\" \"$3\" > \"factory/specs/$1-s.md\"; }\nst() { sed -n \"s/^status: //p\" \"factory/specs/$1-s.md\" | head -1; }\nmrpath() { echo \"/api/v4/projects/grp%2Fproj/merge_requests/$1\"; }\nmrurl() { echo \"https://gitlab.example.test/grp/proj/-/merge_requests/$1\"; }\nopenbranch() { git checkout -q -b \"$1\"; git commit -q --allow-empty -m \"w-$1\"; git checkout -q main; }\nmergedbranch() { openbranch \"$1\"; git merge -q --no-ff --no-edit \"$1\"; }\nrecon() { \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" reconcile-done tester >/dev/null 2>&1; }\nopenbranch claude/idea-squashed\nmkspec 001 claude/idea-squashed \"$(mrurl 1)\"\nfx_http \"GET $(mrpath 1)\" 200 '{\"state\":\"merged\"}'\nrecon\necho \"s1=$(st 001)\"\ngrep -q '^done_at: .' factory/specs/001-s.md && echo done_at_set=yes || echo done_at_set=no\necho \"req1=$(fx_nreq)\"; fx_reqs | grep -o 'auth=[a-z]*'\n[[ -x \"$F\" ]] || FX_MISSING=127; fx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "s1=done",
+        "done_at_set=yes",
+        "req1=1",
+        "auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

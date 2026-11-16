@@ -1,0 +1,29 @@
+{
+  "id": "forge-362-a6-push-honours-configured-remote",
+  "target": "forge.sh push — pushes to FORGE_REMOTE, with upstream tracking",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote ssh://git@example.test/o/r.git\nfx_remote ssh://git@example.test/o/fork.git upstream\nexport FORGE_REMOTE=upstream\nfx_run push main; fx_show r\ncat \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "args=-u upstream main",
+        "r.rc=0"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "args=-u origin main"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

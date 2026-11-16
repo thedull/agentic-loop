@@ -1,0 +1,25 @@
+{
+  "id": "forge-373-a7-unattended-stages-never-pr-close",
+  "target": "templates/workflows/factory.js and skills/review/SKILL.md — no pr-close at all, while they do route through forge.sh",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nJ=\"$PLUGIN_ROOT/templates/workflows/factory.js\"; R=\"$PLUGIN_ROOT/skills/review/SKILL.md\"\nfx_has \"$J\" 'pr-close' factory_prclose\nfx_has \"$R\" 'pr-close' review_prclose\nfx_has \"$J\" 'forge.sh' factory_forge\nfx_has \"$R\" 'forge.sh' review_forge",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "factory_prclose=no",
+        "review_prclose=no",
+        "factory_forge=yes",
+        "review_forge=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

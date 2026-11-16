@@ -1,0 +1,24 @@
+{
+  "id": "forge-401-a10b-doctor-forge-section",
+  "target": "doctor.sh — prints a forge: section whose lines go through ok/warn/fail, and makes no forge call of its own",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/user\" 200 '{\"username\":\"x\"}'\nfx_doctor\ngrep -q '^forge:' .doctor.out && echo header=yes || echo header=no\n[[ -n \"$FX_SEC\" ]] && echo section_lines=yes || echo section_lines=no\necho \"bad_lines=$(printf '%s\\n' \"$FX_SEC\" | grep -Evc '^  \\[(ok|WARN|FAIL)\\] +.+')\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "header=yes",
+        "section_lines=yes",
+        "bad_lines=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

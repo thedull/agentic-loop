@@ -1,0 +1,26 @@
+{
+  "id": "forge-342-a5-forge-url-is-the-bound-instance",
+  "target": "forge.sh pr-state — with FORGE_URL set, that instance (not the remote's host) is the only one that receives requests",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/sub/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nP=\"/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7\"\nU=https://gitlab.example.test/grp/sub/proj/-/merge_requests/7\nexport FORGE_URL=https://gl.example.test\nfx_http \"GET $P\" 200 '{\"state\":\"merged\"}'\nt() { fx_run pr-state \"$2\"; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nt remotehost \"$U\"\necho \"requests_before=$(fx_nreq)\"\nt configured https://gl.example.test/grp/sub/proj/-/merge_requests/7\necho \"requests_after=$(fx_nreq)\"; fx_reqs\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "remotehost=UNKNOWN rc=0",
+        "requests_before=0",
+        "configured=MERGED rc=0",
+        "requests_after=1",
+        "GET https://gl.example.test/api/v4/projects/grp%2Fsub%2Fproj/merge_requests/7 auth=present"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

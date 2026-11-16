@@ -1,0 +1,40 @@
+{
+  "id": "forge-499-a0-acceptance-coverage-meta",
+  "target": "forge suite — every acceptance id a1..a11 plus a5b and a10b has at least one case file (a12 is checked by the review stage's full free run)",
+  "kind": "bash-unit",
+  "cmd": "d=\"$PLUGIN_ROOT/evals/cases/forge\"\nids=\"$(for f in \"$d\"/*.json; do jq -r .id \"$f\"; done)\"\nfor a in a1 a2 a3 a4 a5 a5b a6 a7 a8 a9 a10 a10b a11; do\n  if printf '%s\\n' \"$ids\" | grep -qE \"^forge-[0-9]+-$a-\"; then echo \"$a:has\"; else echo \"$a:MISSING\"; fi\ndone",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "a1:has",
+        "a2:has",
+        "a3:has",
+        "a4:has",
+        "a5:has",
+        "a5b:has",
+        "a6:has",
+        "a7:has",
+        "a8:has",
+        "a9:has",
+        "a10:has",
+        "a10b:has",
+        "a11:has"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        ":MISSING"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

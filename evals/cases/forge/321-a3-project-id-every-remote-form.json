@@ -1,0 +1,33 @@
+{
+  "id": "forge-321-a3-project-id-every-remote-form",
+  "target": "forge.sh pr-create (gitlab) — project id is the URL-encoded repo path for https (with port, no .git), scp and ssh remotes; ssh base has no port",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/o/r.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/projects/g%2Fs%2Fp/merge_requests?source_branch=feat&state=opened\" 200 '[]'\nfx_http \"POST /api/v4/projects/g%2Fs%2Fp/merge_requests\" 201 '{\"iid\":5,\"web_url\":\"https://gitlab.example.test/g/s/p/-/merge_requests/5\"}'\nrcs=0\nfor spec in \"https-port|https://gitlab.example.test:8443/g/s/p.git\" \"https-nogit|https://gitlab.example.test/g/s/p\" \"scp|git@gitlab.example.test:g/s/p.git\" \"ssh-port|ssh://git@gitlab.example.test:2222/g/s/p.git\"; do\n  fx_setremote \"${spec#*|}\"; fx_reqs_clear\n  fx_run pr-create --head feat --base main --title T --body-file body.md\n  [[ $FX_RC -eq 0 ]] || rcs=$FX_RC\n  echo \"${spec%%|*} $(grep '^POST ' \"$FORGE_MOCK_DIR/requests.log\" 2>/dev/null)\"\ndone\necho \"all.rc=$rcs\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "https-port POST https://gitlab.example.test:8443/api/v4/projects/g%2Fs%2Fp/merge_requests",
+        "https-nogit POST https://gitlab.example.test/api/v4/projects/g%2Fs%2Fp/merge_requests",
+        "scp POST https://gitlab.example.test/api/v4/projects/g%2Fs%2Fp/merge_requests",
+        "ssh-port POST https://gitlab.example.test/api/v4/projects/g%2Fs%2Fp/merge_requests",
+        "all.rc=0"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        ":2222",
+        "p.git%"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

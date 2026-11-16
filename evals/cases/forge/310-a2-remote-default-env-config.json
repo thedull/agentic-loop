@@ -1,0 +1,25 @@
+{
+  "id": "forge-310-a2-remote-default-env-config",
+  "target": "forge.sh remote — FORGE_REMOTE env, then .forge.remote, else origin",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/o/r.git\nk() { fx_run remote; echo \"$1=$FX_OUT\"; }\nk default\nfx_config '{\"forge\":{\"remote\":\"upstream\"}}'\nk cfg\nexport FORGE_REMOTE=mirror; k env\nexport FORGE_REMOTE=; k envempty\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "default=origin",
+        "cfg=upstream",
+        "env=mirror",
+        "envempty=upstream"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "forge-410-a10b-gitlab-401-403-are-fail",
+  "target": "doctor.sh forge section (gitlab) — HTTP 401 and 403 from GET /user are [FAIL]",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfor c in 401 403; do\n  fx_http \"GET /api/v4/user\" $c '{\"message\":\"nope\"}'; fx_reqs_clear\n  fx_doctor\n  fx_sec_has e${c}_fail '\\[FAIL\\]'\n  echo \"e${c}_reached=$(fx_reqs | grep -c '/api/v4/user auth=present')\"\ndone\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "e401_fail=yes",
+        "e403_fail=yes",
+        "e401_reached=1",
+        "e403_reached=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "forge-421-a11-init-skill-copy-list",
+  "target": "skills/init/SKILL.md — the copy list names forge.sh",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nfx_has \"$PLUGIN_ROOT/skills/init/SKILL.md\" 'forge.sh' init_names_forge",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "init_names_forge=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

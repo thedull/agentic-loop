@@ -1,0 +1,25 @@
+{
+  "id": "forge-372-a7-shelve-skill-names-forge-pr-close",
+  "target": "skills/shelve/SKILL.md — closing goes through forge.sh pr-close, never gh pr close, still never unprompted or unattended",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"\nS=\"$PLUGIN_ROOT/skills/shelve/SKILL.md\"\nfx_has \"$S\" 'forge.sh pr-close' names_prclose\nfx_has \"$S\" 'gh pr close' gh_pr_close\nfx_has \"$S\" 'unprompted' unprompted\nfx_has \"$S\" 'unattended' unattended",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "names_prclose=yes",
+        "gh_pr_close=no",
+        "unprompted=yes",
+        "unattended=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

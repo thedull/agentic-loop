@@ -1,0 +1,29 @@
+{
+  "id": "forge-411-a10b-gitlab-transport-and-5xx-are-warn",
+  "target": "doctor.sh forge section (gitlab) — a transport error or a 5xx is [WARN], never [FAIL]",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_gh auth_status 0 \"Logged in\"\nunset FORGE FORGE_URL FORGE_REMOTE FORGE_TOKEN GITLAB_TOKEN\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_http \"GET /api/v4/user\" transport-error; fx_reqs_clear; fx_doctor\nfx_sec_has transport_warn '\\[WARN\\]'; fx_sec_has transport_fail '\\[FAIL\\]'\necho \"transport_reached=$(fx_reqs | grep -c '/api/v4/user auth=present')\"\nfx_http \"GET /api/v4/user\" 500 '{}'; fx_reqs_clear; fx_doctor\nfx_sec_has s500_warn '\\[WARN\\]'; fx_sec_has s500_fail '\\[FAIL\\]'\necho \"s500_reached=$(fx_reqs | grep -c '/api/v4/user auth=present')\"\nfx_http \"GET /api/v4/user\" 503 '{}'; fx_doctor\nfx_sec_has s503_warn '\\[WARN\\]'; fx_sec_has s503_fail '\\[FAIL\\]'\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "transport_warn=yes",
+        "transport_fail=no",
+        "s500_warn=yes",
+        "s500_fail=no",
+        "s503_warn=yes",
+        "s503_fail=no",
+        "transport_reached=1",
+        "s500_reached=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

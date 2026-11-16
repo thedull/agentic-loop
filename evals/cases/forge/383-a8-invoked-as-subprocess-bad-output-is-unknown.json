@@ -1,0 +1,29 @@
+{
+  "id": "forge-383-a8-invoked-as-subprocess-bad-output-is-unknown",
+  "target": "tracker.sh reconcile-done — calls forge.sh pr-state as a subprocess; non-zero exit or output outside OPEN|MERGED|CLOSED|UNKNOWN counts as UNKNOWN",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nmkdir -p factory/specs scripts/lib\ncp \"$PLUGIN_ROOT/scripts/lib/tracker.sh\" \"$PLUGIN_ROOT/scripts/lib/obs.sh\" scripts/lib/\ncat > scripts/lib/forge.sh <<'STUB'\n#!/usr/bin/env bash\necho \"argv=$*\" >> \"$STUB_LOG\"\necho \"ppid_is_not_self=$([[ $PPID -ne $$ ]] && echo yes || echo no)\" >> \"$STUB_LOG\"\ncase \"$STUB_MODE\" in\n  merged0) echo MERGED ;;\n  merged1) echo MERGED; exit 1 ;;\n  garbage) echo \"MERGED but with words\" ;;\n  lower) echo merged ;;\n  empty) : ;;\nesac\nSTUB\nchmod +x scripts/lib/forge.sh\ngit checkout -q -b claude/idea-x; git commit -q --allow-empty -m w; git checkout -q main\nexport STUB_LOG=\"$PWD/stub.log\"\nreset() { printf -- '---\\nid: 001\\ntitle: t\\nstatus: pr-open\\nbranch: claude/idea-x\\npr: https://gitlab.example.test/grp/proj/-/merge_requests/7\\n---\\n' > factory/specs/001-s.md; }\nfor m in merged1 garbage lower empty merged0; do\n  reset; export STUB_MODE=$m\n  bash scripts/lib/tracker.sh reconcile-done tester >/dev/null 2>&1\n  echo \"$m=$(sed -n 's/^status: //p' factory/specs/001-s.md | head -1)\"\ndone\necho \"invocations=$(grep -c '^argv=' stub.log 2>/dev/null)\"\ngrep -m1 '^argv=' stub.log 2>/dev/null\ngrep -q 'ppid_is_not_self=yes' stub.log 2>/dev/null && echo subprocess=yes\n[[ -x \"$F\" ]] || FX_MISSING=127\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "merged1=pr-open",
+        "garbage=pr-open",
+        "lower=pr-open",
+        "empty=pr-open",
+        "merged0=done",
+        "invocations=5",
+        "argv=pr-state https://gitlab.example.test/grp/proj/-/merge_requests/7",
+        "subprocess=yes"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

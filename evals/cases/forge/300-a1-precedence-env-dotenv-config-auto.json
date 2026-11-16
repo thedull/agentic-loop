@@ -1,0 +1,25 @@
+{
+  "id": "forge-300-a1-precedence-env-dotenv-config-auto",
+  "target": "forge.sh kind — FORGE env > ./.env > config > auto-detect",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nk() { fx_run kind; echo \"$1=$FX_OUT rc=$FX_RC\"; }\nfx_config '{\"forge\":{\"kind\":\"gitlab\"}}'\nprintf 'FORGE=none\\n' > .env\nexport FORGE=github; k s1; unset FORGE\nk s2\nrm .env; fx_config '{\"forge\":{\"kind\":\"github\"}}'\nk s3\nrm -rf .agentic\nk s4\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "s1=github rc=0",
+        "s2=none rc=0",
+        "s3=github rc=0",
+        "s4=gitlab rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "forge-304-a1-ghe-is-none-until-declared",
+  "target": "forge.sh kind — a GitHub Enterprise host is none, exit 0, and works once declared",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.example.test/o/r.git\nfx_run kind; echo \"ghe=$FX_OUT rc=$FX_RC\"\nexport FORGE=github; fx_run kind; echo \"declared=$FX_OUT rc=$FX_RC\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "ghe=none rc=0",
+        "declared=github rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

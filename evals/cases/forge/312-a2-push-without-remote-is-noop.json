@@ -1,0 +1,29 @@
+{
+  "id": "forge-312-a2-push-without-remote-is-noop",
+  "target": "forge.sh push — no usable remote prints 'no remote', pushes nothing, exits 0 (control: with a remote it does push)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_run push main; fx_show noremote\nexport FORGE=gitlab; export FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_run push main; fx_show declared; unset FORGE FORGE_TOKEN\nfx_remote ssh://git@example.test/o/r.git\nexport FORGE_REMOTE=ghost; fx_run push main; fx_show ghost; unset FORGE_REMOTE\necho \"pushes_before=$(fx_count git push)\"\nfx_run push main; fx_show control\necho \"pushes_after=$(fx_count git push)\"\ncat \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "noremote.rc=0",
+        "noremote.err=[no remote",
+        "declared.rc=0",
+        "ghost.rc=0",
+        "pushes_before=0",
+        "pushes_after=1",
+        "control.rc=0",
+        "GIT_CONFIG_COUNT=0 keys= value_has_token=no args=-u origin main"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "forge-333-a4-github-pull-urls-on-any-host",
+  "target": "forge.sh pr-state — /pull/ URLs on github.com and on a GitHub Enterprise host go through gh, whatever the repo's kind; gh failures are UNKNOWN",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE=gitlab FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_gh pr_view 0 MERGED\nfor u in https://github.com/o/r/pull/3 https://ghe.example.test/o/r/pull/12; do fx_run pr-state \"$u\"; echo \"$u->$FX_OUT\"; done\necho \"gh_views=$(fx_count gh pr view)\"; echo \"requests=$(fx_nreq)\"\nfx_calls_text\ngs() { fx_gh pr_view 0 \"$2\"; fx_run pr-state https://github.com/o/r/pull/3; echo \"g_$1=$FX_OUT\"; }\ngs OPEN OPEN; gs CLOSED CLOSED; gs garbage REOPENED\nfx_gh pr_view 1 ''; fx_run pr-state https://github.com/o/r/pull/3; echo \"g_fail=$FX_OUT rc=$FX_RC\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "https://github.com/o/r/pull/3->MERGED",
+        "https://ghe.example.test/o/r/pull/12->MERGED",
+        "gh_views=2",
+        "requests=0",
+        "pr view https://ghe.example.test/o/r/pull/12",
+        "g_OPEN=OPEN",
+        "g_CLOSED=CLOSED",
+        "g_garbage=UNKNOWN",
+        "g_fail=UNKNOWN rc=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

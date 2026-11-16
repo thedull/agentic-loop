@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# gh shim for the forge suite.
+d="${FORGE_MOCK_DIR:?FORGE_MOCK_DIR not set}"
+mkdir -p "$d/gh"
+SEP=$'\x1f'
+{
+  printf 'gh\t'
+  first=1
+  for a in "$@"; do
+    [[ $first -eq 1 ]] || printf '%s' "$SEP"
+    first=0
+    printf '%s' "$a"
+  done
+  printf '\n'
+} >> "$d/calls.log"
+key="$(printf '%s_%s' "${1:-}" "${2:-}" | tr -c 'A-Za-z0-9\n' '_')"
+resp="$d/gh/$key"
+if [[ ! -f "$resp" ]]; then echo "gh: mock missing" >&2; exit 1; fi
+rc="$(head -1 "$resp")"; rc="${rc#exit: }"
+tail -n +2 "$resp"
+exit "${rc:-0}"

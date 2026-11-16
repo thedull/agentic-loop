@@ -1,0 +1,26 @@
+{
+  "id": "forge-325-a3-github-lookup-first-is-idempotent",
+  "target": "forge.sh pr-create (github) — an open PR for the head is printed and gh pr create is not invoked",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://github.com/o/r.git\nfx_gh pr_list 0 'https://github.com/o/r/pull/4'\nfx_gh pr_create 0 'https://github.com/o/r/pull/99'\nfx_run pr-create --head feat --base main --title T --body-file body.md; fx_show r\necho \"creates=$(fx_count gh pr create)\"; echo \"lists=$(fx_count gh pr list)\"; echo \"requests=$(fx_nreq)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "r.out=[https://github.com/o/r/pull/4]",
+        "r.rc=0",
+        "creates=0",
+        "lists=1",
+        "requests=0"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

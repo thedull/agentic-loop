@@ -1,0 +1,27 @@
+{
+  "id": "forge-311-a2-declared-kind-vs-missing-remote",
+  "target": "forge.sh kind — a declared kind wins even with no usable remote, else none",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/o/r.git\nexport FORGE_REMOTE=ghost\nfx_run kind; echo \"ghost_undeclared=$FX_OUT\"\nexport FORGE=github; fx_run kind; echo \"ghost_declared=$FX_OUT\"; unset FORGE FORGE_REMOTE\nfx_config '{\"forge\":{\"remote\":\"ghost\"}}'\nfx_run kind; echo \"cfg_ghost=$FX_OUT\"\nfx_config '{\"forge\":{\"remote\":\"ghost\",\"kind\":\"gitlab\"}}'\nfx_run kind; echo \"cfg_declared=$FX_OUT\"\nrm -rf .agentic; git remote remove origin\nexport FORGE=gitlab; fx_run kind; echo \"noremote_declared=$FX_OUT\"; unset FORGE\nfx_run kind; echo \"noremote_undeclared=$FX_OUT\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "ghost_undeclared=none",
+        "ghost_declared=github",
+        "noremote_declared=gitlab",
+        "noremote_undeclared=none",
+        "cfg_ghost=none",
+        "cfg_declared=gitlab"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}
