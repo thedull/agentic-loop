@@ -6,7 +6,7 @@ profile: standard
 created: 2026-11-16
 claimed_by:
 branch: claude/idea-forge-adapters
-pr:
+pr: https://github.com/thedull/agentic-loop/pull/31
 ---
 
 # Spec 020 — Operate the factory against GitLab and other forges, not only GitHub
