@@ -1,12 +1,13 @@
 ---
 id: 020
 title: Operate the factory against GitLab and other forges, not only GitHub
-status: pr-open
+status: done
 profile: standard
 created: 2026-11-16
 claimed_by:
 branch: claude/idea-forge-adapters
 pr: https://github.com/thedull/agentic-loop/pull/31
+done_at: 2026-11-16T22:22:28Z
 ---
 
 # Spec 020 — Operate the factory against GitLab and other forges, not only GitHub
