@@ -1,0 +1,29 @@
+{
+  "id": "forge-364-a6-push-refuses-option-like-names",
+  "target": "forge.sh push \u2014 a branch or remote name that starts with `-` is refused (non-zero, named on stderr) and git push is never run (control: a normal push runs once)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://gitlab.example.test/grp/proj.git\nexport FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\nfx_run push --receive-pack=x; fx_show opt\necho \"opt_pushes=$(fx_count git push)\"\nif printf '%s' \"$FX_ERR\" | grep -qF -- '--receive-pack=x'; then echo opt-named=yes; else echo opt-named=no; fi\nfx_reqs_clear\nexport FORGE_REMOTE=-oops\ngit config remote.-oops.url https://gitlab.example.test/grp/proj.git\nfx_run push feat; fx_show rem\necho \"rem_pushes=$(fx_count git push)\"\nif printf '%s' \"$FX_ERR\" | grep -qF -- '-oops'; then echo rem-named=yes; else echo rem-named=no; fi\nunset FORGE_REMOTE\nfx_reqs_clear\nfx_run push feat; fx_show ctl\necho \"ctl_pushes=$(fx_count git push)\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "opt.nz=yes",
+        "opt-named=yes",
+        "opt_pushes=0",
+        "rem.nz=yes",
+        "rem-named=yes",
+        "rem_pushes=0",
+        "ctl.rc=0",
+        "ctl_pushes=1"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}

@@ -1,13 +1,12 @@
 ---
 id: 020
 title: Operate the factory against GitLab and other forges, not only GitHub
-status: specd
+status: pr-open
 profile: standard
 created: 2026-11-16
 claimed_by:
-branch:
+branch: claude/idea-forge-adapters
 pr:
-claimed_at: 2026-11-16T21:28:42Z
 ---
 
 # Spec 020 — Operate the factory against GitLab and other forges, not only GitHub
@@ -68,7 +67,7 @@ claimed_at: 2026-11-16T21:28:42Z
 4. `forge.sh pr-state URL` SHALL print one of `OPEN|MERGED|CLOSED|UNKNOWN` and SHALL fail closed.
    - **gitlab:** given a GitLab MR URL (`…/-/merge_requests/<iid>`), when it runs, then the API states map as follows: `opened`→`OPEN`, `merged`→`MERGED`, `closed`→`CLOSED`. Any other state, including `locked` (transient during a merge), maps to `UNKNOWN`.
    - **gitlab project path:** the project path is everything between the host and `/-/merge_requests/`, at any depth (subgroups included), and it is fully URL-encoded as the project id. Given `FORGE_URL` with a path prefix (an instance served under a sub-path) that the MR URL starts with, then the base is `FORGE_URL` and the project path is the remainder.
-   - **github:** given a PR URL of the shape `https://<host>/<owner>/<repo>/pull/<n>` on **any** host (GitHub Enterprise included), when it runs, then it reports `gh`'s state for that URL. This keeps every URL today's `gh pr view` fallback could read readable.
+   - **github:** given a PR URL of the shape `https://<host>/<owner>/<repo>/pull/<n>` whose host is `github.com` **or the configured GitHub instance** (the host of `FORGE_URL`, else of the remote, when the kind is `github`; GitHub Enterprise included), when it runs, then it reports `gh`'s state for that URL. Given such a URL on any other host, then it prints `UNKNOWN` without invoking `gh`, because `gh` would offer an enterprise credential to whatever host a spec file names (see acceptance 5).
    - **adapter from the URL:** the adapter is chosen from the URL's shape, not from the current repo's `kind`, so a recorded URL stays readable after a project changes forge.
    - **fail closed:** given `local`, an empty value, a non-https value, an unparseable URL, a missing credential, a missing `gh`, or any request error, when it runs, then it prints `UNKNOWN` and exits 0. It never prints `MERGED` without a successful response saying so.
 5. GitLab credentials SHALL be sent only to the configured GitLab instance.
@@ -201,6 +200,12 @@ shim.
   (`PROJECT_REVIEW_ADDENDUM`, plus a project's own `CLAUDE.md`/`AGENTS.md`),
   so shipping a `forge.reviewers` knob would duplicate it.
 
+- **triage** (build, first `check_cmd` failure: 70/72; cases 410 and 411)
+  reproduce: in a bash-unit sandbox, gitlab remote, fake FORGE_TOKEN, `fx_http "GET /api/v4/user" 401`, then `forge.sh check` printed only the `ok` kind line and died on stderr with `_GL_STATUS: unbound variable`. The request reached the curl shim (requests.log `GET …/api/v4/user auth=present`).
+  localize: `scripts/lib/forge.sh` `forge_check` gitlab branch, `out="$(_forge_gl_api GET …)"`, followed by `case "$_GL_STATUS"`. `_forge_gl_api` sets the global `_GL_STATUS`, but it runs inside a command substitution (a subshell), so the caller never sees it. The same pattern appears in `_forge_gitlab_pr_create`/`_pr_close` error messages.
+  hypothesis: the HTTP status is lost across the `$(...)` boundary, so under `set -u` check aborts before it can emit the 401/403 `fail` or the transport/5xx `warn` line.
+  evidence: the unbound-variable error at the `case` line; the doctor `forge:` section holds only the `[ok]` line; case 409 (200) passes because the success branch never reads `_GL_STATUS`. The diagnosis came from a blind loop-reviewer pass (spec, failure output and diff only).
+
 ## Revision log (deltas only — never regenerate this spec)
 
 - 2026-11-16 spec: ADDED initial spec after two grilling questions (detection, reviewers).
@@ -215,3 +220,5 @@ shim.
 - 2026-11-16 spec-review-2: ADDED missing-remote behaviour — a declared kind still resolves; `push` is a no-op with exit 0; `pr-create` prints `local`.
 - 2026-11-16 spec-review-2: ADDED project-id derivation for https, scp and ssh remotes (`.git` stripped, FORGE_URL prefix removed); GitHub `pr-create` is idempotent via a lookup first.
 - 2026-11-16 spec-review-2: ADDED request transport contract (fields in argv, auth on stdin, shim logs `auth=present|absent` only); the unknown-path shim answer is a connection error; doctor cases assert only on the forge section; acceptance 9's factory.js half is a presence assertion; every case needs `exit_code` plus a behaviour check, a meta case checks coverage, and the Red Gate is per case.
+- 2026-11-16 review: MODIFIED acceptance 4 (github) — `/pull/` URLs are read via `gh` only for github.com or the configured GitHub instance, else UNKNOWN with no `gh` call. This extends acceptance 5's host binding to `gh`'s enterprise credentials (blind-review finding; a tightening, no user decision needed).
+- 2026-11-16 review: blind review verdict pass (73/73; reviewer mutations of pr-state, host binding, locked state and push auth each caught). Revision round 1 (of max 2) fixed 6 impl findings, each with a Red-Gate case first (343, 344, 354, 363, 364, 365, 329, 338; 333 updated): a scheme-less FORGE_URL is refused (token never sent over http); the https push injects the token only for the configured instance; the github adapter passes --repo for the configured remote; option-like branch and remote names are refused; the URL authority is cut at the first of / ? # with backslash and whitespace refused; tokens outside [A-Za-z0-9._~-] are refused, and caller GIT_CONFIG_* entries are preserved. Result: forge 81/81, full free suite 454 pass, 0 fail.

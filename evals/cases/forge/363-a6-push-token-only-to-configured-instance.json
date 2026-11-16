@@ -1,0 +1,35 @@
+{
+  "id": "forge-363-a6-push-token-only-to-configured-instance",
+  "target": "forge.sh push \u2014 the token header is injected only when the remote is on the configured instance (FORGE_URL); a mirror host gets a plain push (control: the configured host gets the scoped header)",
+  "kind": "bash-unit",
+  "cmd": ". \"$FIXTURES/forge/setup.sh\"; fx_init\nfx_remote https://mirror.example.test/grp/proj.git\nexport FORGE=gitlab FORGE_URL=https://gitlab.example.test FORGE_TOKEN=glpat-FAKE-not-a-real-token-0001\npl() { tail -1 \"$FORGE_MOCK_DIR/git-push.log\" 2>/dev/null; }\nfx_run push feat; fx_show mirror\necho \"mirror_pushes=$(fx_count git push)\"\necho \"mirror_$(pl | grep -o 'value_has_token=[a-z]*')\"\necho \"mirror_keys=$(pl | grep -o 'keys=[^ ]*' | sed 's/^keys=//')\"\nfx_reqs_clear\nfx_setremote https://gitlab.example.test/grp/proj.git\nfx_run push feat; fx_show ctl\necho \"ctl_pushes=$(fx_count git push)\"\necho \"ctl_$(pl | grep -o 'value_has_token=[a-z]*')\"\necho \"ctl_keys=$(pl | grep -o 'keys=[^ ]*' | sed 's/^keys=//')\"\nfx_done",
+  "checks": [
+    {
+      "type": "exit_code",
+      "equals": 0
+    },
+    {
+      "type": "must_find",
+      "strings": [
+        "mirror.rc=0",
+        "mirror_pushes=1",
+        "mirror_value_has_token=no",
+        "ctl.rc=0",
+        "ctl_pushes=1",
+        "ctl_value_has_token=yes",
+        "ctl_keys=http.https://gitlab.example.test/.extraheader"
+      ]
+    },
+    {
+      "type": "must_not_find",
+      "strings": [
+        "mirror_value_has_token=yes",
+        "mirror_keys=http.https://mirror"
+      ]
+    }
+  ],
+  "provenance": {
+    "source": "hand",
+    "date": "2026-11-16"
+  }
+}
