@@ -99,11 +99,12 @@ fx_tokscan() {
 
 # fx_nogh: PATH with every tool except gh (curl/git stay the shims).
 fx_nogh() {
-  local dir="$PWD/.nogh" d f b
+  local dir="$PWD/.nogh" d f b realgit=""
   mkdir -p "$dir"
   local IFS=:
   for d in $PATH; do
     [[ -d "$d" && "$d" != "$FIXTURES/forge/bin" ]] || continue
+    [[ -z "$realgit" && -x "$d/git" ]] && realgit="$d/git"
     for f in "$d"/*; do
       b="${f##*/}"
       case "$b" in gh|curl|git) continue ;; esac
@@ -111,7 +112,11 @@ fx_nogh() {
     done
   done
   cp "$FIXTURES/forge/bin/curl" "$FIXTURES/forge/bin/git" "$dir/"
-  PATH="$dir"
+  # The git shim execs the first OTHER git on PATH; keep the real one
+  # reachable behind it, or every git call (remote get-url included) fails.
+  mkdir -p "$dir/.realgit"
+  ln -sf "${realgit:-/usr/bin/git}" "$dir/.realgit/git"
+  PATH="$dir:$dir/.realgit"
 }
 
 # fx_doctor: run doctor.sh, set FX_SEC to the lines of the `forge:` section.

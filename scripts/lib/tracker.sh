@@ -958,12 +958,17 @@ tracker_next_id() {
 # Verification is fail-closed, the _tracker_supersede_lands posture:
 #   1. git evidence  — the recorded branch resolves and is an ancestor of the
 #                      default-branch tip (merge commits, fast-forwards);
-#   2. gh evidence   — squash/rebase merges leave no ancestry, so when the
-#                      recorded pr is an https URL and `gh` is on PATH, the
-#                      forge's MERGED state counts.
+#   2. forge evidence — squash/rebase merges leave no ancestry, so when the
+#                      recorded pr is an https URL, the forge's MERGED state
+#                      counts. Read through scripts/lib/forge.sh pr-state
+#                      (spec 020) — invoked as a subprocess, and anything but a
+#                      clean MERGED (non-zero exit, unexpected output) is
+#                      UNKNOWN. A project scaffolded before forge.sh existed
+#                      keeps the original `gh pr view` fallback unchanged.
 # Neither verifies -> the spec is left exactly as it is. Never guesses.
 tracker_reconcile_done() {
-  local actor="${1:-reconcile}" f branch pr base state merged
+  local actor="${1:-reconcile}" f branch pr base state merged forge
+  forge="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/forge.sh"
   [[ -d "$FACTORY_SPECS_DIR" ]] || return 0
   # `|| true` inside the substitutions: unlike _tracker_supersede_lands (only
   # ever called in condition contexts), this runs straight from the CLI
@@ -982,7 +987,10 @@ tracker_reconcile_done() {
     fi
     if [[ "$merged" -eq 0 ]]; then
       pr="$(_tracker_field "$f" pr)"
-      if [[ "$pr" == https://* ]] && command -v gh >/dev/null 2>&1; then
+      if [[ "$pr" == https://* && -x "$forge" ]]; then
+        state="$("$forge" pr-state "$pr" 2>/dev/null)" || state=UNKNOWN
+        if [[ "$state" == "MERGED" ]]; then merged=1; fi
+      elif [[ "$pr" == https://* ]] && command -v gh >/dev/null 2>&1; then
         state="$(gh pr view "$pr" --json state --jq .state 2>/dev/null || true)"
         if [[ "$state" == "MERGED" ]]; then merged=1; fi
       fi

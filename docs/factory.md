@@ -249,11 +249,12 @@ separate hosting account. Heavier options (a GitHub Pages preview branch, a
 Codespaces badge, Cloudflare Pages, Vercel/Netlify hobby tiers) are
 documented project hooks, used only if already wired up.
 
-**PR anatomy.** Push the branch, open a PR: title = spec title; body =
+**PR anatomy.** Push the branch (`scripts/lib/forge.sh push`), open a
+PR/MR (`scripts/lib/forge.sh pr-create`): title = spec title; body =
 executive summary (≤10 lines), acceptance checklist with pass/fail, a
 **test plan**, screenshots, caveats carried from envelopes, spec file
-reference. No remote configured → record `pr: local` and note the branch in
-the digest instead.
+reference. No forge or remote configured → record `pr: local` and note the
+branch in the digest instead.
 
 The test plan is mandatory on every PR and is written for someone who has
 not read the diff: the bench path to run it from, the automated commands
@@ -264,7 +265,7 @@ in this environment** (real hardware, live tmux, paid API paths). A review
 that reports everything green while a whole class went unexercised is the
 exact failure this pipeline exists to prevent.
 
-**Where it reaches you.** The PR body is canonical — GitHub renders `- [ ]`
+**Where it reaches you.** The PR/MR body is canonical — GitHub and GitLab render `- [ ]`
 as interactive checkboxes, so the plan is a live worksheet you tick off in
 the browser, not a static document. When benches are enabled the same text
 is also written to `<bench>/TEST-PLAN.md`, because hands-on review happens
@@ -498,6 +499,32 @@ any chain you changed.)
 
 Benches need no attention: `bench.sh reconcile` retires them for shelved and
 superseded specs the same way it does for merged ones.
+
+## Forges
+
+`scripts/lib/forge.sh` is the same kind of seam for the hosting side: the
+review stage pushes and opens the PR/MR through it and never calls `gh` or a
+GitLab API directly.
+
+- **Kinds:** `github` (via `gh`), `gitlab` (REST + personal access token),
+  `none` (no forge; the stage records `pr: local`).
+- **Detection is declared, not probed.** `FORGE` in env/`.env`, else
+  `.forge.kind` in `.agentic/config.json`, else the remote URL — which only
+  recognizes github.com and hosts with a label starting with `gitlab`. There
+  is no network probe; self-hosted GitLab under another hostname must declare
+  `FORGE=gitlab`.
+- **Settings:** `FORGE`, `FORGE_URL` (GitLab base URL, default derived from
+  the remote), `FORGE_REMOTE` (default `origin`), `FORGE_TOKEN` /
+  `GITLAB_TOKEN` (token in `.env`, only sent to the configured instance).
+- **CLI:** `forge.sh kind | remote | push BRANCH | pr-create --head B --base T
+  --title S --body-file F | pr-state URL | pr-close URL | check`.
+- **Adding a forge (Gitea, Forgejo, Bitbucket):** implement
+  `_forge_<kind>_pr_create`, `_pr_state`, `_pr_close` and `_check`, and teach
+  `_forge_auto`, `_forge_valid_kind` and `_forge_url_kind` the new kind.
+  Callers never change.
+- **Reviewers are project policy.** Assigning reviewers or labels is not a
+  plugin setting; projects that want it say so in their own CLAUDE.md/AGENTS.md
+  or `PROJECT_REVIEW_ADDENDUM`.
 
 ## Tracker connectors
 

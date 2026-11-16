@@ -162,6 +162,7 @@ scripts/observe_push.sh	scripts/observe_push.sh	core
 scripts/run_headless.sh	scripts/run_headless.sh	core
 scripts/statusline-usage.sh	templates/statusline-usage.sh	core
 scripts/lib/bench.sh	scripts/lib/bench.sh	core
+scripts/lib/forge.sh	scripts/lib/forge.sh	core
 scripts/lib/common.sh	scripts/lib/common.sh	core
 scripts/lib/obs.sh	scripts/lib/obs.sh	core
 scripts/lib/obs_summary.jq	scripts/lib/obs_summary.jq	core

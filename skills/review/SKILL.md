@@ -110,13 +110,18 @@ OPEN PR plus a digest entry; merging is the human's signal and theirs alone.
    Pages branch, Codespaces badge, Cloudflare Pages) are project hooks — use
    only if the project already has them configured.
 
-9. **Open the PR.** Push the branch (`git push -u origin claude/idea-<slug>`)
-   and open a PR: title = spec title; body = executive summary (what changed
+9. **Open the PR (MR on GitLab).** Push the branch with
+   `scripts/lib/forge.sh push claude/idea-<slug>`, then open the PR/MR with
+   `scripts/lib/forge.sh pr-create --head claude/idea-<slug> --base <default branch> --title "<spec title>" --body-file <body file>`:
+   title = spec title; body = executive summary (what changed
    and why, ≤10 lines), the acceptance checklist with pass/fail, the **test
    plan** (below — mandatory, never omitted), screenshots,
    caveats/assumptions carried from envelopes, and the spec file reference.
-   No remote configured → record `pr: local` and note the branch in the
-   digest instead.
+   Record the single line it prints as `pr:` — a PR/MR URL, or `local` when
+   the project has no forge/remote (`local` is the only non-URL value; record
+   `pr: local`); in that case note the branch in the digest instead. Reviewer/label
+   assignment is project policy, not plugin behavior: projects that want it
+   add it to their own CLAUDE.md/AGENTS.md or `PROJECT_REVIEW_ADDENDUM`.
 
    ### The test plan (every PR, no exceptions)
 
